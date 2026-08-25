@@ -12,21 +12,24 @@ export class AccountApiClient extends BaseApiClient {
   createUser(payload: LoginPayload): Promise<APIResponse> {
     return this.logged(
       this.request.post(`${this.basePath}/User`, { data: payload }),
-      `POST ${this.basePath}/User`
+      `POST ${this.basePath}/User`,
+      payload
     );
   }
 
   generateToken(payload: LoginPayload): Promise<APIResponse> {
     return this.logged(
       this.request.post(`${this.basePath}/GenerateToken`, { data: payload }),
-      `POST ${this.basePath}/GenerateToken`
+      `POST ${this.basePath}/GenerateToken`,
+      payload
     );
   }
 
   checkAuthorized(payload: LoginPayload): Promise<APIResponse> {
     return this.logged(
       this.request.post(`${this.basePath}/Authorized`, { data: payload }),
-      `POST ${this.basePath}/Authorized`
+      `POST ${this.basePath}/Authorized`,
+      payload
     );
   }
 
