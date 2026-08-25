@@ -54,6 +54,13 @@ module.exports = tseslint.config(
       'no-console': 'warn',
     },
   },
+  {
+    // The one designated logging module — allowed to use console directly.
+    files: ['src/utils/logger.ts'],
+    rules: {
+      'no-console': 'off',
+    },
+  },
   prettierConfig,
   {
     ignores: ['node_modules/', 'test-results/', 'playwright-report/', 'blob-report/', 'dist/'],
