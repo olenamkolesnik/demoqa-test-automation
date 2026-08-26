@@ -3,6 +3,7 @@ import { AccountApiClient } from '../api/account-api.client';
 import { buildNewUserPayload } from '../data/user.factory';
 import { parseJsonBody } from '../utils/api-response.util';
 import { logger } from '../utils/logger';
+import { deleteAndLogOrphanOnFailure } from './teardown.util';
 import { CreateUserResponseSchema, GenerateTokenResponseSchema } from '../types/account.schema';
 import type { LoginPayload } from '../types/account.schema';
 
@@ -22,15 +23,28 @@ interface AccountFixtures {
   seedAuthorizedUser: SeededAuthorizedUser;
 }
 
-async function deleteAndLogOrphanOnFailure(
+async function deleteUserAndLogOrphanOnFailure(
   client: AccountApiClient,
   payload: LoginPayload,
   userId: string,
   existingToken?: string
 ): Promise<void> {
-  const token =
-    existingToken ??
-    (await parseJsonBody(await client.generateToken(payload), GenerateTokenResponseSchema)).token;
+  let token: string | null | undefined = existingToken;
+
+  if (!token) {
+    try {
+      const tokenResponse = await parseJsonBody(
+        await client.generateToken(payload),
+        GenerateTokenResponseSchema
+      );
+      token = tokenResponse.token;
+    } catch (error) {
+      logger.error(
+        `Teardown token re-fetch threw for orphaned user userId=${userId} userName=${payload.userName}: ${String(error)}`
+      );
+      return;
+    }
+  }
 
   if (!token) {
     logger.error(
@@ -39,12 +53,11 @@ async function deleteAndLogOrphanOnFailure(
     return;
   }
 
-  const deleteResponse = await client.deleteUser(userId, token);
-  if (deleteResponse.status() !== 204) {
-    logger.error(
-      `Teardown failed to delete user (status ${deleteResponse.status()}) — orphaned userId=${userId} userName=${payload.userName}`
-    );
-  }
+  await deleteAndLogOrphanOnFailure(
+    () => client.deleteUser(userId, token),
+    () => `orphaned userId=${userId} userName=${payload.userName}`,
+    204
+  );
 }
 
 export const test = base.extend<AccountFixtures>({
@@ -59,7 +72,7 @@ export const test = base.extend<AccountFixtures>({
 
     await use({ userName: payload.userName, password: payload.password, userId: created.userID });
 
-    await deleteAndLogOrphanOnFailure(accountApiClient, payload, created.userID);
+    await deleteUserAndLogOrphanOnFailure(accountApiClient, payload, created.userID);
   },
 
   seedAuthorizedUser: async ({ accountApiClient }, use) => {
@@ -83,7 +96,7 @@ export const test = base.extend<AccountFixtures>({
       token,
     });
 
-    await deleteAndLogOrphanOnFailure(accountApiClient, payload, created.userID, token);
+    await deleteUserAndLogOrphanOnFailure(accountApiClient, payload, created.userID, token);
   },
 });
 

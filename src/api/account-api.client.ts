@@ -13,7 +13,7 @@ export class AccountApiClient extends BaseApiClient {
     return this.logged(
       this.request.post(`${this.basePath}/User`, { data: payload }),
       `POST ${this.basePath}/User`,
-      payload
+      { requestPayload: payload }
     );
   }
 
@@ -21,7 +21,7 @@ export class AccountApiClient extends BaseApiClient {
     return this.logged(
       this.request.post(`${this.basePath}/GenerateToken`, { data: payload }),
       `POST ${this.basePath}/GenerateToken`,
-      payload
+      { requestPayload: payload }
     );
   }
 
@@ -29,7 +29,7 @@ export class AccountApiClient extends BaseApiClient {
     return this.logged(
       this.request.post(`${this.basePath}/Authorized`, { data: payload }),
       `POST ${this.basePath}/Authorized`,
-      payload
+      { requestPayload: payload }
     );
   }
 

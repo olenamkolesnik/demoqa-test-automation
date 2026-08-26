@@ -2,13 +2,18 @@ import { randomUUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import type { LoginPayload } from '../types/account.schema';
 
+// Short, unique-enough suffix for both usernames and passwords — guarantees
+// uniqueness across parallel workers (playwright.config.ts runs fullyParallel)
+// without pulling in a full UUID's length.
+function randomSuffix(): string {
+  return randomUUID().replace(/-/g, '').slice(0, 8);
+}
+
 // Prefixed and suffixed for two different reasons: "qa_" makes any orphaned
 // user left on the shared public backend after a crashed run identifiable
-// for manual cleanup; the UUID suffix guarantees uniqueness across parallel
-// workers (playwright.config.ts runs fullyParallel).
+// for manual cleanup; the suffix guarantees uniqueness across parallel workers.
 export function buildUniqueUsername(): string {
-  const suffix = randomUUID().replace(/-/g, '').slice(0, 8);
-  return `qa_${faker.internet.username()}_${suffix}`;
+  return `qa_${faker.internet.username()}_${randomSuffix()}`;
 }
 
 // Hand-rolled, not faker's internet.password() — this guarantees all four
@@ -16,8 +21,7 @@ export function buildUniqueUsername(): string {
 // rule in docs/api-spec/account-endpoints.md (>=8 chars, upper, lower,
 // digit, special char). Faker's generator doesn't reliably satisfy that.
 export function buildValidPassword(): string {
-  const suffix = randomUUID().replace(/-/g, '').slice(0, 8);
-  return `Aa1!${suffix}`;
+  return `Aa1!${randomSuffix()}`;
 }
 
 export function buildNewUserPayload(overrides?: Partial<LoginPayload>): LoginPayload {

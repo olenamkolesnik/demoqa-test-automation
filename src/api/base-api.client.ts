@@ -12,16 +12,18 @@ export abstract class BaseApiClient {
   protected async logged(
     promise: Promise<APIResponse>,
     label: string,
-    requestPayload?: unknown
+    options?: { requestPayload?: unknown }
   ): Promise<APIResponse> {
-    if (debugEnabled() && requestPayload !== undefined) {
-      logger.debug(`${label} request payload: ${JSON.stringify(redact(requestPayload))}`);
+    const debug = debugEnabled();
+
+    if (debug && options?.requestPayload !== undefined) {
+      logger.debug(`${label} request payload: ${JSON.stringify(redact(options.requestPayload))}`);
     }
 
     const response = await promise;
     logger.info(`${label} -> ${response.status()}`);
 
-    if (debugEnabled()) {
+    if (debug) {
       const body = await response.text().catch(() => '<unreadable body>');
       logger.debug(`${label} response body: ${redactResponseText(body)}`);
     }
