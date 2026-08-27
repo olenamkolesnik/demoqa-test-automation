@@ -75,12 +75,14 @@ Covered at both layers:
 
 ## 8. Risks & Mitigations
 
-| Risk                                                                                                | Mitigation                                                                                                                                                               |
-| --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| DemoQA is a public demo backend — shared state, subject to change without notice                    | Unique per-test data (random suffixes); isolate locators in POMs so breakage is a one-file fix                                                                           |
-| API-seeded UI tests create hidden coupling between suites                                           | Keep seeding logic in dedicated fixtures (`src/fixtures`), named with a `seed*` prefix so seeding usage stays greppable and never silently reused across unrelated tests |
-| Flaky tests eroding confidence                                                                      | Hard waits banned via lint rule; web-first assertions only                                                                                                               |
-| Negative-path/auth testing against a public sandbox may behave inconsistently (rate limiting, etc.) | Document actual observed behavior per case; treat sandbox quirks as known limitations, not framework bugs                                                                |
+Risk IDs below are referenced in test cases (`docs/test-cases/`)
+
+| ID     | Risk                                                                                                | Mitigation                                                                                                                                                               |
+| ------ | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Risk-1 | DemoQA is a public demo backend — shared state, subject to change without notice                    | Unique per-test data (random suffixes); isolate locators in POMs so breakage is a one-file fix                                                                           |
+| Risk-2 | API-seeded UI tests create hidden coupling between suites                                           | Keep seeding logic in dedicated fixtures (`src/fixtures`), named with a `seed*` prefix so seeding usage stays greppable and never silently reused across unrelated tests |
+| Risk-3 | Flaky tests eroding confidence                                                                      | Hard waits banned via lint rule; web-first assertions only                                                                                                               |
+| Risk-4 | Negative-path/auth testing against a public sandbox may behave inconsistently (rate limiting, etc.) | Document actual observed behavior per case; treat sandbox quirks as known limitations, not framework bugs                                                                |
 
 ## 9. Deliverables
 
