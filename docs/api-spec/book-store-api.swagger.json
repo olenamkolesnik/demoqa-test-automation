@@ -1,0 +1,652 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "version": "v1",
+    "title": "Book Store API",
+    "description": "Book Store Web API",
+    "termsOfService": "None"
+  },
+  "paths": {
+    "/Account/v1/Authorized": {
+      "post": {
+        "tags": ["Account"],
+        "summary": "",
+        "operationId": "AccountV1AuthorizedPost",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "loginViewModel",
+            "in": "body",
+            "description": "",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/LoginViewModel"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          "400": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/MessageModal"
+            }
+          },
+          "404": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/MessageModal"
+            }
+          }
+        }
+      }
+    },
+    "/Account/v1/GenerateToken": {
+      "post": {
+        "tags": ["Account"],
+        "operationId": "AccountV1GenerateTokenPost",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "loginViewModel",
+            "in": "body",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/LoginViewModel"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/TokenViewModel"
+            }
+          },
+          "400": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/MessageModal"
+            }
+          }
+        }
+      }
+    },
+    "/Account/v1/User": {
+      "post": {
+        "tags": ["Account"],
+        "operationId": "AccountV1UserPost",
+        "consumes": ["application/json"],
+        "produces": [],
+        "parameters": [
+          {
+            "name": "model",
+            "in": "body",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/RegisterViewModel"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/CreateUserResult"
+            }
+          },
+          "404": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/MessageModal"
+            }
+          },
+          "406": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/MessageModal"
+            }
+          }
+        }
+      }
+    },
+    "/Account/v1/User/{UUID}": {
+      "delete": {
+        "tags": ["Account"],
+        "operationId": "AccountV1UserByUserIdDelete",
+        "consumes": [],
+        "produces": [],
+        "parameters": [
+          {
+            "name": "UserId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/MessageModal"
+            }
+          },
+          "204": {
+            "description": "Unauthorized",
+            "schema": {
+              "$ref": "#/definitions/BooksResult"
+            }
+          },
+          "401": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/MessageModal"
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": ["Account"],
+        "operationId": "AccountV1UserByUserIdGet",
+        "consumes": [],
+        "produces": [],
+        "parameters": [
+          {
+            "name": "UserId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/GetUserResult"
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "schema": {
+              "$ref": "#/definitions/MessageModal"
+            }
+          }
+        }
+      }
+    },
+    "/BookStore/v1/Books": {
+      "get": {
+        "tags": ["BookStore"],
+        "operationId": "BookStoreV1BooksGet",
+        "consumes": [],
+        "produces": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "array",
+              "$ref": "#/definitions/AllBooksModal"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["BookStore"],
+        "operationId": "BookStoreV1BooksPost",
+        "consumes": ["application/json"],
+        "produces": [],
+        "parameters": [
+          {
+            "name": "addListOfBooks",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/AddListOfBooks"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success",
+            "schema": {
+              "type": "array",
+              "$ref": "#/definitions/CollectionOfIsbn"
+            }
+          },
+          "400": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/MessageModal"
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "schema": {
+              "$ref": "#/definitions/MessageModal"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["BookStore"],
+        "operationId": "BookStoreV1BooksDelete",
+        "consumes": [],
+        "produces": [],
+        "parameters": [
+          {
+            "name": "UserId",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/BooksResult"
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "schema": {
+              "$ref": "#/definitions/MessageModal"
+            }
+          }
+        }
+      }
+    },
+    "/BookStore/v1/Book": {
+      "get": {
+        "tags": ["BookStore"],
+        "operationId": "BookStoreV1BookGet",
+        "consumes": [],
+        "produces": [],
+        "parameters": [
+          {
+            "name": "ISBN",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/BookModal"
+            }
+          },
+          "400": {
+            "description": "Not Found",
+            "schema": {
+              "$ref": "#/definitions/MessageModal"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["BookStore"],
+        "operationId": "BookStoreV1BookDelete",
+        "consumes": ["application/json"],
+        "produces": [],
+        "parameters": [
+          {
+            "name": "stringObject",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/StringObject"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/UserBooksResult"
+            }
+          },
+          "400": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/MessageModal"
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "schema": {
+              "$ref": "#/definitions/MessageModal"
+            }
+          }
+        }
+      }
+    },
+    "/BookStore/v1/Books/{ISBN}": {
+      "put": {
+        "tags": ["BookStore"],
+        "operationId": "BookStoreV1BooksByISBNPut",
+        "consumes": ["application/json"],
+        "produces": [],
+        "parameters": [
+          {
+            "name": "ISBN",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "replaceIsbn",
+            "in": "body",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/ReplaceIsbn"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/GetUserResult"
+            }
+          },
+          "400": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/MessageModal"
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "schema": {
+              "$ref": "#/definitions/MessageModal"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "LoginViewModel": {
+      "description": "",
+      "required": ["userName", "password"],
+      "type": "object",
+      "properties": {
+        "userName": {
+          "description": "",
+          "type": "string"
+        },
+        "password": {
+          "format": "password",
+          "description": "",
+          "type": "string"
+        }
+      }
+    },
+    "TokenViewModel": {
+      "description": "",
+      "type": "object",
+      "properties": {
+        "token": {
+          "description": "",
+          "type": "string"
+        },
+        "expires": {
+          "format": "date-time",
+          "description": "",
+          "type": "string"
+        },
+        "status": {
+          "description": "",
+          "type": "string"
+        },
+        "result": {
+          "description": "",
+          "type": "string"
+        }
+      }
+    },
+    "BookModal": {
+      "description": "",
+      "type": "object",
+      "properties": {
+        "isbn": {
+          "description": "",
+          "type": "string"
+        },
+        "title": {
+          "description": "",
+          "type": "string"
+        },
+        "subTitle": {
+          "description": "",
+          "type": "string"
+        },
+        "author": {
+          "description": "",
+          "type": "string"
+        },
+        "publish_date": {
+          "format": "date-time",
+          "description": "",
+          "type": "string"
+        },
+        "publisher": {
+          "description": "",
+          "type": "string"
+        },
+        "pages": {
+          "description": "",
+          "type": "number"
+        },
+        "description": {
+          "description": "",
+          "type": "string"
+        },
+        "website": {
+          "description": "",
+          "type": "string"
+        }
+      }
+    },
+    "RegisterViewModel": {
+      "required": ["userName", "password"],
+      "type": "object",
+      "properties": {
+        "userName": {
+          "type": "string"
+        },
+        "password": {
+          "format": "password",
+          "type": "string"
+        }
+      }
+    },
+    "CreateUserResult": {
+      "description": "",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "description": "",
+          "type": "string"
+        },
+        "username": {
+          "description": "",
+          "type": "string"
+        },
+        "books": {
+          "description": "",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/BookModal"
+          }
+        }
+      }
+    },
+    "GetUserResult": {
+      "description": "",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "description": "",
+          "type": "string"
+        },
+        "username": {
+          "description": "",
+          "type": "string"
+        },
+        "books": {
+          "description": "",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/BookModal"
+          }
+        }
+      }
+    },
+    "AddListOfBooks": {
+      "description": "",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "description": "",
+          "type": "string"
+        },
+        "collectionOfIsbns": {
+          "description": "",
+          "uniqueItems": false,
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CollectionOfIsbn"
+          }
+        }
+      }
+    },
+    "CollectionOfIsbn": {
+      "description": "",
+      "type": "object",
+      "properties": {
+        "isbn": {
+          "description": "",
+          "type": "string"
+        }
+      }
+    },
+    "AllBooksModal": {
+      "description": "",
+      "type": "object",
+      "properties": {
+        "books": {
+          "description": "",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/BookModal"
+          }
+        }
+      }
+    },
+    "StringObject": {
+      "description": "",
+      "type": "object",
+      "properties": {
+        "isbn": {
+          "description": "",
+          "type": "string"
+        },
+        "userId": {
+          "description": "",
+          "type": "string"
+        }
+      }
+    },
+    "BooksResult": {
+      "description": "",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "description": "",
+          "type": "string"
+        },
+        "message": {
+          "description": "",
+          "type": "string"
+        }
+      }
+    },
+    "UserBooksResult": {
+      "description": "",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "description": "",
+          "type": "string"
+        },
+        "isbn": {
+          "description": "",
+          "type": "string"
+        },
+        "message": {
+          "description": "",
+          "type": "string"
+        }
+      }
+    },
+    "ReplaceIsbn": {
+      "description": "",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "description": "",
+          "type": "string"
+        },
+        "isbn": {
+          "description": "",
+          "type": "string"
+        }
+      }
+    },
+    "MessageModal": {
+      "description": "",
+      "type": "object",
+      "properties": {
+        "code": {
+          "description": "",
+          "type": "number"
+        },
+        "message": {
+          "description": "",
+          "type": "string"
+        }
+      }
+    }
+  },
+  "securityDefinitions": {
+    "Basic": {
+      "type": "basic",
+      "description": "Book Store Credentials"
+    },
+    "Bearer": {
+      "name": "Authorization",
+      "in": "header",
+      "type": "apiKey",
+      "description": "Please enter JWT with Bearer into field"
+    }
+  },
+  "security": [
+    {
+      "Basic": []
+    },
+    {
+      "Bearer": []
+    }
+  ]
+}
