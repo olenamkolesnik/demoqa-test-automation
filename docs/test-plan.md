@@ -4,6 +4,8 @@
 
 Demonstrate an ISTQB-aligned test automation solution for the DemoQA Book Store application (UI + API), using TypeScript + Playwright. The goal is a maintainable, reliable codebase backed by automated linting and CI test execution.
 
+This project is built collaboratively with [Claude Code](https://claude.com/claude-code), Anthropic's agentic coding tool — used for scaffolding, implementation, and code review throughout.
+
 ## 2. Scope
 
 **In scope — Book Store application only:**
