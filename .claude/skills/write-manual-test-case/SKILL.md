@@ -1,8 +1,7 @@
-# Skill: Writing Manual Test Cases
-
-## Purpose
-
-Defines how to write human-readable manual test cases for `docs/test-cases/`. Test cases are generated from reviewed test conditions (`docs/test-conditions/`) — never directly from an endpoint or spec. Automated tests trace back to these via `@manualTestId`.
+---
+name: write-manual-test-case
+description: Defines how to write human-readable manual test cases for `docs/test-cases/`. Test cases are generated from reviewed test conditions (`docs/test-conditions/`) — never directly from an endpoint or spec. Automated tests trace back to these via `@manualTestId`.
+---
 
 ## Input
 
@@ -44,6 +43,19 @@ docs/test-cases/
 ```
 
 Parallel structure with automation: `docs/test-cases/api/auth/` traces to `tests/api/account.api.spec.ts`; `docs/test-cases/ui/auth/` traces to `tests/ui/login.ui.spec.ts`.
+
+### Deriving the input and output paths
+
+Given `METHOD /path` for an API endpoint:
+
+1. `<feature>` = the functional area (`auth`, `bookstore`, `collection`, `profile`) — same value used for the conditions file
+2. `<verb>-<resource>` = same derivation as `write-test-conditions` (HTTP method lowercased + entity path segment)
+3. Input conditions file: `docs/test-conditions/api/<feature>/<verb>-<resource>.md` — must already exist and be reviewed; if it doesn't exist yet, stop and say so rather than inventing conditions
+4. Output test cases file: `docs/test-cases/api/<feature>/<verb>-<resource>.md` — same `<feature>`/`<verb>-<resource>` as the input, different top-level folder
+
+Example: `DELETE /Account/v1/User/{UUID}` → input `docs/test-conditions/api/auth/delete-user.md`, output `docs/test-cases/api/auth/delete-user.md`.
+
+Create the output folder if it doesn't exist yet. Do not ask for either path if it can be derived this way.
 
 ---
 
