@@ -58,7 +58,7 @@ One `test()` per (non-Low-priority) test case:
 - Tags (Playwright's native `tag` option, per `docs/coding-standards.md`):
   - The test case's own `ID` (e.g. `@AUTH-001`) — this is the `@manualTestId` link
   - `@positive` or `@negative` (or `@boundary` for a BVA case) from the condition's `Category`/`Technique`
-  - `@priority-high` or `@priority-medium` from the condition's `Priority`
+  - No priority tag — `Priority` already did its job via the filter above; every test that reaches this point is High or Medium, so tagging it again would be inert metadata
 - If the test case's `Postconditions` describes cleanup beyond what the fixture's own teardown already does, note it as a comment — don't add manual cleanup code that duplicates what the fixture already guarantees
 - If a test case's `Preconditions` or `Test data` describes more than one actor (e.g. two separately seeded users), stop and flag it instead of generating anything — this skill does not yet support multi-actor test cases. (No current test case in this project needs this; if one is written in the future, it needs a design decision before this skill can handle it, not a best-effort attempt.)
 
