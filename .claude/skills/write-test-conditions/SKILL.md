@@ -52,8 +52,8 @@ Create the folder if it doesn't exist yet. Do not ask for the output path if it 
 
 Before writing the endpoint analysis, look for the endpoint definition in this order:
 
-1. `docs/api-spec/account-endpoints.md` (or the equivalent live-verified `.md` doc for the feature area, if one exists) — trust this over the raw Swagger spec when the two disagree, since it has been corrected against observed live behavior
-2. `docs/api-spec/book-store-api.swagger.json` — raw spec, used only where no corrected `.md` doc exists yet, or to check field names/shapes the `.md` doc doesn't cover
+1. A corrected, live-verified `.md` doc under `docs/api-spec/` for the feature area, if one exists (e.g. `docs/api-spec/account-endpoints.md`) — trust this over the raw Swagger spec when the two disagree, since it has been corrected against observed live behavior
+2. Any `*.swagger.json` file under `docs/api-spec/` covering the endpoint — raw spec, used only where no corrected `.md` doc exists yet, or to check field names/shapes the `.md` doc doesn't cover. Don't assume a single fixed filename: list `docs/api-spec/` and match by content, since more than one raw spec file may exist as the project grows.
 3. Business rules not captured in either (e.g. password complexity) — ask the user if not already known from a prior conditions file in the same feature area
 
 Do not ask the user to paste the spec section — read it directly from these files.

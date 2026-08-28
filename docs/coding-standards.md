@@ -158,6 +158,22 @@ Don't extract a shared helper until the same shape appears in at least three pla
 
 One logical focus per `test()` — mirrors the manual test case's "one action, one result" rule. A functional test's assertions are all about the one scenario in its title; if you need "and also verify the schema," that's the contract file's job, not an additional assertion bolted onto a functional test.
 
+Within that one focus, use `expect.soft()` rather than `expect()` for every check, not just the first. A functional test typically verifies several facts about one outcome (e.g. AUTH-001 checks status 201, `userID` present, `username` equal, `books` equal `[]` — four checks about one successful-registration scenario). A hard `expect()` on the first of these stops the test the instant it fails, hiding whether the remaining checks would also have failed — which is exactly the information worth having when diagnosing a real regression (did only the status change, or did the whole shape break?). `expect.soft()` runs every assertion in the test and reports all failures together; Playwright still fails the test overall if any soft assertion failed.
+
+```ts
+// Preferred — all four checks run and report together
+expect.soft(response.status()).toBe(201);
+expect.soft(body.userID).toBeTruthy();
+expect.soft(body.username).toBe('qa_reg_valid_001');
+expect.soft(body.books).toEqual([]);
+
+// Avoid — a status-code failure hides whether the body shape also broke
+expect(response.status()).toBe(201);
+expect(body.userID).toBeTruthy();
+```
+
+Exception: a check that later assertions depend on for correctness — e.g. if `response.json()` would itself throw on a non-JSON body — should stay a hard `expect()` (or an early return/guard) so the test doesn't cascade into confusing, unrelated failures. This is rare in practice here, since `parseJsonBody` already throws its own clear error on a shape mismatch before any assertion runs.
+
 ---
 
 ## UI test architecture
