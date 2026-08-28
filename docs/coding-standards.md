@@ -21,13 +21,25 @@ Each layer under `src/` has exactly one job. A change driven by one concern (a n
 
 ## Dependency direction
 
+API side:
+
 ```
 tests/  →  fixtures/  →  api/  →  types/
               ↓
             data/        utils/ (used by any layer above it)
 ```
 
-Never the reverse — a schema must not import a client; a client must not import a fixture. If you find yourself importing "up" this chain, the logic is in the wrong layer.
+UI side (see **UI test architecture** below for the full layer table):
+
+```
+tests/  →  flows/  →  pages/  →  components/
+              ↓
+        api/ fixtures/ (for API-seeded setup — see API-seeded UI tests)
+```
+
+Never the reverse in either chain — a schema must not import a client; a client must not import a fixture; a page object must not import a flow; a component must not import a page. If you find yourself importing "up" either chain, the logic is in the wrong layer.
+
+The two chains meet only at `tests/` (a UI test may use both a flow and an API fixture, per **API-seeded UI tests**) and at `utils/` (shared by both sides) — `src/pages/`, `src/components/`, `src/flows/` never import from `src/api/`, `src/fixtures/`, `src/data/`, or `src/types/` directly; only the test file coordinates both sides.
 
 ---
 
@@ -76,16 +88,19 @@ Every test creates its own data via a `seed*` fixture. Never reuse another test'
 
 ## Naming conventions
 
-| Suffix               | Location        | Example                      |
-| -------------------- | --------------- | ---------------------------- |
-| `*.schema.ts`        | `src/types/`    | `account.schema.ts`          |
-| `*-api.client.ts`    | `src/api/`      | `account-api.client.ts`      |
-| `*.factory.ts`       | `src/data/`     | `user.factory.ts`            |
-| `*.fixtures.ts`      | `src/fixtures/` | `account.fixtures.ts`        |
-| `*.util.ts`          | `src/utils/`    | `redact.util.ts`             |
-| `*.api.spec.ts`      | `tests/api/`    | `post-user.api.spec.ts`      |
-| `*.contract.spec.ts` | `tests/api/`    | `post-user.contract.spec.ts` |
-| `*.ui.spec.ts`       | `tests/ui/`     | `login.ui.spec.ts`           |
+| Suffix               | Location          | Example                      |
+| -------------------- | ----------------- | ---------------------------- |
+| `*.schema.ts`        | `src/types/`      | `account.schema.ts`          |
+| `*-api.client.ts`    | `src/api/`        | `account-api.client.ts`      |
+| `*.factory.ts`       | `src/data/`       | `user.factory.ts`            |
+| `*.fixtures.ts`      | `src/fixtures/`   | `account.fixtures.ts`        |
+| `*.util.ts`          | `src/utils/`      | `redact.util.ts`             |
+| `*.api.spec.ts`      | `tests/api/`      | `post-user.api.spec.ts`      |
+| `*.contract.spec.ts` | `tests/api/`      | `post-user.contract.spec.ts` |
+| `*.page.ts`          | `src/pages/`      | `books.page.ts`              |
+| `*.component.ts`     | `src/components/` | `header.component.ts`        |
+| `*.flow.ts`          | `src/flows/`      | `login.flow.ts`              |
+| `*.ui.spec.ts`       | `tests/ui/`       | `login.ui.spec.ts`           |
 
 API test files are named `<verb>-<resource>` — same derivation as `docs/test-conditions/` and `docs/test-cases/` (see `write-test-conditions`), so an endpoint's spec, conditions, test cases, and code all share one filename stem.
 
@@ -107,7 +122,7 @@ Every generated `test()` carries Playwright's native `tag` option (not a title-e
 ```ts
 test(
   'registers a user with valid credentials',
-  { tag: ['@AUTH-001', '@positive', '@priority-high'] },
+  { tag: ['@AUTH-001', '@positive'] },
   async ({ seedUser }) => {
     /* ... */
   }
@@ -115,15 +130,27 @@ test(
 ```
 
 - One tag is the manual test-case ID this test implements (`@AUTH-001`), matching `docs/test-cases/`'s `ID` field — this is the `@manualTestId` link referenced by `write-manual-test-case`.
-- One tag reflects the condition's category (`@positive` for a valid-EP condition, `@negative` for invalid-EP, `@boundary` for BVA).
-- One tag reflects the condition's `Priority` (`@priority-high` / `@priority-medium` / `@priority-low`), read from the paired `docs/test-conditions/` file — test cases don't carry Priority themselves, so this tag is the one piece of generated-code metadata that must be sourced from the conditions file rather than the test-cases file.
+- One tag reflects the condition's category/technique: `@positive` for a valid-EP condition, `@negative` for invalid-EP, `@boundary` for BVA. For UI conditions using the `State transition` or `Use case / scenario` techniques (see `write-test-conditions`), use `@state-transition` or `@scenario` instead — these are the UI-specific equivalents of the same "what kind of condition is this" tag, not an additional tag layered on top.
+
+No priority tag: `Priority` (from the conditions file) already does its job at generation time — Low-priority conditions are filtered out and never become a test at all (see `generate-api-tests`/`generate-ui-tests`), so every automated test is already High or Medium. There's no distinction left worth tagging unless a High-only subset run (separate from the full automated suite) is ever needed; if that need arises later, add the tag back then rather than carrying inert metadata now.
+
+**Contract tests carry a different tag pair**, since they have no manual test case behind them (see Functional vs. contract tests above): `@contract` plus the endpoint's feature-area prefix (e.g. `@AUTH`, matching the `AREA` used in `docs/test-cases/`'s `ID` format) — never an individual test-case ID or a `@positive`/`@negative` category tag, since a contract test isn't tied to one scenario.
+
+```ts
+test(
+  'POST /Account/v1/User success response matches schema',
+  { tag: ['@contract', '@AUTH'] },
+  async () => {
+    /* ... */
+  }
+);
+```
 
 Selective runs use Playwright's built-in grep filtering — no custom tooling needed:
 
 ```
 npx playwright test --grep @positive
-npx playwright test --grep @priority-high
-npx playwright test --grep-invert @priority-low
+npx playwright test --grep-invert @negative
 ```
 
 ---
@@ -153,6 +180,8 @@ This hasn't been fixed retroactively in `AccountApiClient` (not worth a breaking
 ## DRY vs. premature abstraction
 
 Don't extract a shared helper until the same shape appears in at least three places. Three similar lines of setup across two test files is fine; the same 15-line request-building sequence copy-pasted a third time is the signal to extract it. This applies to test code as much as to `src/` — a generation skill should not invent a generic "request builder" abstraction the first time it writes a second test.
+
+**Exception: UI components extract on the 2nd occurrence, not the 3rd** (see `generate-ui-infrastructure`'s "Deciding page vs. component" rule). This isn't a different DRY philosophy — a UI widget (nav bar, header) crossing onto a second page is a structural fact about the page itself, not a repeated line of code the author chose to copy-paste. The 3-occurrence threshold guards against premature abstraction of something that _might_ recur; a widget that's already present on two real pages has already recurred, so waiting for a third page before extracting it just means duplicating locators across an interim page that will need editing later anyway.
 
 ## Assertions
 
