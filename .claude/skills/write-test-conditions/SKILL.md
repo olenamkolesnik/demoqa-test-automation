@@ -151,12 +151,16 @@ Priority is a test design decision — assigned here in the condition, not in th
 
 ### Technique
 
-| Technique               | When to use                                                |
-| ----------------------- | ---------------------------------------------------------- |
-| `EP`                    | Valid/invalid input classes — one representative per class |
-| `BVA`                   | Length/range boundaries — min, min-1, max, max+1, empty    |
-| `Decision table`        | Combinations of states producing distinct outcomes         |
-| `Exploratory heuristic` | Situations not derivable from spec                         |
+| Technique               | When to use                                                                                                                                                                            |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `EP`                    | Valid/invalid input classes — one representative per class                                                                                                                             |
+| `BVA`                   | Length/range boundaries — min, min-1, max, max+1, empty                                                                                                                                |
+| `Decision table`        | Combinations of states producing distinct outcomes                                                                                                                                     |
+| `State transition`      | UI multi-page flows — a page/step sequence where the next valid step(s) depend on the current one (e.g. login → profile vs. login → error state staying on the login page)             |
+| `Use case / scenario`   | End-to-end UI journeys spanning multiple pages, validating the sequence itself rather than any single field or state (e.g. "register, then log in, then add a book to the collection") |
+| `Exploratory heuristic` | Situations not derivable from spec                                                                                                                                                     |
+
+`State transition` and `Use case / scenario` apply to `docs/test-conditions/ui/` conditions; API conditions rarely need them since a single endpoint call has no multi-step sequence of its own. A UI condition using `State transition` should name the states/transition directly in **What to cover** (e.g. "From the login page, submitting valid credentials transitions to the profile page; invalid credentials keep the user on the login page with an error shown").
 
 ### Values / boundaries
 
