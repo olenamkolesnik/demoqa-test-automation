@@ -1,8 +1,7 @@
-# Skill: Writing Test Conditions
-
-## Purpose
-
-Test conditions are the _what to test_ — derived from spec, business rules, and heuristics — reviewed before test cases are written. They live in `docs/test-conditions/`, mirroring `docs/test-cases/` structure. Conditions link forward to test cases; test cases link back to conditions.
+---
+name: write-test-conditions
+description: Defines how to write test conditions — the "what to test" derived from spec, business rules, and heuristics — reviewed before test cases are written. They live in `docs/test-conditions/`, mirroring `docs/test-cases/` structure. Conditions link forward to test cases; test cases link back to conditions.
+---
 
 **Sequence**: Endpoint analysis → Test conditions (review) → Test cases → Automation. Never skip to test cases directly.
 
@@ -35,6 +34,29 @@ docs/test-conditions/
     └── profile/
         └── profile-management.md
 ```
+
+### Deriving the output path
+
+Given `METHOD /path` for an API endpoint:
+
+1. `<resource>` = the path segment identifying the entity (e.g. `/Account/v1/User` → `user`; `/BookStore/v1/Books` → `books`)
+2. `<verb>` = the HTTP method, lowercased (`post`, `get`, `delete`, ...)
+3. `<feature>` = the functional area the endpoint belongs to (`auth`, `bookstore`, `collection`, `profile`) — infer from the path/domain, matching an existing folder under `docs/test-conditions/api/` if one already fits
+4. Output file: `docs/test-conditions/api/<feature>/<verb>-<resource>.md`
+
+Example: `DELETE /Account/v1/User/{UUID}` → `docs/test-conditions/api/auth/delete-user.md`
+
+Create the folder if it doesn't exist yet. Do not ask for the output path if it can be derived this way — only ask when the feature area is genuinely ambiguous.
+
+### Sourcing the spec
+
+Before writing the endpoint analysis, look for the endpoint definition in this order:
+
+1. `docs/api-spec/account-endpoints.md` (or the equivalent live-verified `.md` doc for the feature area, if one exists) — trust this over the raw Swagger spec when the two disagree, since it has been corrected against observed live behavior
+2. `docs/api-spec/book-store-api.swagger.json` — raw spec, used only where no corrected `.md` doc exists yet, or to check field names/shapes the `.md` doc doesn't cover
+3. Business rules not captured in either (e.g. password complexity) — ask the user if not already known from a prior conditions file in the same feature area
+
+Do not ask the user to paste the spec section — read it directly from these files.
 
 ---
 
