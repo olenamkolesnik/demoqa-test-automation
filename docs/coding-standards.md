@@ -55,9 +55,13 @@ const body = await parseJsonBody(response, CreateUserResponseSchema);
 const body = (await response.json()) as CreateUserResponse;
 ```
 
+This is a direct mitigation for Risk-1 ("shared public backend") in `docs/test-plan.md` §8: DemoQA can change a response shape without notice, and schema validation is what turns that into a clear, immediately diagnosable contract-test failure instead of a confusing downstream assertion failure with no obvious cause.
+
 ## API clients never assert
 
 Methods in `src/api/*-api.client.ts` return the raw `APIResponse` and never throw or assert on the status code. Negative-path status codes (400/401/404/406/...) are the thing under test, not an exceptional case to be hidden from the test file. All assertions belong in `tests/`.
+
+This separation matters for both Risk-1 and Risk-4 ("auth sandbox inconsistency"): if a client both requested and asserted, a failure could mean either "the backend behaved unexpectedly" or "the client's own assertion logic has a bug" — keeping assertions out of the client layer means a functional test failure always points at one place (the test's own expectation), never at a hidden check buried in the transport layer.
 
 ## Centralized request logging
 
@@ -159,9 +163,20 @@ npx playwright test --grep-invert @negative
 
 - **Single Responsibility**: see Layer responsibilities above.
 - **Open/Closed**: adding an endpoint means adding a method to an existing client class or a new client class — never changing an existing method's signature to accommodate one new caller.
-- **Liskov substitution**: not heavily exercised yet (no class hierarchies beyond `BaseApiClient`), but a future subclass must not narrow or change the meaning of an inherited method — e.g. a `BookStoreApiClient extends BaseApiClient` must not make `logged()` throw when the base class contract says it never does.
-- **Interface segregation**: prefer small, focused fixture names (`seedUser`, `seedAuthorizedUser`) over one fixture with options controlling which parts of setup run.
+- **Liskov substitution**: every `src/components/` class takes the same `(page: Page)` constructor shape and is composed into a page object the same way (see UI test architecture below) — any component must be substitutable into that composition without the page object needing to know which one it got. At the API layer: a future subclass must not narrow or change the meaning of an inherited method — e.g. a `BookStoreApiClient extends BaseApiClient` must not make `logged()` throw when the base class contract says it never does.
+- **Interface segregation**: prefer small, focused fixture names (`seedUser`, `seedAuthorizedUser`) over one fixture with options controlling which parts of setup run. The same applies to shared schemas: `LoginPayloadSchema` is reused by `GenerateToken` and `Authorized` because both genuinely need the exact same two fields — the moment a third caller needs only one of those fields, that's a signal to split the schema rather than force the new caller to depend on a shape bigger than what it uses.
 - **Dependency inversion**: fixtures depend on client abstractions (constructor-injected `APIRequestContext`, never constructed manually) — a test never `new`s a client or reaches for a global request context directly.
+
+## Design patterns in use
+
+Naming the patterns already implicit in the layer structure above, so the vocabulary is explicit rather than left for a reader to infer from the shapes alone:
+
+- **Factory** — `src/data/*.factory.ts`. `buildNewUserPayload()`, `buildValidPassword()`, etc. construct fully-formed objects so callers never assemble a request payload by hand field-by-field. Kept a plain-function factory (not a class) since there's no polymorphic family of products to select between — just one shape per resource.
+- **Facade** — `BaseApiClient` (and every class extending it). A test or fixture calls one method (`client.getUser(userId, token)`) that internally hides request construction, logging, and redaction — the caller never touches `APIRequestContext`, `logger`, or `redact()` directly. This is also why "API clients never assert" matters for the pattern to hold: a facade that also threw on your behalf would be leaking the complexity it exists to hide.
+- **Page Object (Model)** — `src/pages/`, composing **Component** objects (`src/components/`) for widgets shared across pages. See UI test architecture below for the full shape; this is the standard UI-automation pattern, not a project-specific invention, which is exactly why the tests/pages/components/flows layering should look familiar to anyone who has used Playwright or Selenium's POM conventions before.
+- **Flow (Journey) object** — `src/flows/`, one level above Page Objects. See "Flows compose page objects" below for the full shape. Not a universally standardized name the way Page Object is — some teams call this a "workflow" or "scenario" object — but the role is the same wherever it appears: a class that orchestrates a multi-page sequence by composing page objects, exposing one method per journey rather than per page, so a test that needs "log in" doesn't re-describe the login page's steps itself.
+- **Builder-ish factories with overrides** — `buildNewUserPayload(overrides?)` accepts a partial override object rather than requiring every field on every call, similar in spirit to a Builder without the fluent chaining — appropriate here because the shape being built is small and flat, not deep enough to need a true Builder's step-by-step assembly.
+- **Singleton (module-level)** — `logger` (`src/utils/logger.ts`) is a single exported object; every importer gets the same instance, since an ES module's top-level `const` is evaluated once per process regardless of how many files import it. This is a lighter-weight version of the classic Singleton (no private constructor or `getInstance()` needed — the module system provides the "only one instance" guarantee for free) and is appropriate here because a shared logger is exactly the kind of cross-cutting, stateless-enough utility Singleton is meant for. Not a pattern to reach for casually elsewhere: a Singleton hides a dependency inside whatever imports it directly, which is why `BaseApiClient`'s actual dependencies (the request context) are still constructor-injected rather than also being singletons — `logger` is the one deliberate exception, not a precedent for making everything a shared global.
 
 ## Clean code
 
