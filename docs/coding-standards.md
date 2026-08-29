@@ -163,6 +163,64 @@ npx playwright test --grep-invert @negative
 - **Interface segregation**: prefer small, focused fixture names (`seedUser`, `seedAuthorizedUser`) over one fixture with options controlling which parts of setup run.
 - **Dependency inversion**: fixtures depend on client abstractions (constructor-injected `APIRequestContext`, never constructed manually) — a test never `new`s a client or reaches for a global request context directly.
 
+## Clean code
+
+### Meaningful names
+
+An identifier should say what it holds or does without needing its surrounding lines read first. This applies to every layer, not just the ones with a naming-convention table above (which governs file suffixes, not identifier quality inside a file):
+
+```ts
+// Bad — says nothing about what's inside
+const r = await client.getUser(userId, token);
+const temp = buildNewUserPayload();
+const data2 = await parseJsonBody(response, GetUserResponseSchema);
+
+// Good — the name is the documentation
+const getUserResponse = await client.getUser(userId, token);
+const newUserPayload = buildNewUserPayload();
+const userProfile = await parseJsonBody(response, GetUserResponseSchema);
+```
+
+A boolean reads as a yes/no question (`isAuthorized`, `hasToken`), not a bare noun (`auth`, `token` for what should be `hasToken`). A function name is a verb phrase describing its effect or its answer (`deleteUser`, `isVisible`), matching the Command-Query Separation rule below.
+
+### Command-Query Separation
+
+A method either **does** something (a command — returns `void` or the created resource, has a side effect) or **answers** something (a query — returns a value, has no side effect) — never both. This is already followed in spirit throughout this codebase (a page object's methods either act on the page or return state for the test to assert on, never both in one call; `src/api/` clients send a request and return the response, they don't also assert) — stated here as a general rule so it's enforced deliberately, not just as an accident of how the existing code happens to be shaped.
+
+```ts
+// Bad — acts AND returns a business verdict in one call
+async submitAndCheckSuccess(credentials: LoginPayload): Promise<boolean> { ... }
+
+// Good — separate command and query; the test composes them
+async submit(credentials: LoginPayload): Promise<void> { ... }
+async getErrorMessage(): Promise<string | null> { ... } // query — the test decides what "success" means
+```
+
+### Small functions that do one thing
+
+A method should be readable as a short list of steps at one level of abstraction, not a mix of high-level orchestration and low-level detail in the same block. If a page-object method or fixture is doing three unrelated things (e.g. filling a form, then separately handling an unrelated modal, then separately checking a cookie), that's three methods, not one — regardless of whether it stays within its correct layer. Layer boundaries (see Layer responsibilities / UI test architecture above) are necessary but not sufficient; a method can respect every layer rule and still be doing too much.
+
+### Exception handling has one shape
+
+A caught error is either **handled** (logged with enough context to act on, then execution continues deliberately) or **rethrown** — never silently swallowed with no trace. This codebase already does this consistently (a fixture teardown failure is logged with the orphaned entity's ID before returning; a `ZodError` is logged with the redacted raw body before being rethrown) — the rule generalizes those specific cases: a bare `catch {}` or a `catch` that logs nothing is not acceptable anywhere in `src/` or `tests/`. Don't use exceptions for expected control flow (e.g. a negative-path 400 response is a normal return value from an API client, per "API clients never assert" above — not something to throw over).
+
+### Comments explain why, not what
+
+A well-named identifier already says what the code does; a comment repeating that is noise. Write a comment only for a non-obvious constraint, a workaround, or a reason a reader couldn't derive from the code itself — every code example in this document follows that rule (e.g. `// relative to playwright.config.ts's use.baseURL — never a hardcoded https://demoqa.com URL` explains _why_ a relative path is required, not that `goto()` navigates).
+
+```ts
+// Bad — restates what the line already says
+// increment the retry counter
+retryCount++;
+
+// Good — explains a non-obvious constraint
+// DemoQA's sandbox occasionally 500s on the first GenerateToken call after
+// a fresh user is created; one retry clears it in practice (see Risk-4)
+retryCount++;
+```
+
+---
+
 ## Avoid ambiguous positional arguments
 
 A method with two or more parameters of the same primitive type is a transposition hazard — nothing stops a caller from swapping them, and the compiler won't catch it. Once a method reaches this shape, switch to a named options object.
