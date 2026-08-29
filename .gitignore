@@ -5,6 +5,9 @@
 # Claude Code local settings (per-machine tool permissions, not shared config)
 .claude/settings.local.json
 
+# Claude Code skills — kept locally and in git history, not published on the remote
+.claude/skills/
+
 # Playwright
 node_modules/
 /test-results/
