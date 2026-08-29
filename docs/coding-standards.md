@@ -55,9 +55,13 @@ const body = await parseJsonBody(response, CreateUserResponseSchema);
 const body = (await response.json()) as CreateUserResponse;
 ```
 
+This is a direct mitigation for Risk-1 ("shared public backend") in `docs/test-plan.md` §8: DemoQA can change a response shape without notice, and schema validation is what turns that into a clear, immediately diagnosable contract-test failure instead of a confusing downstream assertion failure with no obvious cause.
+
 ## API clients never assert
 
 Methods in `src/api/*-api.client.ts` return the raw `APIResponse` and never throw or assert on the status code. Negative-path status codes (400/401/404/406/...) are the thing under test, not an exceptional case to be hidden from the test file. All assertions belong in `tests/`.
+
+This separation matters for both Risk-1 and Risk-4 ("auth sandbox inconsistency"): if a client both requested and asserted, a failure could mean either "the backend behaved unexpectedly" or "the client's own assertion logic has a bug" — keeping assertions out of the client layer means a functional test failure always points at one place (the test's own expectation), never at a hidden check buried in the transport layer.
 
 ## Centralized request logging
 
@@ -159,9 +163,137 @@ npx playwright test --grep-invert @negative
 
 - **Single Responsibility**: see Layer responsibilities above.
 - **Open/Closed**: adding an endpoint means adding a method to an existing client class or a new client class — never changing an existing method's signature to accommodate one new caller.
-- **Liskov substitution**: not heavily exercised yet (no class hierarchies beyond `BaseApiClient`), but a future subclass must not narrow or change the meaning of an inherited method — e.g. a `BookStoreApiClient extends BaseApiClient` must not make `logged()` throw when the base class contract says it never does.
-- **Interface segregation**: prefer small, focused fixture names (`seedUser`, `seedAuthorizedUser`) over one fixture with options controlling which parts of setup run.
+- **Liskov substitution**: every `src/components/` class takes the same `(page: Page)` constructor shape and is composed into a page object the same way (see UI test architecture below) — any component must be substitutable into that composition without the page object needing to know which one it got. At the API layer: a future subclass must not narrow or change the meaning of an inherited method — e.g. a `BookStoreApiClient extends BaseApiClient` must not make `logged()` throw when the base class contract says it never does.
+- **Interface segregation**: prefer small, focused fixture names (`seedUser`, `seedAuthorizedUser`) over one fixture with options controlling which parts of setup run. The same applies to shared schemas: `LoginPayloadSchema` is reused by `GenerateToken` and `Authorized` because both genuinely need the exact same two fields — the moment a third caller needs only one of those fields, that's a signal to split the schema rather than force the new caller to depend on a shape bigger than what it uses.
 - **Dependency inversion**: fixtures depend on client abstractions (constructor-injected `APIRequestContext`, never constructed manually) — a test never `new`s a client or reaches for a global request context directly.
+
+## Design patterns in use
+
+Naming the patterns already implicit in the layer structure above, so the vocabulary is explicit rather than left for a reader to infer from the shapes alone:
+
+- **Factory** — `src/data/*.factory.ts`. `buildNewUserPayload()`, `buildValidPassword()`, etc. construct fully-formed objects so callers never assemble a request payload by hand field-by-field. Kept a plain-function factory (not a class) since there's no polymorphic family of products to select between — just one shape per resource.
+- **Facade** — `BaseApiClient` (and every class extending it). A test or fixture calls one method (`client.getUser(userId, token)`) that internally hides request construction, logging, and redaction — the caller never touches `APIRequestContext`, `logger`, or `redact()` directly. This is also why "API clients never assert" matters for the pattern to hold: a facade that also threw on your behalf would be leaking the complexity it exists to hide.
+- **Page Object (Model)** — `src/pages/`, composing **Component** objects (`src/components/`) for widgets shared across pages. See UI test architecture below for the full shape; this is the standard UI-automation pattern, not a project-specific invention, which is exactly why the tests/pages/components/flows layering should look familiar to anyone who has used Playwright or Selenium's POM conventions before.
+- **Flow (Journey) object** — `src/flows/`, one level above Page Objects. See "Flows compose page objects" below for the full shape. Not a universally standardized name the way Page Object is — some teams call this a "workflow" or "scenario" object — but the role is the same wherever it appears: a class that orchestrates a multi-page sequence by composing page objects, exposing one method per journey rather than per page, so a test that needs "log in" doesn't re-describe the login page's steps itself.
+- **Builder-ish factories with overrides** — `buildNewUserPayload(overrides?)` accepts a partial override object rather than requiring every field on every call, similar in spirit to a Builder without the fluent chaining — appropriate here because the shape being built is small and flat, not deep enough to need a true Builder's step-by-step assembly.
+- **Singleton (module-level)** — `logger` (`src/utils/logger.ts`) is a single exported object; every importer gets the same instance, since an ES module's top-level `const` is evaluated once per process regardless of how many files import it. This is a lighter-weight version of the classic Singleton (no private constructor or `getInstance()` needed — the module system provides the "only one instance" guarantee for free) and is appropriate here because a shared logger is exactly the kind of cross-cutting, stateless-enough utility Singleton is meant for. Not a pattern to reach for casually elsewhere: a Singleton hides a dependency inside whatever imports it directly, which is why `BaseApiClient`'s actual dependencies (the request context) are still constructor-injected rather than also being singletons — `logger` is the one deliberate exception, not a precedent for making everything a shared global.
+
+## Clean code
+
+### Meaningful names
+
+An identifier should say what it holds or does without needing its surrounding lines read first. This applies to every layer, not just the ones with a naming-convention table above (which governs file suffixes, not identifier quality inside a file):
+
+```ts
+// Bad — says nothing about what's inside
+const r = await client.getUser(userId, token);
+const temp = buildNewUserPayload();
+const data2 = await parseJsonBody(response, GetUserResponseSchema);
+
+// Good — the name is the documentation
+const getUserResponse = await client.getUser(userId, token);
+const newUserPayload = buildNewUserPayload();
+const userProfile = await parseJsonBody(response, GetUserResponseSchema);
+```
+
+A boolean reads as a yes/no question (`isAuthorized`, `hasToken`), not a bare noun (`auth`, `token` for what should be `hasToken`). A function name is a verb phrase describing its effect or its answer (`deleteUser`, `isVisible`), matching the Command-Query Separation rule below.
+
+A few more naming rules worth being explicit about, since a generation skill will otherwise happily violate any of them:
+
+- **Avoid disinformation.** Don't name two things almost identically when they differ in an important way (`getUser` vs. `getUsers` returning fundamentally different shapes is fine if plural genuinely means a list; `userList` for something that's actually a `Map` is not). Don't use noise words (`userData`, `userInfo`, `userObject`) that add length without adding meaning — `user` alone is clearer.
+- **Make meaningful distinctions.** Never resolve a naming collision by appending a number (`user1`, `user2`) — name what's actually different about them (`userA`, `userB` for two peer test actors is still weak; `requestingUser`/`targetUser` says why there are two).
+- **Use pronounceable, searchable names.** `genUsrId` is neither; `generateUserId` is both, and is `grep`-able in a way a single-letter variable or abbreviation isn't. This especially matters for tags and constants meant to be found later (e.g. `invalidPasswords.tooShort`, not `pw1`).
+- **Avoid mental mapping.** A reader shouldn't have to remember "in this file, `p` means `page`" — write `page`. This project's naming conventions already avoid single-letter identifiers everywhere except conventional short-lived loop indices.
+
+### Command-Query Separation
+
+A method either **does** something (a command — returns `void` or the created resource, has a side effect) or **answers** something (a query — returns a value, has no side effect) — never both. This is already followed in spirit throughout this codebase (a page object's methods either act on the page or return state for the test to assert on, never both in one call; `src/api/` clients send a request and return the response, they don't also assert) — stated here as a general rule so it's enforced deliberately, not just as an accident of how the existing code happens to be shaped.
+
+```ts
+// Bad — acts AND returns a business verdict in one call
+async submitAndCheckSuccess(credentials: LoginPayload): Promise<boolean> { ... }
+
+// Good — separate command and query; the test composes them
+async submit(credentials: LoginPayload): Promise<void> { ... }
+async getErrorMessage(): Promise<string | null> { ... } // query — the test decides what "success" means
+```
+
+### Small functions that do one thing
+
+Functions should be small, and then smaller than that. A method should be readable as a short list of steps at one level of abstraction — not a mix of high-level orchestration and low-level detail in the same block, and not two unrelated concerns interleaved. If a page-object method or fixture is doing three unrelated things (e.g. filling a form, then separately handling an unrelated modal, then separately checking a cookie), that's three methods, not one — regardless of whether it stays within its correct layer. Layer boundaries (see Layer responsibilities / UI test architecture above) are necessary but not sufficient; a method can respect every layer rule and still be doing too much.
+
+**One level of abstraction per function.** Don't mix "what this does at a high level" with "how a low-level detail is implemented" in the same function body. A flow's `logIn()` method calling `loginPage.enterCredentials()` and `loginPage.submit()` is one level (orchestration); a page object's `submit()` method finding a locator and clicking it is a different, lower level. Neither should reach into the other's level directly.
+
+**Few arguments.** Zero is ideal, one or two is normal, three is a signal to reconsider, and this project's existing "avoid ambiguous positional arguments" rule (below) already forces the fix once a method reaches that point: a named options object instead of a growing positional list.
+
+**No side effects.** A function's name is a promise; a hidden side effect breaks it. `getUser(userId)` that also refreshes an internal token cache is lying about what it does — split it, or name it to be honest about both effects (and per Command-Query Separation above, that's usually a sign it should be two functions regardless). This is exactly why `src/api/` clients "never assert" (a `get` that could also throw on your behalf is a function with an undisclosed side effect).
+
+**A descriptive name beats a comment.** `buildValidPasswordWithAllComplexityRules()` needs no comment explaining what it returns; a short name plus a paragraph of clarifying comment usually means the name should have been longer and the comment shorter or absent.
+
+### Exception handling has one shape
+
+A caught error is either **handled** (logged with enough context to act on, then execution continues deliberately) or **rethrown** — never silently swallowed with no trace. This codebase already does this consistently (a fixture teardown failure is logged with the orphaned entity's ID before returning; a `ZodError` is logged with the redacted raw body before being rethrown) — the rule generalizes those specific cases: a bare `catch {}` or a `catch` that logs nothing is not acceptable anywhere in `src/` or `tests/`. Don't use exceptions for expected control flow (e.g. a negative-path 400 response is a normal return value from an API client, per "API clients never assert" above — not something to throw over). Every exception should carry enough context in its message to know where and why it happened without attaching a debugger — this is already how `parseJsonBody`'s validation failure and the teardown orphan log both work; match that standard for any new error path.
+
+**Prefer not returning or passing `null`.** A `null` return forces every caller to remember a null check, and a forgotten one is a runtime crash instead of a compile error. Where a value is genuinely optional by the API's own contract (e.g. `GenerateTokenResponseSchema`'s `token: z.string().nullable()` — DemoQA itself returns `null` on a failed auth, this isn't a choice made in this codebase), model it as `nullable`/`| null` explicitly in the type so the compiler forces every caller to handle it, and check it immediately at the point of use — don't let a possibly-null value travel through several calls before the check finally happens (`seedAuthorizedUser` in `account.fixtures.ts` does this correctly: it checks `token` for null immediately after `parseJsonBody` returns it, before the fixture does anything else with it). Avoid introducing a _new_ `null` return in code you write when a thrown error or a non-nullable default would do instead.
+
+### Comments explain why, not what
+
+A well-named identifier already says what the code does; a comment repeating that is noise. Write a comment only for a non-obvious constraint, a workaround, or a reason a reader couldn't derive from the code itself — every code example in this document follows that rule (e.g. `// relative to playwright.config.ts's use.baseURL — never a hardcoded https://demoqa.com URL` explains _why_ a relative path is required, not that `goto()` navigates).
+
+```ts
+// Bad — restates what the line already says
+// increment the retry counter
+retryCount++;
+
+// Good — explains a non-obvious constraint
+// DemoQA's sandbox occasionally 500s on the first GenerateToken call after
+// a fresh user is created; one retry clears it in practice (see Risk-4)
+retryCount++;
+```
+
+**Comments worth writing**: intent ("why this exists"), a warning of consequences (e.g. "don't reorder — teardown depends on this running before the token is discarded"), a clarification of a genuinely obscure argument, a short-lived `TODO` naming what's missing and why it isn't done yet.
+
+**Comments to never write**: one that restates the line below it; one that's gone stale and now describes behavior the code no longer has (worse than no comment — actively misleading); commented-out code (delete it — git history is the record, not a comment block); a "journal" comment recording who changed what and when (that's what `git blame` and commit messages are for); a comment mandated by convention with nothing to say (an empty-value docblock on every function regardless of whether that function needs explaining). If the code needs a comment to be understood at all, the real fix is usually a better name or a smaller function — a comment is a fallback, not a first response.
+
+### Formatting as communication
+
+Code formatting communicates structure before a reader parses a single statement. Prettier already enforces the mechanical half of this (indentation, line width, spacing) — the rules below are the half a formatter can't decide for you:
+
+- **Vertical ordering**: a function should appear above the functions it calls, so reading top-to-bottom mirrors the call flow — a fixture's setup logic reads before its teardown helper, not after.
+- **Vertical density and distance**: tightly related lines (e.g. a locator declaration and the one method that uses it) stay close together with no blank-line separation; unrelated concerns get a blank line between them so each block reads as one complete thought. A page object mixing three unrelated methods with no visual separation is harder to scan than the same three methods with a blank line between each.
+- **Team rules over individual preference**: this document — plus Prettier and ESLint's enforced config — is the agreed style. Don't introduce a personal formatting preference (brace placement, quote style, import ordering) that diverges from what's already configured.
+
+### F.I.R.S.T. — clean test properties
+
+Applies to this project's Playwright specs the same way it applies to unit tests generally:
+
+| Property            | What it means here                                                                                                                                                                                                                                                                                                                           |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **F**ast            | A test that's slow to run is a test that gets run less often. Avoid unnecessary waits (see No manual waits below) and unnecessary setup — use the narrowest fixture the test actually needs (`seedUser`, not `seedAuthorizedUser`, if no token is needed).                                                                                   |
+| **I**ndependent     | Already codified above as Test isolation — every test creates its own data, none depends on another test's side effects or run order.                                                                                                                                                                                                        |
+| **R**epeatable      | A test must produce the same result on any machine, any run — this is why hand-rolled deterministic passwords are used instead of a source of randomness that could occasionally violate a complexity rule, and why `baseURL` is configured rather than hardcoded per environment.                                                           |
+| **S**elf-validating | A test's result is pass or fail with no manual interpretation needed — this is what `expect`/`expect.soft` assertions give you for free; a test that only logs something for a human to eyeball afterward isn't self-validating.                                                                                                             |
+| **T**imely          | A test is written close to the code it covers — in this project's pipeline, that means test cases get automated soon after being reviewed, not left to accumulate as a backlog of "we'll automate this later" (which is exactly the failure mode `Automation: Not automated` in `docs/test-cases/` is meant to make visible, not permanent). |
+
+### Smells checklist
+
+A quick self-check before considering any generated or hand-written code finished — these are symptoms, not the root rules themselves (the rules are everywhere else in this document); use this list to catch what a rule-by-rule read might miss:
+
+- Duplication of logic (not just literal text) across two files that should share one source
+- A name that no longer matches what the thing actually does (renamed behavior, stale name)
+- Too many function arguments, or a boolean/enum "flag argument" that makes a function secretly do two different things depending on its value
+- A function with a side effect its name doesn't disclose
+- An output argument (mutating a parameter passed in) instead of returning a new value
+- Dead code: a function, fixture, or component nothing calls anymore
+- Incorrect or untested behavior specifically at a boundary (empty array, zero, the exact max-length value) — this project's BVA test conditions exist precisely to catch this class of smell before it ships
+- A skipped or `.only`'d test left in committed code (`playwright/no-skipped-test` and `forbidOnly` in CI already guard against this mechanically — treat a local skip as temporary, never commit one)
+- Setup that requires more than one manual step to run — if seeding a test's precondition needs more than calling its fixture, the fixture is incomplete
+
+### The Boy Scout Rule
+
+Leave code cleaner than you found it. This doesn't license unrelated refactoring inside an unrelated change (see this project's "don't add cleanup beyond what the task requires" convention) — it means: if you're already editing a file for another reason and notice a small, obviously-safe improvement in the lines you're touching (a stale comment, a name that no longer fits, a missed `expect.soft`), fix it in the same pass rather than filing it away. Don't go looking for cleanup elsewhere in the file just because you're there.
+
+---
 
 ## Avoid ambiguous positional arguments
 
