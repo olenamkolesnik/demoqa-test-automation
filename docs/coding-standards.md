@@ -183,6 +183,13 @@ const userProfile = await parseJsonBody(response, GetUserResponseSchema);
 
 A boolean reads as a yes/no question (`isAuthorized`, `hasToken`), not a bare noun (`auth`, `token` for what should be `hasToken`). A function name is a verb phrase describing its effect or its answer (`deleteUser`, `isVisible`), matching the Command-Query Separation rule below.
 
+A few more naming rules worth being explicit about, since a generation skill will otherwise happily violate any of them:
+
+- **Avoid disinformation.** Don't name two things almost identically when they differ in an important way (`getUser` vs. `getUsers` returning fundamentally different shapes is fine if plural genuinely means a list; `userList` for something that's actually a `Map` is not). Don't use noise words (`userData`, `userInfo`, `userObject`) that add length without adding meaning — `user` alone is clearer.
+- **Make meaningful distinctions.** Never resolve a naming collision by appending a number (`user1`, `user2`) — name what's actually different about them (`userA`, `userB` for two peer test actors is still weak; `requestingUser`/`targetUser` says why there are two).
+- **Use pronounceable, searchable names.** `genUsrId` is neither; `generateUserId` is both, and is `grep`-able in a way a single-letter variable or abbreviation isn't. This especially matters for tags and constants meant to be found later (e.g. `invalidPasswords.tooShort`, not `pw1`).
+- **Avoid mental mapping.** A reader shouldn't have to remember "in this file, `p` means `page`" — write `page`. This project's naming conventions already avoid single-letter identifiers everywhere except conventional short-lived loop indices.
+
 ### Command-Query Separation
 
 A method either **does** something (a command — returns `void` or the created resource, has a side effect) or **answers** something (a query — returns a value, has no side effect) — never both. This is already followed in spirit throughout this codebase (a page object's methods either act on the page or return state for the test to assert on, never both in one call; `src/api/` clients send a request and return the response, they don't also assert) — stated here as a general rule so it's enforced deliberately, not just as an accident of how the existing code happens to be shaped.
@@ -198,11 +205,21 @@ async getErrorMessage(): Promise<string | null> { ... } // query — the test de
 
 ### Small functions that do one thing
 
-A method should be readable as a short list of steps at one level of abstraction, not a mix of high-level orchestration and low-level detail in the same block. If a page-object method or fixture is doing three unrelated things (e.g. filling a form, then separately handling an unrelated modal, then separately checking a cookie), that's three methods, not one — regardless of whether it stays within its correct layer. Layer boundaries (see Layer responsibilities / UI test architecture above) are necessary but not sufficient; a method can respect every layer rule and still be doing too much.
+Functions should be small, and then smaller than that. A method should be readable as a short list of steps at one level of abstraction — not a mix of high-level orchestration and low-level detail in the same block, and not two unrelated concerns interleaved. If a page-object method or fixture is doing three unrelated things (e.g. filling a form, then separately handling an unrelated modal, then separately checking a cookie), that's three methods, not one — regardless of whether it stays within its correct layer. Layer boundaries (see Layer responsibilities / UI test architecture above) are necessary but not sufficient; a method can respect every layer rule and still be doing too much.
+
+**One level of abstraction per function.** Don't mix "what this does at a high level" with "how a low-level detail is implemented" in the same function body. A flow's `logIn()` method calling `loginPage.enterCredentials()` and `loginPage.submit()` is one level (orchestration); a page object's `submit()` method finding a locator and clicking it is a different, lower level. Neither should reach into the other's level directly.
+
+**Few arguments.** Zero is ideal, one or two is normal, three is a signal to reconsider, and this project's existing "avoid ambiguous positional arguments" rule (below) already forces the fix once a method reaches that point: a named options object instead of a growing positional list.
+
+**No side effects.** A function's name is a promise; a hidden side effect breaks it. `getUser(userId)` that also refreshes an internal token cache is lying about what it does — split it, or name it to be honest about both effects (and per Command-Query Separation above, that's usually a sign it should be two functions regardless). This is exactly why `src/api/` clients "never assert" (a `get` that could also throw on your behalf is a function with an undisclosed side effect).
+
+**A descriptive name beats a comment.** `buildValidPasswordWithAllComplexityRules()` needs no comment explaining what it returns; a short name plus a paragraph of clarifying comment usually means the name should have been longer and the comment shorter or absent.
 
 ### Exception handling has one shape
 
-A caught error is either **handled** (logged with enough context to act on, then execution continues deliberately) or **rethrown** — never silently swallowed with no trace. This codebase already does this consistently (a fixture teardown failure is logged with the orphaned entity's ID before returning; a `ZodError` is logged with the redacted raw body before being rethrown) — the rule generalizes those specific cases: a bare `catch {}` or a `catch` that logs nothing is not acceptable anywhere in `src/` or `tests/`. Don't use exceptions for expected control flow (e.g. a negative-path 400 response is a normal return value from an API client, per "API clients never assert" above — not something to throw over).
+A caught error is either **handled** (logged with enough context to act on, then execution continues deliberately) or **rethrown** — never silently swallowed with no trace. This codebase already does this consistently (a fixture teardown failure is logged with the orphaned entity's ID before returning; a `ZodError` is logged with the redacted raw body before being rethrown) — the rule generalizes those specific cases: a bare `catch {}` or a `catch` that logs nothing is not acceptable anywhere in `src/` or `tests/`. Don't use exceptions for expected control flow (e.g. a negative-path 400 response is a normal return value from an API client, per "API clients never assert" above — not something to throw over). Every exception should carry enough context in its message to know where and why it happened without attaching a debugger — this is already how `parseJsonBody`'s validation failure and the teardown orphan log both work; match that standard for any new error path.
+
+**Prefer not returning or passing `null`.** A `null` return forces every caller to remember a null check, and a forgotten one is a runtime crash instead of a compile error. Where a value is genuinely optional by the API's own contract (e.g. `GenerateTokenResponseSchema`'s `token: z.string().nullable()` — DemoQA itself returns `null` on a failed auth, this isn't a choice made in this codebase), model it as `nullable`/`| null` explicitly in the type so the compiler forces every caller to handle it, and check it immediately at the point of use — don't let a possibly-null value travel through several calls before the check finally happens (`seedAuthorizedUser` in `account.fixtures.ts` does this correctly: it checks `token` for null immediately after `parseJsonBody` returns it, before the fixture does anything else with it). Avoid introducing a _new_ `null` return in code you write when a thrown error or a non-nullable default would do instead.
 
 ### Comments explain why, not what
 
@@ -218,6 +235,48 @@ retryCount++;
 // a fresh user is created; one retry clears it in practice (see Risk-4)
 retryCount++;
 ```
+
+**Comments worth writing**: intent ("why this exists"), a warning of consequences (e.g. "don't reorder — teardown depends on this running before the token is discarded"), a clarification of a genuinely obscure argument, a short-lived `TODO` naming what's missing and why it isn't done yet.
+
+**Comments to never write**: one that restates the line below it; one that's gone stale and now describes behavior the code no longer has (worse than no comment — actively misleading); commented-out code (delete it — git history is the record, not a comment block); a "journal" comment recording who changed what and when (that's what `git blame` and commit messages are for); a comment mandated by convention with nothing to say (an empty-value docblock on every function regardless of whether that function needs explaining). If the code needs a comment to be understood at all, the real fix is usually a better name or a smaller function — a comment is a fallback, not a first response.
+
+### Formatting as communication
+
+Code formatting communicates structure before a reader parses a single statement. Prettier already enforces the mechanical half of this (indentation, line width, spacing) — the rules below are the half a formatter can't decide for you:
+
+- **Vertical ordering**: a function should appear above the functions it calls, so reading top-to-bottom mirrors the call flow — a fixture's setup logic reads before its teardown helper, not after.
+- **Vertical density and distance**: tightly related lines (e.g. a locator declaration and the one method that uses it) stay close together with no blank-line separation; unrelated concerns get a blank line between them so each block reads as one complete thought. A page object mixing three unrelated methods with no visual separation is harder to scan than the same three methods with a blank line between each.
+- **Team rules over individual preference**: this document — plus Prettier and ESLint's enforced config — is the agreed style. Don't introduce a personal formatting preference (brace placement, quote style, import ordering) that diverges from what's already configured.
+
+### F.I.R.S.T. — clean test properties
+
+Applies to this project's Playwright specs the same way it applies to unit tests generally:
+
+| Property            | What it means here                                                                                                                                                                                                                                                                                                                           |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **F**ast            | A test that's slow to run is a test that gets run less often. Avoid unnecessary waits (see No manual waits below) and unnecessary setup — use the narrowest fixture the test actually needs (`seedUser`, not `seedAuthorizedUser`, if no token is needed).                                                                                   |
+| **I**ndependent     | Already codified above as Test isolation — every test creates its own data, none depends on another test's side effects or run order.                                                                                                                                                                                                        |
+| **R**epeatable      | A test must produce the same result on any machine, any run — this is why hand-rolled deterministic passwords are used instead of a source of randomness that could occasionally violate a complexity rule, and why `baseURL` is configured rather than hardcoded per environment.                                                           |
+| **S**elf-validating | A test's result is pass or fail with no manual interpretation needed — this is what `expect`/`expect.soft` assertions give you for free; a test that only logs something for a human to eyeball afterward isn't self-validating.                                                                                                             |
+| **T**imely          | A test is written close to the code it covers — in this project's pipeline, that means test cases get automated soon after being reviewed, not left to accumulate as a backlog of "we'll automate this later" (which is exactly the failure mode `Automation: Not automated` in `docs/test-cases/` is meant to make visible, not permanent). |
+
+### Smells checklist
+
+A quick self-check before considering any generated or hand-written code finished — these are symptoms, not the root rules themselves (the rules are everywhere else in this document); use this list to catch what a rule-by-rule read might miss:
+
+- Duplication of logic (not just literal text) across two files that should share one source
+- A name that no longer matches what the thing actually does (renamed behavior, stale name)
+- Too many function arguments, or a boolean/enum "flag argument" that makes a function secretly do two different things depending on its value
+- A function with a side effect its name doesn't disclose
+- An output argument (mutating a parameter passed in) instead of returning a new value
+- Dead code: a function, fixture, or component nothing calls anymore
+- Incorrect or untested behavior specifically at a boundary (empty array, zero, the exact max-length value) — this project's BVA test conditions exist precisely to catch this class of smell before it ships
+- A skipped or `.only`'d test left in committed code (`playwright/no-skipped-test` and `forbidOnly` in CI already guard against this mechanically — treat a local skip as temporary, never commit one)
+- Setup that requires more than one manual step to run — if seeding a test's precondition needs more than calling its fixture, the fixture is incomplete
+
+### The Boy Scout Rule
+
+Leave code cleaner than you found it. This doesn't license unrelated refactoring inside an unrelated change (see this project's "don't add cleanup beyond what the task requires" convention) — it means: if you're already editing a file for another reason and notice a small, obviously-safe improvement in the lines you're touching (a stale comment, a name that no longer fits, a missed `expect.soft`), fix it in the same pass rather than filing it away. Don't go looking for cleanup elsewhere in the file just because you're there.
 
 ---
 
