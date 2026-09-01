@@ -57,6 +57,8 @@ const body = (await response.json()) as CreateUserResponse;
 
 This is a direct mitigation for Risk-1 ("shared public backend") in `docs/test-plan.md` §8: DemoQA can change a response shape without notice, and schema validation is what turns that into a clear, immediately diagnosable contract-test failure instead of a confusing downstream assertion failure with no obvious cause.
 
+**Exception — contract tests (`*.contract.spec.ts`):** these read the body as `const body: unknown = await response.json();` and assert the shape directly via the `toMatchSchema` matcher (`src/utils/matchers.util.ts`), e.g. `expect(body).toMatchSchema(GetUserResponseSchema)`. This is the one designated alternative to `parseJsonBody`: a contract test's whole job is "does this fail schema validation," which `toMatchSchema` expresses as a visible `expect`, whereas `parseJsonBody` exists to hand back a typed value for a caller who needs to read fields off it (the functional-test/fixture case). Everywhere else — functional tests, fixtures — `parseJsonBody` remains mandatory as above.
+
 ## API clients never assert
 
 Methods in `src/api/*-api.client.ts` return the raw `APIResponse` and never throw or assert on the status code. Negative-path status codes (400/401/404/406/...) are the thing under test, not an exceptional case to be hidden from the test file. All assertions belong in `tests/`.
@@ -307,7 +309,7 @@ getUser(userId: string, token: string): Promise<APIResponse>
 getUser({ userId, token }: { userId: string; token: string }): Promise<APIResponse>
 ```
 
-This hasn't been fixed retroactively in `AccountApiClient` (not worth a breaking change for a hazard that hasn't bitten yet) — but new client methods should use the options-object shape from the start, and this becomes a required fix the first time it actually causes a bug.
+Every client method (`AccountApiClient` included) follows this shape once it has two or more same-typed parameters — there is no grandfathered exception in this codebase.
 
 ## DRY vs. premature abstraction
 

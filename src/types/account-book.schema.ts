@@ -10,16 +10,18 @@ import { z } from 'zod';
 // Deliberately separate from any future BookStore DTO in book.schema.ts: this
 // file only models what Account endpoints embed, which may not match the
 // live-verified shape the BookStore API itself actually returns.
-export const AccountBookSchema = z.object({
-  isbn: z.string(),
-  title: z.string(),
-  subTitle: z.string(),
-  author: z.string(),
-  publish_date: z.string(),
-  publisher: z.string(),
-  pages: z.number(),
-  description: z.string(),
-  website: z.string(),
-});
+export const AccountBookSchema = z
+  .object({
+    isbn: z.string(),
+    title: z.string(),
+    subTitle: z.string(),
+    author: z.string(),
+    publish_date: z.string(),
+    publisher: z.string(),
+    pages: z.number(),
+    description: z.string(),
+    website: z.string(),
+  })
+  .strict();
 
 export type AccountBook = z.infer<typeof AccountBookSchema>;

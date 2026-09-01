@@ -1,4 +1,5 @@
 import { test as base } from '@playwright/test';
+import '../utils/matchers.util';
 import { AccountApiClient } from '../api/account-api.client';
 import { buildNewUserPayload } from '../data/user.factory';
 import { parseJsonBody } from '../utils/api-response.util';
@@ -54,7 +55,7 @@ async function deleteUserAndLogOrphanOnFailure(
   }
 
   await deleteAndLogOrphanOnFailure(
-    () => client.deleteUser(userId, token),
+    () => client.deleteUser({ userId, token }),
     () => `orphaned userId=${userId} userName=${payload.userName}`,
     204
   );

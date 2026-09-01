@@ -14,7 +14,7 @@ Generated from reviewed conditions in `docs/test-conditions/api/auth/get-user.md
 | Preconditions  | User account exists and token generated (POST /Account/v1/User, then POST /Account/v1/GenerateToken) for userName "qa_getuser_valid_012" and password "Aa1!aaaa"             |
 | Test data      | UUID: the userId returned when the precondition user was created / Authorization header: Bearer \<token\> (the valid token acquired in the precondition, for this same user) |
 | Postconditions | User "qa_getuser_valid_012" deleted via DELETE /Account/v1/User/{userId} (reuse the token already acquired in the precondition)                                              |
-| Automation     | Not automated                                                                                                                                                                |
+| Automation     | Automated → `get-user.api.spec.ts`                                                                                                                                           |
 
 **Steps & expected results**
 
@@ -37,7 +37,7 @@ Generated from reviewed conditions in `docs/test-conditions/api/auth/get-user.md
 | Preconditions  | User account exists (created via API: POST /Account/v1/User) with userName "qa_getuser_noauth_013" and password "Aa1!aaaa"                                                                    |
 | Test data      | UUID: the userId returned when the precondition user was created / no Authorization header is sent                                                                                            |
 | Postconditions | User "qa_getuser_noauth_013" deleted via DELETE /Account/v1/User/{userId} (requires a token acquired via POST /Account/v1/GenerateToken for this user, since none was generated during setup) |
-| Automation     | Not automated                                                                                                                                                                                 |
+| Automation     | Automated → `get-user.api.spec.ts`                                                                                                                                                            |
 
 **Steps & expected results**
 
@@ -60,7 +60,7 @@ Live-confirmed. Same response as AUTH-014 (invalid/malformed token) — DemoQA g
 | Preconditions  | User account exists (created via API: POST /Account/v1/User) with userName "qa_getuser_badtoken_014" and password "Aa1!aaaa"                                                                                                                  |
 | Test data      | UUID: the userId returned when the precondition user was created / Authorization header: Bearer not-a-real-token-abc123 (malformed/never-issued token)                                                                                        |
 | Postconditions | User "qa_getuser_badtoken_014" deleted via DELETE /Account/v1/User/{userId} (requires a token acquired via POST /Account/v1/GenerateToken for this user, since the token used in the test itself is invalid and cannot be reused for cleanup) |
-| Automation     | Not automated                                                                                                                                                                                                                                 |
+| Automation     | Automated → `get-user.api.spec.ts`                                                                                                                                                                                                            |
 
 **Steps & expected results**
 
@@ -70,29 +70,6 @@ Live-confirmed. Same response as AUTH-014 (invalid/malformed token) — DemoQA g
 
 **Notes**
 Live-confirmed. Same response as AUTH-013 (missing header) — see that test case's Notes for the shared-response detail. `code` is asserted as a string ("1200"); swagger's `MessageModal` documents `code` as a number, which is unconfirmed for this specific endpoint but known to be wrong on every other endpoint sharing this schema — treat swagger's `number` type as unreliable here too.
-
----
-
-### TC: Get another user's profile using a valid but unrelated token
-
-| Field          | Value                                                                                                                                                                                                             |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ID             | AUTH-015                                                                                                                                                                                                          |
-| Condition      | COND-AUTH-015                                                                                                                                                                                                     |
-| Risk           | Risk-1, Risk-4                                                                                                                                                                                                    |
-| Preconditions  | Two user accounts exist and each has a token generated (POST /Account/v1/User, then POST /Account/v1/GenerateToken) — User A: "qa_getuser_crossA_015" / User B: "qa_getuser_crossB_015", both password "Aa1!aaaa" |
-| Test data      | UUID: User B's userId / Authorization header: Bearer \<User A's valid token\>                                                                                                                                     |
-| Postconditions | User A and User B both deleted via DELETE /Account/v1/User/{userId}, each using its own already-acquired token                                                                                                    |
-| Automation     | Not automated                                                                                                                                                                                                     |
-
-**Steps & expected results**
-
-| #   | Action                                                                                                 | Expected result                                                                 |
-| --- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
-| 1   | Send GET /Account/v1/User/{User B's userId} with header `Authorization: Bearer <User A's valid token>` | Status 401; body equals `{ "code": "1200", "message": "User not authorized!" }` |
-
-**Notes**
-Live-confirmed 2026-08-26. The API rejects cross-user access with the same generic response as a missing/invalid token (AUTH-013/AUTH-014) — it does not return User B's data, and does not surface a distinct "wrong owner" error. This test case's own expected behavior is currently observed, live-confirmed behavior; it is not yet confirmed as an intentionally guaranteed contract by the project's test plan (see the equivalent note in `docs/test-conditions/api/auth/get-user.md`'s COND-AUTH-015).
 
 ---
 
@@ -115,4 +92,4 @@ Live-confirmed 2026-08-26. The API rejects cross-user access with the same gener
 | 1   | Send GET /Account/v1/User/00000000-0000-0000-0000-000000000000 with header `Authorization: Bearer <valid, unrelated token>` | Status 401; body equals `{ "code": "1207", "message": "User not found!" }` |
 
 **Notes**
-Live-confirmed 2026-08-26. This response is distinct from AUTH-013/AUTH-014/AUTH-015's shared `1200`/"User not authorized!" response, despite sharing the same HTTP status (401) — assert the exact `code` value, not just the status code, to distinguish this scenario from the others. The `1207`/"User not found!" pair matches the code already confirmed for `POST /Account/v1/Authorized`'s wrong-password case, suggesting `1207` is a general "no such user" code reused across endpoints.
+Live-confirmed 2026-08-26. This response is distinct from AUTH-013/AUTH-014's shared `1200`/"User not authorized!" response, despite sharing the same HTTP status (401) — assert the exact `code` value, not just the status code, to distinguish this scenario from the others. The `1207`/"User not found!" pair matches the code already confirmed for `POST /Account/v1/Authorized`'s wrong-password case, suggesting `1207` is a general "no such user" code reused across endpoints.

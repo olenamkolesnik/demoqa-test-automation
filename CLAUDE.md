@@ -6,7 +6,7 @@ See `docs/test-plan.md` for scope, test items, approach, and risk mitigations �
 
 ## API source of truth
 
-DemoQA's own Swagger docs are unreliable — verified during spec extraction that several documented response fields and status codes are wrong or incomplete for real live behavior. `docs/api-spec/account-endpoints.md` is the **corrected, live-verified** reference for the `/Account` endpoints (specific quirks documented there, not repeated here); `docs/api-spec/book-store-api.swagger.json` is the raw (partially inaccurate) Swagger spec, kept for reference only. Trust the `.md` file over the `.json` file.
+DemoQA's own Swagger docs are unreliable — verified during spec extraction that several documented response fields and status codes are wrong or incomplete for real live behavior. `docs/api-spec/account-endpoints.md` (`/Account` endpoints) and `docs/api-spec/book-store-endpoints.md` (`/BookStore` endpoints) are the **corrected, live-verified** references covering every endpoint in the spec (specific quirks documented there, not repeated here); `docs/api-spec/book-store-api.swagger.json` is the raw (partially inaccurate) Swagger spec, kept for reference only. Trust the `.md` files over the `.json` file.
 
 ## Coding standards
 

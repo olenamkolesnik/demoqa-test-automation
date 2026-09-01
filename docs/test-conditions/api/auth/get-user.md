@@ -13,7 +13,6 @@
 
 - Missing `Authorization` header entirely.
 - `Authorization` header present but the token is invalid/malformed.
-- Valid token belonging to a different user than the one identified by the `UUID` path parameter (cross-user access) — live-confirmed 2026-08-26, see Status codes table.
 - Non-existent `UUID` (a syntactically plausible but never-issued user ID) with a valid, unrelated token — live-confirmed 2026-08-26, see Status codes table.
 
 **Boundary cases**
@@ -25,21 +24,19 @@
 - Valid token, own UUID → 200, profile returned.
 - Missing token → 401, `{code: "1200", message: "User not authorized!"}`.
 - Invalid/malformed token → 401, same response as missing token (not distinguished by the live-verified doc — both are grouped under "Missing/invalid token" in a single documented row).
-- Valid token, different user's UUID (cross-user access) → live-confirmed 2026-08-26: 401, `{code: "1200", message: "User not authorized!"}` — identical to the missing/invalid-token response; the API enforces per-user ownership but does not surface a distinct error for it.
 - Valid, unrelated token, non-existent UUID → live-confirmed 2026-08-26: 401, `{code: "1207", message: "User not found!"}` — a genuinely distinct response from the "not authorized" case, even though both are HTTP 401.
 
 **Status codes and response shape**
 
-| Scenario                                               | Status | Response                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| ------------------------------------------------------ | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Success                                                | 200    | `{ userId: string, username: string, books: [] }` — **live-confirmed `userId`, lowercase d**; swagger's `GetUserResult` definition already agrees with this casing for this specific endpoint (unlike the POST /Account/v1/User endpoint, where swagger's casing is wrong)                                                                                                                                                             |
-| Missing or invalid/malformed token                     | 401    | `{ code: "1200", message: "User not authorized!" }` — live-confirmed; swagger documents `code` as `number`, but every other endpoint sharing the `MessageModal` schema is confirmed live as a **string** — treat swagger's `number` type as unreliable here too unless independently reconfirmed for this exact endpoint                                                                                                               |
-| Valid token, different user's UUID (cross-user access) | 401    | `{ code: "1200", message: "User not authorized!" }` — **live-confirmed 2026-08-26**; identical to the missing/invalid-token response, confirming the API enforces per-user ownership without a distinct error code for it                                                                                                                                                                                                              |
-| Valid, unrelated token, non-existent UUID              | 401    | `{ code: "1207", message: "User not found!" }` — **live-confirmed 2026-08-26**; distinct from the "not authorized" response, and reuses the same `1207`/"User not found!" code+message pair already confirmed for `POST /Account/v1/Authorized`'s wrong-password case (see `docs/api-spec/account-endpoints.md`) — though that endpoint returns **404** for it, not 401, so only the code/message pairing matches, not the HTTP status |
+| Scenario                                  | Status | Response                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ----------------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Success                                   | 200    | `{ userId: string, username: string, books: [] }` — **live-confirmed `userId`, lowercase d**; swagger's `GetUserResult` definition already agrees with this casing for this specific endpoint (unlike the POST /Account/v1/User endpoint, where swagger's casing is wrong)                                                                                                                                                             |
+| Missing or invalid/malformed token        | 401    | `{ code: "1200", message: "User not authorized!" }` — live-confirmed; swagger documents `code` as `number`, but every other endpoint sharing the `MessageModal` schema is confirmed live as a **string** — treat swagger's `number` type as unreliable here too unless independently reconfirmed for this exact endpoint                                                                                                               |
+| Valid, unrelated token, non-existent UUID | 401    | `{ code: "1207", message: "User not found!" }` — **live-confirmed 2026-08-26**; distinct from the "not authorized" response, and reuses the same `1207`/"User not found!" code+message pair already confirmed for `POST /Account/v1/Authorized`'s wrong-password case (see `docs/api-spec/account-endpoints.md`) — though that endpoint returns **404** for it, not 401, so only the code/message pairing matches, not the HTTP status |
 
 **Spec ambiguities / unknowns**
 
-- ~~Cross-user access (a valid, correctly-authenticated token used to request a _different_ user's UUID) is not documented by either the swagger spec or the live-verified doc.~~ Resolved by live check 2026-08-26 — see COND-AUTH-015 and the status table above. (Note: an earlier draft of this project's test plan explicitly scoped cross-user access out of the project; the current test plan no longer states this exclusion. The behavior is now confirmed regardless, but the project's own scope decision on whether this is a supported/intended contract, or merely observed incidental behavior, is a separate question — see Coverage completeness check.)
+- Cross-user access (a valid, correctly-authenticated token used to request a _different_ user's UUID) is out of scope for this project's test plan and is not covered by a condition. Live behavior was observed 2026-08-26 (401, `{code: "1200", message: "User not authorized!"}`, identical to the missing/invalid-token response) before the scope decision was made, but no condition or test case is maintained for it.
 - ~~A non-existent `UUID` (well-formed but never issued) combined with a valid, unrelated token is not documented by either spec source.~~ Resolved by live check 2026-08-26 — see COND-AUTH-016 and the status table above.
 - No length or format constraint on the `UUID` path parameter is documented anywhere — do not invent one; see Boundary cases above.
 - The live-verified doc groups "missing" and "invalid" token under one documented row (`401`, same message) — it is not confirmed whether a malformed-but-present token (e.g. garbage string) actually produces byte-identical behavior to a header that is absent altogether, or merely the same status code with some other difference. Treated as a single condition per the doc's own grouping, since no evidence suggests a different treatment.
@@ -133,34 +130,6 @@ The live-verified doc documents "missing" and "invalid" token under a single com
 
 ---
 
-### COND-AUTH-015: Cross-user access with a valid token is rejected
-
-| Field      | Value                                    |
-| ---------- | ---------------------------------------- |
-| ID         | COND-AUTH-015                            |
-| Priority   | Medium                                   |
-| Category   | Authorization                            |
-| Technique  | Exploratory heuristic                    |
-| Source     | Observed behavior: live check 2026-08-26 |
-| Test cases | AUTH-015                                 |
-
-**What to cover**
-Invalid equivalence class: a valid, correctly-authenticated bearer token for User A is used to request User B's UUID. Confirms the API enforces per-user ownership rather than granting access to any UUID for any valid token.
-
-**Values / boundaries**
-
-```
-# EP
-Invalid class — cross-user access: User A's valid token, User B's UUID (two distinct previously-created users)
-Expected status: 401
-Expected body: { code: "1200", message: "User not authorized!" }
-```
-
-**Notes**
-Live-confirmed 2026-08-26 against https://demoqa.com. Promoted from COND-AUTH-INF-003 after live verification. The response is identical to COND-AUTH-013/014 (missing/invalid token) — the API does not distinguish "wrong owner" from "no valid credential at all," both surface as the same generic `1200` error. This was previously deferred pending a live check or an explicit test-plan scope decision on cross-user access; the live check has now resolved the _behavior_ question. Whether this observed behavior is treated as an intended, guaranteed contract (worth a regression test) or merely incidental behavior (not guaranteed to remain stable) is a separate, unresolved scope question — see Coverage completeness check.
-
----
-
 ### COND-AUTH-016: Non-existent UUID with a valid, unrelated token returns a distinct "not found" error
 
 | Field      | Value                                    |
@@ -185,11 +154,33 @@ Expected body: { code: "1207", message: "User not found!" }
 ```
 
 **Notes**
-Live-confirmed 2026-08-26 against https://demoqa.com. Promoted from COND-AUTH-INF-004 after live verification. Both the status (401) and the specific error code (1207) were confirmed — this is genuinely distinct from COND-AUTH-013/014/015's shared `1200` response, despite sharing the same HTTP status. The `1207`/"User not found!" code+message pair matches what's confirmed for `POST /Account/v1/Authorized`'s wrong-password case in `docs/api-spec/account-endpoints.md` — re-verified live 2026-08-28 (`curl` against https://demoqa.com), confirming that endpoint returns **404** for the same `1207` body, not 401. So `1207`/"User not found!" appears to be this API's general "no such user" code reused across endpoints, but the HTTP status it's wrapped in is endpoint-specific, not part of the shared contract.
+Live-confirmed 2026-08-26 against https://demoqa.com. Promoted from COND-AUTH-INF-004 after live verification. Both the status (401) and the specific error code (1207) were confirmed — this is genuinely distinct from COND-AUTH-013/014's shared `1200` response, despite sharing the same HTTP status. The `1207`/"User not found!" code+message pair matches what's confirmed for `POST /Account/v1/Authorized`'s wrong-password case in `docs/api-spec/account-endpoints.md` — re-verified live 2026-08-28 (`curl` against https://demoqa.com), confirming that endpoint returns **404** for the same `1207` body, not 401. So `1207`/"User not found!" appears to be this API's general "no such user" code reused across endpoints, but the HTTP status it's wrapped in is endpoint-specific, not part of the shared contract.
 
 ---
 
 ## Infeasible conditions
+
+### COND-AUTH-INF-006: Cross-user access with a valid token (out of scope)
+
+| Field      | Value                                                                    |
+| ---------- | ------------------------------------------------------------------------ |
+| ID         | COND-AUTH-INF-006                                                        |
+| Priority   | Low — excluded by project scope decision, not by technical infeasibility |
+| Category   | Authorization                                                            |
+| Technique  | Exploratory heuristic                                                    |
+| Source     | Observed behavior: live check 2026-08-26; scope decision: project owner  |
+| Test cases | —                                                                        |
+
+**What to cover**
+Would cover the invalid equivalence class of a valid, correctly-authenticated bearer token for User A being used to request User B's UUID.
+
+**Why infeasible**
+Not technically infeasible — this is fully testable and was live-confirmed 2026-08-26 (401, `{code: "1200", message: "User not authorized!"}`, identical to the missing/invalid-token response). Excluded per an explicit project-scope decision that cross-user access behavior is out of scope for this test plan.
+
+**Mitigation**
+None planned. If the project scope is revisited and cross-user access is brought back in scope, reintroduce this as a real Authorization condition using the already-confirmed live behavior above.
+
+---
 
 ### COND-AUTH-INF-005: UUID maximum length / format boundary (infeasible)
 
@@ -215,34 +206,33 @@ Deferred. If a future live-verification pass observes an actual constraint (e.g.
 
 ## Coverage completeness check
 
-| Question                                                                               | Answer                                                                                                                                                                          |
-| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Does every required input field have a valid EP condition?                             | Yes — COND-AUTH-012 covers the valid-token, own-UUID class                                                                                                                      |
-| Does every required input field have at least one invalid EP condition?                | Yes — COND-AUTH-013 (missing token), COND-AUTH-014 (invalid/malformed token)                                                                                                    |
-| Are all BVA boundaries covered (min, min-1, empty)?                                    | Not applicable — no length/format rule exists for the UUID parameter to bound; the absence of such a rule is itself documented as COND-AUTH-INF-005                             |
-| Does every authorization state produce a distinct condition?                           | Yes — COND-AUTH-012 (valid), COND-AUTH-013 (missing), COND-AUTH-014 (invalid), COND-AUTH-015 (cross-user access), COND-AUTH-016 (non-existent UUID)                             |
-| Are all infeasible conditions documented?                                              | Yes — COND-AUTH-INF-005 (UUID format/length). COND-AUTH-INF-003/004 were promoted to COND-AUTH-015/016 after live verification 2026-08-26 and are no longer infeasible.         |
-| Does every analysis bullet map to at least one condition?                              | Yes — see mapping below                                                                                                                                                         |
-| Are all conditions independently testable?                                             | Yes — no condition depends on another executing first or in a specific order; each requires its own seeded user/token but not another condition's prior execution               |
-| Does any condition pair only ever get exercised together (trigger vs. its own effect)? | No — COND-AUTH-012 already merges its own trigger (valid token + own UUID) and effect (200 with correct casing) into one condition, following the precedent set in post-user.md |
+| Question                                                                               | Answer                                                                                                                                                                                  |
+| -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Does every required input field have a valid EP condition?                             | Yes — COND-AUTH-012 covers the valid-token, own-UUID class                                                                                                                              |
+| Does every required input field have at least one invalid EP condition?                | Yes — COND-AUTH-013 (missing token), COND-AUTH-014 (invalid/malformed token)                                                                                                            |
+| Are all BVA boundaries covered (min, min-1, empty)?                                    | Not applicable — no length/format rule exists for the UUID parameter to bound; the absence of such a rule is itself documented as COND-AUTH-INF-005                                     |
+| Does every authorization state produce a distinct condition?                           | Yes — COND-AUTH-012 (valid), COND-AUTH-013 (missing), COND-AUTH-014 (invalid), COND-AUTH-016 (non-existent UUID). Cross-user access is explicitly out of scope — see COND-AUTH-INF-006. |
+| Are all infeasible conditions documented?                                              | Yes — COND-AUTH-INF-005 (UUID format/length), COND-AUTH-INF-006 (cross-user access, out of scope). COND-AUTH-INF-004 was promoted to COND-AUTH-016 after live verification 2026-08-26.  |
+| Does every analysis bullet map to at least one condition?                              | Yes — see mapping below                                                                                                                                                                 |
+| Are all conditions independently testable?                                             | Yes — no condition depends on another executing first or in a specific order; each requires its own seeded user/token but not another condition's prior execution                       |
+| Does any condition pair only ever get exercised together (trigger vs. its own effect)? | No — COND-AUTH-012 already merges its own trigger (valid token + own UUID) and effect (200 with correct casing) into one condition, following the precedent set in post-user.md         |
 
 **Analysis-to-condition mapping**
 
 - Happy path (valid token, own UUID, live-confirmed response shape) → COND-AUTH-012
 - Negative: missing Authorization header → COND-AUTH-013
 - Negative: invalid/malformed token → COND-AUTH-014
-- Negative: cross-user access with a valid token → COND-AUTH-015
 - Negative: non-existent UUID with a valid token → COND-AUTH-016
 - Boundary: UUID undocumented length/format constraint → COND-AUTH-INF-005
-- Authorization states: valid/missing/invalid/cross-user/non-existent-UUID → COND-AUTH-012, COND-AUTH-013, COND-AUTH-014, COND-AUTH-015, COND-AUTH-016
-- Status codes/response shape: 200 shape, 401 shared error (missing/invalid/cross-user), 401 distinct "not found" error (non-existent UUID) → COND-AUTH-012, COND-AUTH-013, COND-AUTH-014, COND-AUTH-015, COND-AUTH-016
-- Spec ambiguities: cross-user access resolved 2026-08-26 → COND-AUTH-015; non-existent UUID resolved 2026-08-26 → COND-AUTH-016; UUID format undocumented → COND-AUTH-INF-005; missing-vs-invalid-token distinction unconfirmed → addressed directly in COND-AUTH-014's Notes
+- Authorization states: valid/missing/invalid/non-existent-UUID → COND-AUTH-012, COND-AUTH-013, COND-AUTH-014, COND-AUTH-016; cross-user access → COND-AUTH-INF-006 (out of scope)
+- Status codes/response shape: 200 shape, 401 shared error (missing/invalid), 401 distinct "not found" error (non-existent UUID) → COND-AUTH-012, COND-AUTH-013, COND-AUTH-014, COND-AUTH-016
+- Spec ambiguities: cross-user access excluded by project scope decision → COND-AUTH-INF-006; non-existent UUID resolved 2026-08-26 → COND-AUTH-016; UUID format undocumented → COND-AUTH-INF-005; missing-vs-invalid-token distinction unconfirmed → addressed directly in COND-AUTH-014's Notes
 
 **Coverage gaps identified**
 
-- None beyond what is already captured as the one remaining infeasible condition (UUID format/length).
-- The project's own scope decision on cross-user access is still unresolved at the project-management level, independent of the now-confirmed API behavior: is COND-AUTH-015's observed rejection an intended, guaranteed contract worth a permanent regression test, or merely incidental behavior of the current implementation? This should be resolved with the test plan owner; it does not block writing a test case against the currently-observed behavior, but does affect how much weight that test case's failure should carry if the behavior ever changes.
+- None beyond what is already captured as the two remaining infeasible/out-of-scope conditions (UUID format/length; cross-user access).
 
 **Deferred conditions**
 
 - COND-AUTH-INF-005 (UUID format/length) — deferred pending live exploratory observation or a documented constraint appearing in a future spec update.
+- COND-AUTH-INF-006 (cross-user access) — excluded per project scope decision; not deferred pending further information, since the behavior is already confirmed and the exclusion is a deliberate scope choice.

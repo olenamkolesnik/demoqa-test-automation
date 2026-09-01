@@ -61,6 +61,15 @@ module.exports = tseslint.config(
       'no-console': 'off',
     },
   },
+  {
+    // Playwright's own expect.extend() matcher augmentation API requires
+    // reopening its `namespace PlaywrightTest` (see node_modules/playwright/types/test.d.ts) —
+    // there's no interface-only alternative.
+    files: ['src/utils/matchers.util.ts'],
+    rules: {
+      '@typescript-eslint/no-namespace': 'off',
+    },
+  },
   prettierConfig,
   {
     ignores: ['node_modules/', 'test-results/', 'playwright-report/', 'blob-report/', 'dist/'],
