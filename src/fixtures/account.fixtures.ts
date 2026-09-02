@@ -54,7 +54,7 @@ async function deleteUserAndLogOrphanOnFailure(
   }
 
   await deleteAndLogOrphanOnFailure(
-    () => client.deleteUser(userId, token),
+    () => client.deleteUser({ userId, token }),
     () => `orphaned userId=${userId} userName=${payload.userName}`,
     204
   );

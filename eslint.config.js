@@ -16,6 +16,20 @@ module.exports = tseslint.config(
     },
   },
   {
+    // CI maintenance scripts run under plain Node, outside the test framework —
+    // console is their only output channel, so the src/ ban doesn't apply.
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+      },
+    },
+    rules: {
+      'no-console': 'off',
+    },
+  },
+  {
     // Type-aware TS rules (e.g. no-floating-promises) — scoped to .ts only so
     // eslint.config.js (plain CommonJS, not part of tsconfig) isn't affected.
     files: ['**/*.ts'],
@@ -59,6 +73,15 @@ module.exports = tseslint.config(
     files: ['src/utils/logger.ts'],
     rules: {
       'no-console': 'off',
+    },
+  },
+  {
+    // Playwright's own expect.extend() matcher augmentation API requires
+    // reopening its `namespace PlaywrightTest` (see node_modules/playwright/types/test.d.ts) —
+    // there's no interface-only alternative.
+    files: ['src/utils/matchers.util.ts'],
+    rules: {
+      '@typescript-eslint/no-namespace': 'off',
     },
   },
   prettierConfig,

@@ -2,6 +2,11 @@ import type { APIRequestContext, APIResponse } from '@playwright/test';
 import { BaseApiClient } from './base-api.client';
 import type { LoginPayload } from '../types/account.schema';
 
+interface AuthorizedUserRequest {
+  userId: string;
+  token: string;
+}
+
 export class AccountApiClient extends BaseApiClient {
   private readonly basePath = '/Account/v1';
 
@@ -33,17 +38,16 @@ export class AccountApiClient extends BaseApiClient {
     );
   }
 
-  getUser(userId: string, token: string): Promise<APIResponse> {
-    return this.logged(
-      this.request.get(`${this.basePath}/User/${userId}`, { headers: this.authHeader(token) }),
-      `GET ${this.basePath}/User/${userId}`
-    );
+  getUser({ userId, token }: AuthorizedUserRequest): Promise<APIResponse> {
+    const path = `${this.basePath}/User/${encodeURIComponent(userId)}`;
+    return this.logged(this.request.get(path, { headers: this.authHeader(token) }), `GET ${path}`);
   }
 
-  deleteUser(userId: string, token: string): Promise<APIResponse> {
+  deleteUser({ userId, token }: AuthorizedUserRequest): Promise<APIResponse> {
+    const path = `${this.basePath}/User/${encodeURIComponent(userId)}`;
     return this.logged(
-      this.request.delete(`${this.basePath}/User/${userId}`, { headers: this.authHeader(token) }),
-      `DELETE ${this.basePath}/User/${userId}`
+      this.request.delete(path, { headers: this.authHeader(token) }),
+      `DELETE ${path}`
     );
   }
 }

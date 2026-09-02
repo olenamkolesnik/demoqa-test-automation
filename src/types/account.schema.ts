@@ -11,22 +11,26 @@ export const LoginPayloadSchema = z.object({
 export type LoginPayload = z.infer<typeof LoginPayloadSchema>;
 
 // POST /Account/v1/User response — confirmed live: capital "ID".
-export const CreateUserResponseSchema = z.object({
-  userID: z.string(),
-  username: z.string(),
-  books: z.array(AccountBookSchema),
-});
+export const CreateUserResponseSchema = z
+  .object({
+    userID: z.string(),
+    username: z.string(),
+    books: z.array(AccountBookSchema),
+  })
+  .strict();
 
 export type CreateUserResponse = z.infer<typeof CreateUserResponseSchema>;
 
 // GET /Account/v1/User/{UUID} response — confirmed live: lowercase "d".
 // Deliberately not unified with CreateUserResponseSchema; the two live
 // endpoints genuinely disagree on this field's casing.
-export const GetUserResponseSchema = z.object({
-  userId: z.string(),
-  username: z.string(),
-  books: z.array(AccountBookSchema),
-});
+export const GetUserResponseSchema = z
+  .object({
+    userId: z.string(),
+    username: z.string(),
+    books: z.array(AccountBookSchema),
+  })
+  .strict();
 
 export type GetUserResponse = z.infer<typeof GetUserResponseSchema>;
 
