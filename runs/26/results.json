@@ -1,0 +1,390 @@
+{
+  "config": {
+    "argv": [
+      "/opt/hostedtoolcache/node/24.19.0/x64/bin/node",
+      "/home/runner/work/demoqa-test-automation/demoqa-test-automation/node_modules/.bin/playwright",
+      "test"
+    ],
+    "configFile": "/home/runner/work/demoqa-test-automation/demoqa-test-automation/playwright.config.ts",
+    "rootDir": "/home/runner/work/demoqa-test-automation/demoqa-test-automation/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/olenamkolesnik/demoqa-test-automation/commit/0af750b9b82717ed7e76e137a66a13ab5e5908f9",
+        "commitHash": "0af750b9b82717ed7e76e137a66a13ab5e5908f9",
+        "buildHref": "https://github.com/olenamkolesnik/demoqa-test-automation/actions/runs/33639512483"
+      },
+      "gitCommit": {
+        "shortHash": "0af750b",
+        "hash": "0af750b9b82717ed7e76e137a66a13ab5e5908f9",
+        "subject": "Merge pull request #12 from olenamkolesnik/chore/sync-updates",
+        "body": "Merge pull request #12 from olenamkolesnik/chore/sync-updates\n\nChore/sync updates",
+        "author": {
+          "name": "olenamkolesnik",
+          "email": "33692828+olenamkolesnik@users.noreply.github.com",
+          "time": 1788357767000
+        },
+        "committer": {
+          "name": "GitHub",
+          "email": "noreply@github.com",
+          "time": 1788357767000
+        },
+        "branch": "main"
+      },
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/demoqa-test-automation/demoqa-test-automation/test-results",
+        "repeatEach": 1,
+        "retries": 2,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/olenamkolesnik/demoqa-test-automation/commit/0af750b9b82717ed7e76e137a66a13ab5e5908f9",
+            "commitHash": "0af750b9b82717ed7e76e137a66a13ab5e5908f9",
+            "buildHref": "https://github.com/olenamkolesnik/demoqa-test-automation/actions/runs/33639512483"
+          },
+          "gitCommit": {
+            "shortHash": "0af750b",
+            "hash": "0af750b9b82717ed7e76e137a66a13ab5e5908f9",
+            "subject": "Merge pull request #12 from olenamkolesnik/chore/sync-updates",
+            "body": "Merge pull request #12 from olenamkolesnik/chore/sync-updates\n\nChore/sync updates",
+            "author": {
+              "name": "olenamkolesnik",
+              "email": "33692828+olenamkolesnik@users.noreply.github.com",
+              "time": 1788357767000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1788357767000
+            },
+            "branch": "main"
+          },
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/runner/work/demoqa-test-automation/demoqa-test-automation/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "html",
+        {
+          "open": "never"
+        }
+      ],
+      [
+        "github",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "playwright-report/results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "api/get-user.api.spec.ts",
+      "file": "api/get-user.api.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Get own user profile with a valid token",
+          "ok": true,
+          "tags": [
+            "AUTH-012",
+            "positive"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4786,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-02T14:03:28.948Z [w0] [Get own user profile with a valid token] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-02T14:03:30.706Z [w0] [Get own user profile with a valid token] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-02T14:03:31.034Z [w0] [Get own user profile with a valid token] [INFO] GET /Account/v1/User/e887461e-fea2-4e57-87e9-602a7349363a -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-02T14:03:31.742Z [w0] [Get own user profile with a valid token] [INFO] DELETE /Account/v1/User/e887461e-fea2-4e57-87e9-602a7349363a -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-02T14:03:26.929Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b2bd4494f98d86f87e56-32ad40df7066e9bdb050",
+          "file": "api/get-user.api.spec.ts",
+          "line": 6,
+          "column": 5
+        },
+        {
+          "title": "Get user profile with no Authorization header",
+          "ok": true,
+          "tags": [
+            "AUTH-013",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3686,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-02T14:03:33.004Z [w0] [Get user profile with no Authorization header] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-02T14:03:34.784Z [w0] [Get user profile with no Authorization header] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-02T14:03:35.443Z [w0] [Get user profile with no Authorization header] [INFO] DELETE /Account/v1/User/2ae7c3d9-ac2b-49d2-b2c4-1164ca72afe2 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-02T14:03:31.752Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b2bd4494f98d86f87e56-3fb93e5e045cf0980325",
+          "file": "api/get-user.api.spec.ts",
+          "line": 23,
+          "column": 5
+        },
+        {
+          "title": "Get user profile with an invalid or malformed token",
+          "ok": true,
+          "tags": [
+            "AUTH-014",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3563,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-02T14:03:36.477Z [w0] [Get user profile with an invalid or malformed token] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-02T14:03:36.857Z [w0] [Get user profile with an invalid or malformed token] [INFO] GET /Account/v1/User/e3f6ba1c-4c48-48a2-afbe-d81fb975219e -> 401\n"
+                    },
+                    {
+                      "text": "2026-09-02T14:03:38.433Z [w0] [Get user profile with an invalid or malformed token] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-02T14:03:39.015Z [w0] [Get user profile with an invalid or malformed token] [INFO] DELETE /Account/v1/User/e3f6ba1c-4c48-48a2-afbe-d81fb975219e -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-02T14:03:35.449Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b2bd4494f98d86f87e56-e533c1170ef109b3681a",
+          "file": "api/get-user.api.spec.ts",
+          "line": 39,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "api/get-user.contract.spec.ts",
+      "file": "api/get-user.contract.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "GET /Account/v1/User/{UUID} success response matches schema",
+          "ok": true,
+          "tags": [
+            "contract",
+            "AUTH"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3876,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-02T14:03:40.008Z [w0] [GET /Account/v1/User/{UUID} success response matches schema] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-02T14:03:41.963Z [w0] [GET /Account/v1/User/{UUID} success response matches schema] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-02T14:03:42.379Z [w0] [GET /Account/v1/User/{UUID} success response matches schema] [INFO] GET /Account/v1/User/364fcdd3-0bdd-475d-829d-c12e27eb749a -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-02T14:03:42.901Z [w0] [GET /Account/v1/User/{UUID} success response matches schema] [INFO] DELETE /Account/v1/User/364fcdd3-0bdd-475d-829d-c12e27eb749a -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-02T14:03:39.022Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a8aca4f3c5f83291ff47-47c4a5c015f20272a343",
+          "file": "api/get-user.contract.spec.ts",
+          "line": 5,
+          "column": 5
+        },
+        {
+          "title": "GET /Account/v1/User/{UUID} error response matches schema",
+          "ok": true,
+          "tags": [
+            "contract",
+            "AUTH"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4053,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-02T14:03:44.579Z [w0] [GET /Account/v1/User/{UUID} error response matches schema] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-02T14:03:44.906Z [w0] [GET /Account/v1/User/{UUID} error response matches schema] [INFO] GET /Account/v1/User/3de3eed8-918e-4e14-b5be-0208af71a510 -> 401\n"
+                    },
+                    {
+                      "text": "2026-09-02T14:03:46.300Z [w0] [GET /Account/v1/User/{UUID} error response matches schema] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-02T14:03:46.965Z [w0] [GET /Account/v1/User/{UUID} error response matches schema] [INFO] DELETE /Account/v1/User/3de3eed8-918e-4e14-b5be-0208af71a510 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-02T14:03:42.907Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a8aca4f3c5f83291ff47-a5594ebaa638cac36726",
+          "file": "api/get-user.contract.spec.ts",
+          "line": 20,
+          "column": 5
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-09-02T14:03:26.024Z",
+    "duration": 20968.149999999998,
+    "expected": 5,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
