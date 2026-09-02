@@ -49,6 +49,8 @@ function buildEntry() {
     status: requireEnv('STATUS'),
     sha: requireEnv('SHA').slice(0, 7),
     ref: requireEnv('REF'),
+    // Only set on pull-request runs; absent for pushes to main.
+    pr: process.env.PR ? Number(process.env.PR) : null,
     actor: requireEnv('ACTOR'),
     date: new Date().toISOString(),
     workflowUrl: `${server}/${repo}/actions/runs/${runId}`,
@@ -84,11 +86,14 @@ function escapeHtml(value) {
 function renderRow(entry) {
   const passed = entry.status === 'success';
   const timestamp = String(entry.date).replace('T', ' ').slice(0, 16);
+  const source = entry.pr
+    ? `<span class="pr">PR #${escapeHtml(entry.pr)}</span> ${escapeHtml(entry.ref)}`
+    : escapeHtml(entry.ref);
 
   return `      <tr>
         <td><a href="runs/${escapeHtml(entry.run)}/index.html">#${escapeHtml(entry.run)}</a></td>
         <td class="${passed ? 'ok' : 'bad'}">${passed ? 'passed' : escapeHtml(entry.status)}</td>
-        <td>${escapeHtml(entry.ref)}</td>
+        <td>${source}</td>
         <td><code>${escapeHtml(entry.sha)}</code></td>
         <td>${escapeHtml(timestamp)} UTC</td>
         <td><a href="${escapeHtml(entry.workflowUrl)}">workflow</a></td>
@@ -137,6 +142,12 @@ function renderIndex(history) {
       .bad {
         color: #c02626;
       }
+      .pr {
+        font-size: 0.75rem;
+        padding: 0.1em 0.4em;
+        border-radius: 3px;
+        background: #8883;
+      }
       @media (prefers-color-scheme: dark) {
         .ok {
           color: #4ade80;
@@ -149,7 +160,10 @@ function renderIndex(history) {
   </head>
   <body>
     <h1>Playwright report history</h1>
-    <p><a href="index.html">Latest report</a> — newest ${history.length} runs on main.</p>
+    <p>
+      <a href="index.html">Latest report on main</a> — newest ${history.length} runs,
+      including pull requests.
+    </p>
     <table>
       <thead>
         <tr>
