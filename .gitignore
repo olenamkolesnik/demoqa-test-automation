@@ -5,8 +5,13 @@
 # Claude Code local settings (per-machine tool permissions, not shared config)
 .claude/settings.local.json
 
-# Claude Code skills — kept locally and in git history, not published on the remote
+# Claude Code skills and agents — local-only, not published on the remote.
+# The agents delegate their review criteria to the skills, so the two are
+# ignored together: publishing agents without their skills would ship a
+# definition that fails on a missing rules file.
+# Earlier versions are recoverable from git history at bc725d1^.
 .claude/skills/
+.claude/agents/
 
 # Playwright
 node_modules/
