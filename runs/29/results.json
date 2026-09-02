@@ -1,0 +1,398 @@
+{
+  "config": {
+    "argv": [
+      "/opt/hostedtoolcache/node/24.19.0/x64/bin/node",
+      "/home/runner/work/demoqa-test-automation/demoqa-test-automation/node_modules/.bin/playwright",
+      "test"
+    ],
+    "configFile": "/home/runner/work/demoqa-test-automation/demoqa-test-automation/playwright.config.ts",
+    "rootDir": "/home/runner/work/demoqa-test-automation/demoqa-test-automation/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/olenamkolesnik/demoqa-test-automation/commit/30f014d891a100ed71d3ed886e9534595e39a4db",
+        "commitHash": "30f014d891a100ed71d3ed886e9534595e39a4db",
+        "prHref": "https://github.com/olenamkolesnik/demoqa-test-automation/pull/14",
+        "prTitle": "Bump GitHub Actions to Node 24 runtime versions",
+        "prBaseHash": "91e6499b8111c5d64be27aa6a3751fb88abe47c6",
+        "buildHref": "https://github.com/olenamkolesnik/demoqa-test-automation/actions/runs/33648068447"
+      },
+      "gitCommit": {
+        "shortHash": "30f014d",
+        "hash": "30f014d891a100ed71d3ed886e9534595e39a4db",
+        "subject": "Merge 9f76b4ea92928a556da93e66ccb68490993f3103 into 91e6499b8111c5d64be27aa6a3751fb88abe47c6",
+        "body": "Merge 9f76b4ea92928a556da93e66ccb68490993f3103 into 91e6499b8111c5d64be27aa6a3751fb88abe47c6\n",
+        "author": {
+          "name": "olenamkolesnik",
+          "email": "33692828+olenamkolesnik@users.noreply.github.com",
+          "time": 1788362513000
+        },
+        "committer": {
+          "name": "GitHub",
+          "email": "noreply@github.com",
+          "time": 1788362513000
+        },
+        "branch": "HEAD"
+      },
+      "gitDiff": "diff --git a/.github/workflows/playwright.yml b/.github/workflows/playwright.yml\nindex afa303f..8b42429 100644\n--- a/.github/workflows/playwright.yml\n+++ b/.github/workflows/playwright.yml\n@@ -21,8 +21,8 @@ jobs:\n       # Kept as a workflow-level env var so the SUT can be repointed in one place.\n       BASE_URL: https://demoqa.com\n     steps:\n-      - uses: actions/checkout@v4\n-      - uses: actions/setup-node@v4\n+      - uses: actions/checkout@v5\n+      - uses: actions/setup-node@v5\n         with:\n           node-version: lts/*\n           cache: npm\n@@ -38,7 +38,7 @@ jobs:\n       # Uploaded on failure too — the report is most useful precisely when the\n       # run is red. This is how PR runs get their report, since PRs don't publish.\n       - name: Upload HTML report\n-        uses: actions/upload-artifact@v4\n+        uses: actions/upload-artifact@v5\n         if: ${{ !cancelled() }}\n         with:\n           name: playwright-report-${{ github.run_number }}\n@@ -69,14 +69,14 @@ jobs:\n       # The publish script lives on the source branch, not on gh-pages, so it is\n       # checked out separately into its own directory.\n       - name: Checkout scripts from source branch\n-        uses: actions/checkout@v4\n+        uses: actions/checkout@v5\n         with:\n           path: source\n           sparse-checkout: scripts\n           sparse-checkout-cone-mode: false\n \n       - name: Checkout gh-pages\n-        uses: actions/checkout@v4\n+        uses: actions/checkout@v5\n         with:\n           ref: gh-pages\n           path: pages\n@@ -84,7 +84,7 @@ jobs:\n       # Downloaded straight into the archive slot for this run; the root copy\n       # below is taken from there.\n       - name: Download report\n-        uses: actions/download-artifact@v4\n+        uses: actions/download-artifact@v5\n         with:\n           name: playwright-report-${{ github.run_number }}\n           path: pages/runs/${{ github.run_number }}\n@@ -139,7 +139,7 @@ jobs:\n       # a branch with several pushes doesn't accumulate a wall of bot comments.\n       - name: Comment report link on the pull request\n         if: ${{ github.event_name == 'pull_request' }}\n-        uses: actions/github-script@v7\n+        uses: actions/github-script@v8\n         with:\n           script: |\n             const run = context.runNumber;\n@@ -156,7 +156,7 @@ jobs:\n               ...context.repo,\n               issue_number: context.issue.number,\n             });\n-            const existing = comments.find((comment) => comment.body.includes(marker));\n+            const existing = comments.find((comment) => comment.body?.includes(marker));\n \n             if (existing) {\n               await github.rest.issues.updateComment({",
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/demoqa-test-automation/demoqa-test-automation/test-results",
+        "repeatEach": 1,
+        "retries": 2,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/olenamkolesnik/demoqa-test-automation/commit/30f014d891a100ed71d3ed886e9534595e39a4db",
+            "commitHash": "30f014d891a100ed71d3ed886e9534595e39a4db",
+            "prHref": "https://github.com/olenamkolesnik/demoqa-test-automation/pull/14",
+            "prTitle": "Bump GitHub Actions to Node 24 runtime versions",
+            "prBaseHash": "91e6499b8111c5d64be27aa6a3751fb88abe47c6",
+            "buildHref": "https://github.com/olenamkolesnik/demoqa-test-automation/actions/runs/33648068447"
+          },
+          "gitCommit": {
+            "shortHash": "30f014d",
+            "hash": "30f014d891a100ed71d3ed886e9534595e39a4db",
+            "subject": "Merge 9f76b4ea92928a556da93e66ccb68490993f3103 into 91e6499b8111c5d64be27aa6a3751fb88abe47c6",
+            "body": "Merge 9f76b4ea92928a556da93e66ccb68490993f3103 into 91e6499b8111c5d64be27aa6a3751fb88abe47c6\n",
+            "author": {
+              "name": "olenamkolesnik",
+              "email": "33692828+olenamkolesnik@users.noreply.github.com",
+              "time": 1788362513000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1788362513000
+            },
+            "branch": "HEAD"
+          },
+          "gitDiff": "diff --git a/.github/workflows/playwright.yml b/.github/workflows/playwright.yml\nindex afa303f..8b42429 100644\n--- a/.github/workflows/playwright.yml\n+++ b/.github/workflows/playwright.yml\n@@ -21,8 +21,8 @@ jobs:\n       # Kept as a workflow-level env var so the SUT can be repointed in one place.\n       BASE_URL: https://demoqa.com\n     steps:\n-      - uses: actions/checkout@v4\n-      - uses: actions/setup-node@v4\n+      - uses: actions/checkout@v5\n+      - uses: actions/setup-node@v5\n         with:\n           node-version: lts/*\n           cache: npm\n@@ -38,7 +38,7 @@ jobs:\n       # Uploaded on failure too — the report is most useful precisely when the\n       # run is red. This is how PR runs get their report, since PRs don't publish.\n       - name: Upload HTML report\n-        uses: actions/upload-artifact@v4\n+        uses: actions/upload-artifact@v5\n         if: ${{ !cancelled() }}\n         with:\n           name: playwright-report-${{ github.run_number }}\n@@ -69,14 +69,14 @@ jobs:\n       # The publish script lives on the source branch, not on gh-pages, so it is\n       # checked out separately into its own directory.\n       - name: Checkout scripts from source branch\n-        uses: actions/checkout@v4\n+        uses: actions/checkout@v5\n         with:\n           path: source\n           sparse-checkout: scripts\n           sparse-checkout-cone-mode: false\n \n       - name: Checkout gh-pages\n-        uses: actions/checkout@v4\n+        uses: actions/checkout@v5\n         with:\n           ref: gh-pages\n           path: pages\n@@ -84,7 +84,7 @@ jobs:\n       # Downloaded straight into the archive slot for this run; the root copy\n       # below is taken from there.\n       - name: Download report\n-        uses: actions/download-artifact@v4\n+        uses: actions/download-artifact@v5\n         with:\n           name: playwright-report-${{ github.run_number }}\n           path: pages/runs/${{ github.run_number }}\n@@ -139,7 +139,7 @@ jobs:\n       # a branch with several pushes doesn't accumulate a wall of bot comments.\n       - name: Comment report link on the pull request\n         if: ${{ github.event_name == 'pull_request' }}\n-        uses: actions/github-script@v7\n+        uses: actions/github-script@v8\n         with:\n           script: |\n             const run = context.runNumber;\n@@ -156,7 +156,7 @@ jobs:\n               ...context.repo,\n               issue_number: context.issue.number,\n             });\n-            const existing = comments.find((comment) => comment.body.includes(marker));\n+            const existing = comments.find((comment) => comment.body?.includes(marker));\n \n             if (existing) {\n               await github.rest.issues.updateComment({",
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/runner/work/demoqa-test-automation/demoqa-test-automation/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "html",
+        {
+          "open": "never"
+        }
+      ],
+      [
+        "github",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "playwright-report/results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "api/get-user.api.spec.ts",
+      "file": "api/get-user.api.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Get own user profile with a valid token",
+          "ok": true,
+          "tags": [
+            "AUTH-012",
+            "positive"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3887,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-02T15:22:33.612Z [w0] [Get own user profile with a valid token] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-02T15:22:34.925Z [w0] [Get own user profile with a valid token] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-02T15:22:35.204Z [w0] [Get own user profile with a valid token] [INFO] GET /Account/v1/User/f03a4556-925a-4e42-b82f-8a59523d97a2 -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-02T15:22:35.681Z [w0] [Get own user profile with a valid token] [INFO] DELETE /Account/v1/User/f03a4556-925a-4e42-b82f-8a59523d97a2 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-02T15:22:31.766Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b2bd4494f98d86f87e56-32ad40df7066e9bdb050",
+          "file": "api/get-user.api.spec.ts",
+          "line": 6,
+          "column": 5
+        },
+        {
+          "title": "Get user profile with no Authorization header",
+          "ok": true,
+          "tags": [
+            "AUTH-013",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3476,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-02T15:22:36.566Z [w0] [Get user profile with no Authorization header] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-02T15:22:37.965Z [w0] [Get user profile with no Authorization header] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-02T15:22:39.173Z [w0] [Get user profile with no Authorization header] [INFO] DELETE /Account/v1/User/77ad275c-712e-4ce5-ae62-519e709b811c -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-02T15:22:35.692Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b2bd4494f98d86f87e56-3fb93e5e045cf0980325",
+          "file": "api/get-user.api.spec.ts",
+          "line": 23,
+          "column": 5
+        },
+        {
+          "title": "Get user profile with an invalid or malformed token",
+          "ok": true,
+          "tags": [
+            "AUTH-014",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4661,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-02T15:22:40.390Z [w0] [Get user profile with an invalid or malformed token] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-02T15:22:41.344Z [w0] [Get user profile with an invalid or malformed token] [INFO] GET /Account/v1/User/bcf518b7-dbf2-4565-aab6-133e3766e00a -> 401\n"
+                    },
+                    {
+                      "text": "2026-09-02T15:22:42.633Z [w0] [Get user profile with an invalid or malformed token] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-02T15:22:43.844Z [w0] [Get user profile with an invalid or malformed token] [INFO] DELETE /Account/v1/User/bcf518b7-dbf2-4565-aab6-133e3766e00a -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-02T15:22:39.179Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b2bd4494f98d86f87e56-e533c1170ef109b3681a",
+          "file": "api/get-user.api.spec.ts",
+          "line": 39,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "api/get-user.contract.spec.ts",
+      "file": "api/get-user.contract.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "GET /Account/v1/User/{UUID} success response matches schema",
+          "ok": true,
+          "tags": [
+            "contract",
+            "AUTH"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3357,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-02T15:22:44.679Z [w0] [GET /Account/v1/User/{UUID} success response matches schema] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-02T15:22:45.615Z [w0] [GET /Account/v1/User/{UUID} success response matches schema] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-02T15:22:46.715Z [w0] [GET /Account/v1/User/{UUID} success response matches schema] [INFO] GET /Account/v1/User/740a6364-10fe-4ada-b871-799f0d73033b -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-02T15:22:47.210Z [w0] [GET /Account/v1/User/{UUID} success response matches schema] [INFO] DELETE /Account/v1/User/740a6364-10fe-4ada-b871-799f0d73033b -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-02T15:22:43.850Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a8aca4f3c5f83291ff47-47c4a5c015f20272a343",
+          "file": "api/get-user.contract.spec.ts",
+          "line": 5,
+          "column": 5
+        },
+        {
+          "title": "GET /Account/v1/User/{UUID} error response matches schema",
+          "ok": true,
+          "tags": [
+            "contract",
+            "AUTH"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4690,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-02T15:22:48.503Z [w0] [GET /Account/v1/User/{UUID} error response matches schema] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-02T15:22:49.584Z [w0] [GET /Account/v1/User/{UUID} error response matches schema] [INFO] GET /Account/v1/User/b12700e6-3ddd-4092-a5e4-b2556255287b -> 401\n"
+                    },
+                    {
+                      "text": "2026-09-02T15:22:50.792Z [w0] [GET /Account/v1/User/{UUID} error response matches schema] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-02T15:22:51.911Z [w0] [GET /Account/v1/User/{UUID} error response matches schema] [INFO] DELETE /Account/v1/User/b12700e6-3ddd-4092-a5e4-b2556255287b -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-02T15:22:47.217Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a8aca4f3c5f83291ff47-a5594ebaa638cac36726",
+          "file": "api/get-user.contract.spec.ts",
+          "line": 20,
+          "column": 5
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-09-02T15:22:30.573Z",
+    "duration": 21365.26,
+    "expected": 5,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
