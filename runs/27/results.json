@@ -1,0 +1,398 @@
+{
+  "config": {
+    "argv": [
+      "/opt/hostedtoolcache/node/24.19.0/x64/bin/node",
+      "/home/runner/work/demoqa-test-automation/demoqa-test-automation/node_modules/.bin/playwright",
+      "test"
+    ],
+    "configFile": "/home/runner/work/demoqa-test-automation/demoqa-test-automation/playwright.config.ts",
+    "rootDir": "/home/runner/work/demoqa-test-automation/demoqa-test-automation/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/olenamkolesnik/demoqa-test-automation/commit/a15c748022c8764d4c590296cfc3b6ebc525dcbd",
+        "commitHash": "a15c748022c8764d4c590296cfc3b6ebc525dcbd",
+        "prHref": "https://github.com/olenamkolesnik/demoqa-test-automation/pull/13",
+        "prTitle": "Publish reports for pull requests, not only main",
+        "prBaseHash": "0af750b9b82717ed7e76e137a66a13ab5e5908f9",
+        "buildHref": "https://github.com/olenamkolesnik/demoqa-test-automation/actions/runs/33641746582"
+      },
+      "gitCommit": {
+        "shortHash": "a15c748",
+        "hash": "a15c748022c8764d4c590296cfc3b6ebc525dcbd",
+        "subject": "Merge 69adfcdcc87b6435c46c00a246325bdd67ad072c into 0af750b9b82717ed7e76e137a66a13ab5e5908f9",
+        "body": "Merge 69adfcdcc87b6435c46c00a246325bdd67ad072c into 0af750b9b82717ed7e76e137a66a13ab5e5908f9\n",
+        "author": {
+          "name": "olenamkolesnik",
+          "email": "33692828+olenamkolesnik@users.noreply.github.com",
+          "time": 1788359011000
+        },
+        "committer": {
+          "name": "GitHub",
+          "email": "noreply@github.com",
+          "time": 1788359011000
+        },
+        "branch": "HEAD"
+      },
+      "gitDiff": "diff --git a/.github/workflows/playwright.yml b/.github/workflows/playwright.yml\nindex 01b6031..afa303f 100644\n--- a/.github/workflows/playwright.yml\n+++ b/.github/workflows/playwright.yml\n@@ -45,19 +45,26 @@ jobs:\n           path: playwright-report/\n           retention-days: 30\n \n-  # Publishes to the gh-pages branch: root = newest report, /runs/<n>/ = archive.\n-  # main only — a PR publish would overwrite main's report, and a fork PR would\n-  # fail outright on the missing write permission.\n+  # Publishes to the gh-pages branch. Every run is archived under /runs/<n>/ and\n+  # listed in history.html; only main also claims the root URL, so the site's\n+  # front page stays \"latest on main\" rather than whichever branch ran last.\n+  #\n+  # Skipped for pull requests from forks: those get a read-only token and would\n+  # fail on the contents: write below.\n   publish-report:\n     name: Publish report to Pages\n     needs: test\n     # `always()` so a failing test run still publishes its (red) report — a\n     # report you only get when tests pass is a report you can't debug with.\n-    if: ${{ always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}\n+    if: >-\n+      ${{ always() &&\n+          (github.event_name != 'pull_request' ||\n+           github.event.pull_request.head.repo.full_name == github.repository) }}\n     runs-on: ubuntu-latest\n     timeout-minutes: 10\n     permissions:\n       contents: write\n+      pull-requests: write\n     steps:\n       # The publish script lives on the source branch, not on gh-pages, so it is\n       # checked out separately into its own directory.\n@@ -82,7 +89,10 @@ jobs:\n           name: playwright-report-${{ github.run_number }}\n           path: pages/runs/${{ github.run_number }}\n \n+      # Only main claims the root: a PR run is archived and indexed, but must not\n+      # replace the front page, which represents the state of the main branch.\n       - name: Copy report to site root as latest\n+        if: ${{ github.ref == 'refs/heads/main' }}\n         working-directory: pages\n         run: |\n           set -euo pipefail\n@@ -103,7 +113,10 @@ jobs:\n           RUN: ${{ github.run_number }}\n           STATUS: ${{ needs.test.result }}\n           SHA: ${{ github.sha }}\n-          REF: ${{ github.ref_name }}\n+          # On a pull request github.ref_name is \"<number>/merge\"; use the source\n+          # branch instead so the history table reads meaningfully.\n+          REF: ${{ github.head_ref || github.ref_name }}\n+          PR: ${{ github.event.pull_request.number }}\n           ACTOR: ${{ github.actor }}\n           SERVER: ${{ github.server_url }}\n           REPO: ${{ github.repository }}\n@@ -121,3 +134,40 @@ jobs:\n           git diff --staged --quiet && echo \"nothing to publish\" && exit 0\n           git commit -m \"Publish report for run #${{ github.run_number }} (${{ needs.test.result }})\"\n           git push \"https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git\" gh-pages\n+\n+      # One comment per PR, edited in place on re-runs rather than appended, so\n+      # a branch with several pushes doesn't accumulate a wall of bot comments.\n+      - name: Comment report link on the pull request\n+        if: ${{ github.event_name == 'pull_request' }}\n+        uses: actions/github-script@v7\n+        with:\n+          script: |\n+            const run = context.runNumber;\n+            const passed = '${{ needs.test.result }}' === 'success';\n+            const url =\n+              `https://${context.repo.owner}.github.io/${context.repo.repo}/runs/${run}/`;\n+            const marker = '<!-- playwright-report-link -->';\n+            const body =\n+              `${marker}\\n### Playwright report — ${passed ? '✅ passed' : '❌ failed'}\\n\\n` +\n+              `[View the report for run #${run}](${url})\\n\\n` +\n+              `<sub>Updated automatically on each push to this branch.</sub>`;\n+\n+            const { data: comments } = await github.rest.issues.listComments({\n+              ...context.repo,\n+              issue_number: context.issue.number,\n+            });\n+            const existing = comments.find((comment) => comment.body.includes(marker));\n+\n+            if (existing) {\n+              await github.rest.issues.updateComment({\n+                ...context.repo,\n+                comment_id: existing.id,\n+                body,\n+              });\n+            } else {\n+              await github.rest.issues.createComment({\n+                ...context.repo,\n+                issue_number: context.issue.number,\n+                body,\n+              });\n+            }\ndiff --git a/scripts/publish-report.mjs b/scripts/publish-report.mjs\nindex 7273913..3f155e1 100644\n--- a/scripts/publish-report.mjs\n+++ b/scripts/publish-report.mjs\n@@ -49,6 +49,8 @@ function buildEntry() {\n     status: requireEnv('STATUS'),\n     sha: requireEnv('SHA').slice(0, 7),\n     ref: requireEnv('REF'),\n+    // Only set on pull-request runs; absent for pushes to main.\n+    pr: process.env.PR ? Number(process.env.PR) : null,\n     actor: requireEnv('ACTOR'),\n     date: new Date().toISOString(),\n     workflowUrl: `${server}/${repo}/actions/runs/${runId}`,\n@@ -84,11 +86,14 @@ function escapeHtml(value) {\n function renderRow(entry) {\n   const passed = entry.status === 'success';\n   const timestamp = String(entry.date).replace('T', ' ').slice(0, 16);\n+  const source = entry.pr\n+    ? `<span class=\"pr\">PR #${escapeHtml(entry.pr)}</span> ${escapeHtml(entry.ref)}`\n+    : escapeHtml(entry.ref);\n \n   return `      <tr>\n         <td><a href=\"runs/${escapeHtml(entry.run)}/index.html\">#${escapeHtml(entry.run)}</a></td>\n         <td class=\"${passed ? 'ok' : 'bad'}\">${passed ? 'passed' : escapeHtml(entry.status)}</td>\n-        <td>${escapeHtml(entry.ref)}</td>\n+        <td>${source}</td>\n         <td><code>${escapeHtml(entry.sha)}</code></td>\n         <td>${escapeHtml(timestamp)} UTC</td>\n         <td><a href=\"${escapeHtml(entry.workflowUrl)}\">workflow</a></td>\n@@ -137,6 +142,12 @@ function renderIndex(history) {\n       .bad {\n         color: #c02626;\n       }\n+      .pr {\n+        font-size: 0.75rem;\n+        padding: 0.1em 0.4em;\n+        border-radius: 3px;\n+        background: #8883;\n+      }\n       @media (prefers-color-scheme: dark) {\n         .ok {\n           color: #4ade80;\n@@ -149,7 +160,10 @@ function renderIndex(history) {\n   </head>\n   <body>\n     <h1>Playwright report history</h1>\n-    <p><a href=\"index.html\">Latest report</a> — newest ${history.length} runs on main.</p>\n+    <p>\n+      <a href=\"index.html\">Latest report on main</a> — newest ${history.length} runs,\n+      including pull requests.\n+    </p>\n     <table>\n       <thead>\n         <tr>",
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/demoqa-test-automation/demoqa-test-automation/test-results",
+        "repeatEach": 1,
+        "retries": 2,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/olenamkolesnik/demoqa-test-automation/commit/a15c748022c8764d4c590296cfc3b6ebc525dcbd",
+            "commitHash": "a15c748022c8764d4c590296cfc3b6ebc525dcbd",
+            "prHref": "https://github.com/olenamkolesnik/demoqa-test-automation/pull/13",
+            "prTitle": "Publish reports for pull requests, not only main",
+            "prBaseHash": "0af750b9b82717ed7e76e137a66a13ab5e5908f9",
+            "buildHref": "https://github.com/olenamkolesnik/demoqa-test-automation/actions/runs/33641746582"
+          },
+          "gitCommit": {
+            "shortHash": "a15c748",
+            "hash": "a15c748022c8764d4c590296cfc3b6ebc525dcbd",
+            "subject": "Merge 69adfcdcc87b6435c46c00a246325bdd67ad072c into 0af750b9b82717ed7e76e137a66a13ab5e5908f9",
+            "body": "Merge 69adfcdcc87b6435c46c00a246325bdd67ad072c into 0af750b9b82717ed7e76e137a66a13ab5e5908f9\n",
+            "author": {
+              "name": "olenamkolesnik",
+              "email": "33692828+olenamkolesnik@users.noreply.github.com",
+              "time": 1788359011000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1788359011000
+            },
+            "branch": "HEAD"
+          },
+          "gitDiff": "diff --git a/.github/workflows/playwright.yml b/.github/workflows/playwright.yml\nindex 01b6031..afa303f 100644\n--- a/.github/workflows/playwright.yml\n+++ b/.github/workflows/playwright.yml\n@@ -45,19 +45,26 @@ jobs:\n           path: playwright-report/\n           retention-days: 30\n \n-  # Publishes to the gh-pages branch: root = newest report, /runs/<n>/ = archive.\n-  # main only — a PR publish would overwrite main's report, and a fork PR would\n-  # fail outright on the missing write permission.\n+  # Publishes to the gh-pages branch. Every run is archived under /runs/<n>/ and\n+  # listed in history.html; only main also claims the root URL, so the site's\n+  # front page stays \"latest on main\" rather than whichever branch ran last.\n+  #\n+  # Skipped for pull requests from forks: those get a read-only token and would\n+  # fail on the contents: write below.\n   publish-report:\n     name: Publish report to Pages\n     needs: test\n     # `always()` so a failing test run still publishes its (red) report — a\n     # report you only get when tests pass is a report you can't debug with.\n-    if: ${{ always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}\n+    if: >-\n+      ${{ always() &&\n+          (github.event_name != 'pull_request' ||\n+           github.event.pull_request.head.repo.full_name == github.repository) }}\n     runs-on: ubuntu-latest\n     timeout-minutes: 10\n     permissions:\n       contents: write\n+      pull-requests: write\n     steps:\n       # The publish script lives on the source branch, not on gh-pages, so it is\n       # checked out separately into its own directory.\n@@ -82,7 +89,10 @@ jobs:\n           name: playwright-report-${{ github.run_number }}\n           path: pages/runs/${{ github.run_number }}\n \n+      # Only main claims the root: a PR run is archived and indexed, but must not\n+      # replace the front page, which represents the state of the main branch.\n       - name: Copy report to site root as latest\n+        if: ${{ github.ref == 'refs/heads/main' }}\n         working-directory: pages\n         run: |\n           set -euo pipefail\n@@ -103,7 +113,10 @@ jobs:\n           RUN: ${{ github.run_number }}\n           STATUS: ${{ needs.test.result }}\n           SHA: ${{ github.sha }}\n-          REF: ${{ github.ref_name }}\n+          # On a pull request github.ref_name is \"<number>/merge\"; use the source\n+          # branch instead so the history table reads meaningfully.\n+          REF: ${{ github.head_ref || github.ref_name }}\n+          PR: ${{ github.event.pull_request.number }}\n           ACTOR: ${{ github.actor }}\n           SERVER: ${{ github.server_url }}\n           REPO: ${{ github.repository }}\n@@ -121,3 +134,40 @@ jobs:\n           git diff --staged --quiet && echo \"nothing to publish\" && exit 0\n           git commit -m \"Publish report for run #${{ github.run_number }} (${{ needs.test.result }})\"\n           git push \"https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git\" gh-pages\n+\n+      # One comment per PR, edited in place on re-runs rather than appended, so\n+      # a branch with several pushes doesn't accumulate a wall of bot comments.\n+      - name: Comment report link on the pull request\n+        if: ${{ github.event_name == 'pull_request' }}\n+        uses: actions/github-script@v7\n+        with:\n+          script: |\n+            const run = context.runNumber;\n+            const passed = '${{ needs.test.result }}' === 'success';\n+            const url =\n+              `https://${context.repo.owner}.github.io/${context.repo.repo}/runs/${run}/`;\n+            const marker = '<!-- playwright-report-link -->';\n+            const body =\n+              `${marker}\\n### Playwright report — ${passed ? '✅ passed' : '❌ failed'}\\n\\n` +\n+              `[View the report for run #${run}](${url})\\n\\n` +\n+              `<sub>Updated automatically on each push to this branch.</sub>`;\n+\n+            const { data: comments } = await github.rest.issues.listComments({\n+              ...context.repo,\n+              issue_number: context.issue.number,\n+            });\n+            const existing = comments.find((comment) => comment.body.includes(marker));\n+\n+            if (existing) {\n+              await github.rest.issues.updateComment({\n+                ...context.repo,\n+                comment_id: existing.id,\n+                body,\n+              });\n+            } else {\n+              await github.rest.issues.createComment({\n+                ...context.repo,\n+                issue_number: context.issue.number,\n+                body,\n+              });\n+            }\ndiff --git a/scripts/publish-report.mjs b/scripts/publish-report.mjs\nindex 7273913..3f155e1 100644\n--- a/scripts/publish-report.mjs\n+++ b/scripts/publish-report.mjs\n@@ -49,6 +49,8 @@ function buildEntry() {\n     status: requireEnv('STATUS'),\n     sha: requireEnv('SHA').slice(0, 7),\n     ref: requireEnv('REF'),\n+    // Only set on pull-request runs; absent for pushes to main.\n+    pr: process.env.PR ? Number(process.env.PR) : null,\n     actor: requireEnv('ACTOR'),\n     date: new Date().toISOString(),\n     workflowUrl: `${server}/${repo}/actions/runs/${runId}`,\n@@ -84,11 +86,14 @@ function escapeHtml(value) {\n function renderRow(entry) {\n   const passed = entry.status === 'success';\n   const timestamp = String(entry.date).replace('T', ' ').slice(0, 16);\n+  const source = entry.pr\n+    ? `<span class=\"pr\">PR #${escapeHtml(entry.pr)}</span> ${escapeHtml(entry.ref)}`\n+    : escapeHtml(entry.ref);\n \n   return `      <tr>\n         <td><a href=\"runs/${escapeHtml(entry.run)}/index.html\">#${escapeHtml(entry.run)}</a></td>\n         <td class=\"${passed ? 'ok' : 'bad'}\">${passed ? 'passed' : escapeHtml(entry.status)}</td>\n-        <td>${escapeHtml(entry.ref)}</td>\n+        <td>${source}</td>\n         <td><code>${escapeHtml(entry.sha)}</code></td>\n         <td>${escapeHtml(timestamp)} UTC</td>\n         <td><a href=\"${escapeHtml(entry.workflowUrl)}\">workflow</a></td>\n@@ -137,6 +142,12 @@ function renderIndex(history) {\n       .bad {\n         color: #c02626;\n       }\n+      .pr {\n+        font-size: 0.75rem;\n+        padding: 0.1em 0.4em;\n+        border-radius: 3px;\n+        background: #8883;\n+      }\n       @media (prefers-color-scheme: dark) {\n         .ok {\n           color: #4ade80;\n@@ -149,7 +160,10 @@ function renderIndex(history) {\n   </head>\n   <body>\n     <h1>Playwright report history</h1>\n-    <p><a href=\"index.html\">Latest report</a> — newest ${history.length} runs on main.</p>\n+    <p>\n+      <a href=\"index.html\">Latest report on main</a> — newest ${history.length} runs,\n+      including pull requests.\n+    </p>\n     <table>\n       <thead>\n         <tr>",
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/runner/work/demoqa-test-automation/demoqa-test-automation/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "html",
+        {
+          "open": "never"
+        }
+      ],
+      [
+        "github",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "playwright-report/results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "api/get-user.api.spec.ts",
+      "file": "api/get-user.api.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Get own user profile with a valid token",
+          "ok": true,
+          "tags": [
+            "AUTH-012",
+            "positive"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5203,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-02T14:24:09.220Z [w0] [Get own user profile with a valid token] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-02T14:24:10.799Z [w0] [Get own user profile with a valid token] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-02T14:24:11.297Z [w0] [Get own user profile with a valid token] [INFO] GET /Account/v1/User/918bdffe-ebf0-4bfd-a90d-cd7a6aeec26d -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-02T14:24:12.343Z [w0] [Get own user profile with a valid token] [INFO] DELETE /Account/v1/User/918bdffe-ebf0-4bfd-a90d-cd7a6aeec26d -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-02T14:24:07.100Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b2bd4494f98d86f87e56-32ad40df7066e9bdb050",
+          "file": "api/get-user.api.spec.ts",
+          "line": 6,
+          "column": 5
+        },
+        {
+          "title": "Get user profile with no Authorization header",
+          "ok": true,
+          "tags": [
+            "AUTH-013",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4459,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-02T14:24:14.866Z [w0] [Get user profile with no Authorization header] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-02T14:24:16.164Z [w0] [Get user profile with no Authorization header] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-02T14:24:16.818Z [w0] [Get user profile with no Authorization header] [INFO] DELETE /Account/v1/User/ed185dc5-cd46-431c-b3e4-a6658c1cbc4d -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-02T14:24:12.354Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b2bd4494f98d86f87e56-3fb93e5e045cf0980325",
+          "file": "api/get-user.api.spec.ts",
+          "line": 23,
+          "column": 5
+        },
+        {
+          "title": "Get user profile with an invalid or malformed token",
+          "ok": true,
+          "tags": [
+            "AUTH-014",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6236,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-02T14:24:18.701Z [w0] [Get user profile with an invalid or malformed token] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-02T14:24:19.049Z [w0] [Get user profile with an invalid or malformed token] [INFO] GET /Account/v1/User/d0da61b4-b1bb-44df-8baa-4f245c3eb280 -> 401\n"
+                    },
+                    {
+                      "text": "2026-09-02T14:24:21.418Z [w0] [Get user profile with an invalid or malformed token] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-02T14:24:23.064Z [w0] [Get user profile with an invalid or malformed token] [INFO] DELETE /Account/v1/User/d0da61b4-b1bb-44df-8baa-4f245c3eb280 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-02T14:24:16.825Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b2bd4494f98d86f87e56-e533c1170ef109b3681a",
+          "file": "api/get-user.api.spec.ts",
+          "line": 39,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "api/get-user.contract.spec.ts",
+      "file": "api/get-user.contract.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "GET /Account/v1/User/{UUID} success response matches schema",
+          "ok": true,
+          "tags": [
+            "contract",
+            "AUTH"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9069,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-02T14:24:26.599Z [w0] [GET /Account/v1/User/{UUID} success response matches schema] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-02T14:24:30.643Z [w0] [GET /Account/v1/User/{UUID} success response matches schema] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-02T14:24:31.098Z [w0] [GET /Account/v1/User/{UUID} success response matches schema] [INFO] GET /Account/v1/User/7a25210b-3540-4233-a1e3-b030d6bed362 -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-02T14:24:32.143Z [w0] [GET /Account/v1/User/{UUID} success response matches schema] [INFO] DELETE /Account/v1/User/7a25210b-3540-4233-a1e3-b030d6bed362 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-02T14:24:23.070Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a8aca4f3c5f83291ff47-47c4a5c015f20272a343",
+          "file": "api/get-user.contract.spec.ts",
+          "line": 5,
+          "column": 5
+        },
+        {
+          "title": "GET /Account/v1/User/{UUID} error response matches schema",
+          "ok": true,
+          "tags": [
+            "contract",
+            "AUTH"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3496,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-02T14:24:33.562Z [w0] [GET /Account/v1/User/{UUID} error response matches schema] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-02T14:24:33.892Z [w0] [GET /Account/v1/User/{UUID} error response matches schema] [INFO] GET /Account/v1/User/9a459e51-2383-4894-abc3-24c9cf20497a -> 401\n"
+                    },
+                    {
+                      "text": "2026-09-02T14:24:35.105Z [w0] [GET /Account/v1/User/{UUID} error response matches schema] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-02T14:24:35.649Z [w0] [GET /Account/v1/User/{UUID} error response matches schema] [INFO] DELETE /Account/v1/User/9a459e51-2383-4894-abc3-24c9cf20497a -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-02T14:24:32.149Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a8aca4f3c5f83291ff47-a5594ebaa638cac36726",
+          "file": "api/get-user.contract.spec.ts",
+          "line": 20,
+          "column": 5
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-09-02T14:24:05.853Z",
+    "duration": 29824.148,
+    "expected": 5,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
