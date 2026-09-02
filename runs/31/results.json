@@ -1,0 +1,398 @@
+{
+  "config": {
+    "argv": [
+      "/opt/hostedtoolcache/node/24.19.0/x64/bin/node",
+      "/home/runner/work/demoqa-test-automation/demoqa-test-automation/node_modules/.bin/playwright",
+      "test"
+    ],
+    "configFile": "/home/runner/work/demoqa-test-automation/demoqa-test-automation/playwright.config.ts",
+    "rootDir": "/home/runner/work/demoqa-test-automation/demoqa-test-automation/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/olenamkolesnik/demoqa-test-automation/commit/4007206837ae337481e6acaa899012a30fd79c96",
+        "commitHash": "4007206837ae337481e6acaa899012a30fd79c96",
+        "prHref": "https://github.com/olenamkolesnik/demoqa-test-automation/pull/15",
+        "prTitle": "Update package.json description and add node engine requirements",
+        "prBaseHash": "518f004d592d7253b93dc82ac60d1a63b94ad99c",
+        "buildHref": "https://github.com/olenamkolesnik/demoqa-test-automation/actions/runs/33648829666"
+      },
+      "gitCommit": {
+        "shortHash": "4007206",
+        "hash": "4007206837ae337481e6acaa899012a30fd79c96",
+        "subject": "Merge 62b3ef677ad8076baf560954b90d18245eb5a066 into 518f004d592d7253b93dc82ac60d1a63b94ad99c",
+        "body": "Merge 62b3ef677ad8076baf560954b90d18245eb5a066 into 518f004d592d7253b93dc82ac60d1a63b94ad99c\n",
+        "author": {
+          "name": "olenamkolesnik",
+          "email": "33692828+olenamkolesnik@users.noreply.github.com",
+          "time": 1788362940000
+        },
+        "committer": {
+          "name": "GitHub",
+          "email": "noreply@github.com",
+          "time": 1788362940000
+        },
+        "branch": "HEAD"
+      },
+      "gitDiff": "diff --git a/README.md b/README.md\nnew file mode 100644\nindex 0000000..ef1732a\n--- /dev/null\n+++ b/README.md\n@@ -0,0 +1,288 @@\n+# DemoQA Test Automation\n+\n+[![Playwright Tests](https://github.com/olenamkolesnik/demoqa-test-automation/actions/workflows/playwright.yml/badge.svg?branch=main)](https://github.com/olenamkolesnik/demoqa-test-automation/actions/workflows/playwright.yml)\n+[![Latest report](https://img.shields.io/badge/report-latest-2EAD33?logo=playwright&logoColor=white)](https://olenamkolesnik.github.io/demoqa-test-automation/)\n+[![Report history](https://img.shields.io/badge/report-history-blue)](https://olenamkolesnik.github.io/demoqa-test-automation/history.html)\n+[![Playwright](https://img.shields.io/badge/Playwright-1.62-2EAD33?logo=playwright&logoColor=white)](https://playwright.dev/)\n+[![TypeScript](https://img.shields.io/badge/TypeScript-6.0-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)\n+[![Node.js](https://img.shields.io/badge/Node.js-LTS-339933?logo=node.js&logoColor=white)](https://nodejs.org/)\n+\n+📊 **[Latest test report](https://olenamkolesnik.github.io/demoqa-test-automation/)** · **[Run history](https://olenamkolesnik.github.io/demoqa-test-automation/history.html)** — published automatically on every push to `main` and on every pull request.\n+\n+ISTQB-aligned test automation for the [DemoQA](https://demoqa.com) Book Store application, covering both the REST API and the web UI with TypeScript and Playwright.\n+\n+**API coverage** — account management (`/Account/v1`): user creation, token generation, authorization checks, and profile retrieval. Functional tests assert behaviour; separate contract tests validate response bodies against Zod schemas.\n+\n+**UI coverage** — planned: login, book catalogue browsing, collection management, and profile state. See [Current scope](#current-scope) for what is implemented today.\n+\n+Test design follows equivalence partitioning, boundary value analysis, and decision-table coverage of authorization states. Every automated test traces to a reviewed test case in `docs/test-cases/`, which in turn traces to a test condition in `docs/test-conditions/`.\n+\n+## Current scope\n+\n+| Area                          | Status                                                  |\n+| ----------------------------- | ------------------------------------------------------- |\n+| `GET /Account/v1/User/{UUID}` | Automated — 3 functional + 2 contract tests             |\n+| `POST /Account/v1/User`       | Specified in `docs/test-cases/`, not yet automated      |\n+| BookStore API (`/BookStore`)  | Specified in `docs/api-spec/`, not yet automated        |\n+| UI (all flows)                | Planned — `src/pages/` and `tests/ui/` are placeholders |\n+\n+## Project structure\n+\n+```\n+src/\n+  api/         Typed API clients — send requests, return the raw response, never assert\n+  types/       Zod schemas and the types inferred from them\n+  data/        Pure test-data factories (unique usernames, valid/invalid passwords)\n+  fixtures/    Setup and teardown — seed a user, hand it to the test, delete it after\n+  utils/       Cross-cutting helpers: logging, secret redaction, response parsing\n+  pages/       Page objects (UI — not yet populated)\n+tests/\n+  api/         *.api.spec.ts (functional) and *.contract.spec.ts (schema validation)\n+  ui/          UI specs (not yet populated)\n+docs/          Test plan, coding standards, API spec, test conditions and test cases\n+scripts/       CI maintenance — report publishing\n+```\n+\n+Each layer has one job and depends only on the layer below it: a test never constructs a\n+client directly, a client never asserts, a factory never makes a network call. The rules\n+and the reasoning behind them are in [`docs/coding-standards.md`](docs/coding-standards.md).\n+\n+---\n+\n+## Base setup\n+\n+### Prerequisites\n+\n+| Tool        | Minimum version             | Download                                 |\n+| ----------- | --------------------------- | ---------------------------------------- |\n+| **Node.js** | `>=22.22.1` — 24 LTS tested | <https://nodejs.org/en/download>         |\n+| **npm**     | Bundled with Node.js        | —                                        |\n+| **Git**     | Any recent version          | <https://git-scm.com/downloads>          |\n+| **VS Code** | Optional, recommended       | <https://code.visualstudio.com/download> |\n+\n+CI runs the current Node LTS (24.x). The `22.22.1` floor comes from `lint-staged`; ESLint additionally excludes 23.x, so use **22 LTS or 24 LTS** — odd-numbered Node releases are unsupported.\n+\n+Verify your installation:\n+\n+```bash\n+node --version\n+npm --version\n+git --version\n+```\n+\n+### Installation\n+\n+```bash\n+# 1. Clone the repository\n+git clone https://github.com/olenamkolesnik/demoqa-test-automation.git\n+cd demoqa-test-automation\n+\n+# 2. Install dependencies (uses package-lock.json for a reproducible install)\n+npm ci\n+\n+# 3. Install the Playwright browser\n+#    Only Chromium is configured; omit the argument to install all browsers.\n+npx playwright install --with-deps chromium\n+\n+# 4. Create your local environment file\n+cp .env.example .env\n+```\n+\n+The suite fails immediately with an explicit message if `.env` is missing or `BASE_URL` is unset — see [Environment variables](#environment-variables).\n+\n+---\n+\n+## How to use the test solution\n+\n+### VS Code setup\n+\n+Install the official **[Playwright Test for VS Code](https://marketplace.visualstudio.com/items?itemName=ms-playwright.playwright)** extension (`ms-playwright.playwright`). It adds:\n+\n+- A **Testing** sidebar to run or debug any test by clicking the gutter icon\n+- **Pick locator** — hover the running page to generate a locator\n+- **Record new** — generate a test by interacting with the browser\n+- Inline pass/fail annotations directly in the editor\n+\n+```bash\n+code --install-extension ms-playwright.playwright\n+```\n+\n+Recommended companions: `dbaeumer.vscode-eslint` and `esbenp.prettier-vscode`.\n+\n+### Test execution\n+\n+| Command                                       | Description                                                           |\n+| --------------------------------------------- | --------------------------------------------------------------------- |\n+| `npm test`                                    | Run the entire suite                                                  |\n+| `npm run test:api`                            | Run API tests only (`tests/api`)                                      |\n+| `npm run test:ui`                             | Run UI tests only — no tests yet, see [Current scope](#current-scope) |\n+| `npm run test:headed`                         | Run with a visible browser window                                     |\n+| `npm run test:debug`                          | Run with the Playwright Inspector attached                            |\n+| `npm run test:report`                         | Open the HTML report from the last run                                |\n+| `npx playwright test --grep @contract`        | Run only schema/contract tests                                        |\n+| `npx playwright test --grep @negative`        | Run only negative-path tests                                          |\n+| `npx playwright test --grep @AUTH-012`        | Run one specific test case by its traceability ID                     |\n+| `npx playwright test --grep-invert @contract` | Exclude a tag — here, functional tests only                           |\n+| `npx playwright test get-user`                | Run tests whose file path matches a substring                         |\n+| `npx playwright test --repeat-each 5`         | Re-run tests repeatedly to expose flakiness                           |\n+| `npx playwright test --workers 1`             | Run serially — useful when debugging shared-state interference        |\n+\n+Available tags: `@positive`, `@negative`, `@contract`, `@AUTH`, plus one per test case (`@AUTH-012`, `@AUTH-013`, `@AUTH-014`) linking each test back to `docs/test-cases/`.\n+\n+### Playwright-specific commands\n+\n+**Record a test (Codegen)** — opens a browser and writes test code as you interact:\n+\n+```bash\n+# Record against the configured base URL\n+npx playwright codegen https://demoqa.com\n+\n+# Record and save straight to a file\n+npx playwright codegen --target typescript -o tests/ui/new-test.spec.ts https://demoqa.com\n+```\n+\n+**UI Mode** — the recommended way to develop and debug tests. Provides a watch mode, time-travel through each step, a DOM snapshot per action, and a locator picker:\n+\n+```bash\n+npx playwright test --ui\n+```\n+\n+**Trace viewer** — step through a recorded run with a DOM snapshot per action:\n+\n+```bash\n+# Force a trace locally (config records only on the first retry, and retries\n+# are disabled outside CI, so a plain local failure produces no trace)\n+npx playwright test --trace on\n+\n+npx playwright show-trace test-results/<test-name>/trace.zip\n+```\n+\n+In CI, `retries: 2` means a failing test is retried and its trace is captured automatically — download the `playwright-report` artifact from the run to inspect it.\n+\n+**Update visual snapshots** — regenerate baseline screenshots after an intentional UI change:\n+\n+```bash\n+# Update every snapshot\n+npx playwright test --update-snapshots\n+\n+# Update snapshots for one spec only\n+npx playwright test tests/ui/book-store.spec.ts --update-snapshots\n+```\n+\n+> **Note:** this project does not yet contain visual regression tests. The command is documented for when UI coverage with `toHaveScreenshot()` is added. Review every regenerated baseline before committing — `--update-snapshots` accepts whatever the page currently renders, including a genuine regression.\n+\n+---\n+\n+## Authorization data & environment variables\n+\n+### Environment variables\n+\n+All environment-specific configuration lives in a local `.env` file. It is listed in `.gitignore` and **must never be committed**.\n+\n+```bash\n+cp .env.example .env\n+```\n+\n+| Variable   | Required | Description                                                                       |\n+| ---------- | -------- | --------------------------------------------------------------------------------- |\n+| `BASE_URL` | Yes      | Base URL of the system under test. `playwright.config.ts` fails fast if unset.    |\n+| `DEBUG`    | No       | Set to the literal string `true` to log request and response bodies. Default off. |\n+\n+In CI, `BASE_URL` is set directly in `.github/workflows/playwright.yml`. Any future secret must be stored as a **GitHub Actions repository secret** and referenced with `${{ secrets.NAME }}` — never hard-coded in the workflow.\n+\n+### Authorization data\n+\n+The system under test is a **public sandbox with no shared credentials**. Each test creates its own user through the API and deletes it during teardown, so there is no shared account to obtain or rotate.\n+\n+Test users are generated by `src/data/user.factory.ts`:\n+\n+- **Usernames** are prefixed `qa_` and suffixed with a random value, so parallel workers never collide and any orphaned record left by a crashed run is identifiable.\n+- **Passwords** are constructed to satisfy every complexity rule by design, rather than relying on a random generator that may not.\n+\n+Tests never read credentials from `.env`. If this solution is ever pointed at an environment that **does** require shared credentials, add them to `.env` for local runs and store them as GitHub Actions repository secrets for CI — never commit them, and never share them over chat.\n+\n+### Session state (`storageState`)\n+\n+Playwright can persist an authenticated browser session to a JSON file and reuse it, so each test starts logged in without repeating the login flow through the UI:\n+\n+```ts\n+// Save once in a setup project\n+await page.context().storageState({ path: 'playwright/.auth/user.json' });\n+\n+// Reuse in playwright.config.ts\n+use: {\n+  storageState: 'playwright/.auth/user.json';\n+}\n+```\n+\n+> **Note:** not yet implemented. Current API tests authenticate with a bearer token acquired per test via fixtures (`src/fixtures/account.fixtures.ts`), which needs no stored browser state. `storageState` becomes relevant once UI tests exist. When added, `playwright/.auth/` is already gitignored — an auth state file is a live credential and must not be committed.\n+\n+---\n+\n+## CI & reporting\n+\n+The GitHub Actions workflow runs the suite on every push to `main` and on every pull request.\n+\n+- **Pull requests** — the report is published and a bot comments the direct link on the PR.\n+- **`main`** — the report is published as the site's front page.\n+\n+| Destination                                                                         | Contents                               |\n+| ----------------------------------------------------------------------------------- | -------------------------------------- |\n+| [Latest report](https://olenamkolesnik.github.io/demoqa-test-automation/)           | Latest report from `main`              |\n+| [Run history](https://olenamkolesnik.github.io/demoqa-test-automation/history.html) | Index of recent runs, with pass/fail   |\n+| `https://olenamkolesnik.github.io/demoqa-test-automation/runs/<run-number>/`        | Permanent archive of an individual run |\n+\n+## Contributing\n+\n+Branch from `main`, open a pull request, and squash merge once CI is green.\n+\n+```bash\n+git checkout main && git pull\n+git checkout -b feat/short-description   # feat/ | docs/ | chore/\n+# ...changes...\n+git add -A && git commit -m \"Describe the change\"\n+git push -u origin feat/short-description\n+\n+# after the pull request is squash merged\n+git checkout main && git pull\n+git branch -D feat/short-description\n+```\n+\n+`main` is protected: the Playwright check must pass before a pull request can be merged. A Husky pre-commit hook runs ESLint and Prettier on staged files.\n+\n+> Squash merging rewrites the branch's commits into one, so `git branch -d` will not recognise it as merged — use `-D`.\n+\n+Before writing code, read [`docs/coding-standards.md`](docs/coding-standards.md); before adding coverage, read [`docs/test-plan.md`](docs/test-plan.md).\n+\n+---\n+\n+## Useful links & contacts\n+\n+### Project documentation\n+\n+| Document          | Location                                                                         |\n+| ----------------- | -------------------------------------------------------------------------------- |\n+| Test plan         | [`docs/test-plan.md`](docs/test-plan.md)                                         |\n+| Coding standards  | [`docs/coding-standards.md`](docs/coding-standards.md)                           |\n+| API specification | [`docs/api-spec/`](docs/api-spec/)                                               |\n+| Test conditions   | [`docs/test-conditions/`](docs/test-conditions/)                                 |\n+| Test cases        | [`docs/test-cases/`](docs/test-cases/)                                           |\n+| Issue tracker     | [GitHub Issues](https://github.com/olenamkolesnik/demoqa-test-automation/issues) |\n+\n+### External documentation\n+\n+- [Playwright documentation](https://playwright.dev/docs/intro)\n+- [Playwright API reference](https://playwright.dev/docs/api/class-playwright)\n+- [Playwright best practices](https://playwright.dev/docs/best-practices)\n+- [Playwright test annotations & tags](https://playwright.dev/docs/test-annotations)\n+- [TypeScript handbook](https://www.typescriptlang.org/docs/)\n+- [Zod documentation](https://zod.dev/)\n+- [System under test — DemoQA](https://demoqa.com)\n+\n+### Contributors & contacts\n+\n+| Role             | Name           | Contact                                                                                                   |\n+| ---------------- | -------------- | --------------------------------------------------------------------------------------------------------- |\n+| Automation Owner | Olena Kolesnik | [GitHub](https://github.com/olenamkolesnik) · [olenamkolesnik@gmail.com](mailto:olenamkolesnik@gmail.com) |\n+\n+Questions, suggestions, or bug reports: open an [issue](https://github.com/olenamkolesnik/demoqa-test-automation/issues) or a pull request.\ndiff --git a/package.json b/package.json\nindex bd6e480..dd15793 100644\n--- a/package.json\n+++ b/package.json\n@@ -1,8 +1,11 @@\n {\n   \"name\": \"demoqa-test-automation\",\n   \"version\": \"1.0.0\",\n-  \"description\": \"\",\n+  \"description\": \"ISTQB-aligned Playwright test automation for the DemoQA Book Store application (API and UI).\",\n   \"main\": \"index.js\",\n+  \"engines\": {\n+    \"node\": \"^22.22.1 || >=24\"\n+  },\n   \"scripts\": {\n     \"test\": \"playwright test\",\n     \"test:ui\": \"playwright test tests/ui\",",
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/demoqa-test-automation/demoqa-test-automation/test-results",
+        "repeatEach": 1,
+        "retries": 2,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/olenamkolesnik/demoqa-test-automation/commit/4007206837ae337481e6acaa899012a30fd79c96",
+            "commitHash": "4007206837ae337481e6acaa899012a30fd79c96",
+            "prHref": "https://github.com/olenamkolesnik/demoqa-test-automation/pull/15",
+            "prTitle": "Update package.json description and add node engine requirements",
+            "prBaseHash": "518f004d592d7253b93dc82ac60d1a63b94ad99c",
+            "buildHref": "https://github.com/olenamkolesnik/demoqa-test-automation/actions/runs/33648829666"
+          },
+          "gitCommit": {
+            "shortHash": "4007206",
+            "hash": "4007206837ae337481e6acaa899012a30fd79c96",
+            "subject": "Merge 62b3ef677ad8076baf560954b90d18245eb5a066 into 518f004d592d7253b93dc82ac60d1a63b94ad99c",
+            "body": "Merge 62b3ef677ad8076baf560954b90d18245eb5a066 into 518f004d592d7253b93dc82ac60d1a63b94ad99c\n",
+            "author": {
+              "name": "olenamkolesnik",
+              "email": "33692828+olenamkolesnik@users.noreply.github.com",
+              "time": 1788362940000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1788362940000
+            },
+            "branch": "HEAD"
+          },
+          "gitDiff": "diff --git a/README.md b/README.md\nnew file mode 100644\nindex 0000000..ef1732a\n--- /dev/null\n+++ b/README.md\n@@ -0,0 +1,288 @@\n+# DemoQA Test Automation\n+\n+[![Playwright Tests](https://github.com/olenamkolesnik/demoqa-test-automation/actions/workflows/playwright.yml/badge.svg?branch=main)](https://github.com/olenamkolesnik/demoqa-test-automation/actions/workflows/playwright.yml)\n+[![Latest report](https://img.shields.io/badge/report-latest-2EAD33?logo=playwright&logoColor=white)](https://olenamkolesnik.github.io/demoqa-test-automation/)\n+[![Report history](https://img.shields.io/badge/report-history-blue)](https://olenamkolesnik.github.io/demoqa-test-automation/history.html)\n+[![Playwright](https://img.shields.io/badge/Playwright-1.62-2EAD33?logo=playwright&logoColor=white)](https://playwright.dev/)\n+[![TypeScript](https://img.shields.io/badge/TypeScript-6.0-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)\n+[![Node.js](https://img.shields.io/badge/Node.js-LTS-339933?logo=node.js&logoColor=white)](https://nodejs.org/)\n+\n+📊 **[Latest test report](https://olenamkolesnik.github.io/demoqa-test-automation/)** · **[Run history](https://olenamkolesnik.github.io/demoqa-test-automation/history.html)** — published automatically on every push to `main` and on every pull request.\n+\n+ISTQB-aligned test automation for the [DemoQA](https://demoqa.com) Book Store application, covering both the REST API and the web UI with TypeScript and Playwright.\n+\n+**API coverage** — account management (`/Account/v1`): user creation, token generation, authorization checks, and profile retrieval. Functional tests assert behaviour; separate contract tests validate response bodies against Zod schemas.\n+\n+**UI coverage** — planned: login, book catalogue browsing, collection management, and profile state. See [Current scope](#current-scope) for what is implemented today.\n+\n+Test design follows equivalence partitioning, boundary value analysis, and decision-table coverage of authorization states. Every automated test traces to a reviewed test case in `docs/test-cases/`, which in turn traces to a test condition in `docs/test-conditions/`.\n+\n+## Current scope\n+\n+| Area                          | Status                                                  |\n+| ----------------------------- | ------------------------------------------------------- |\n+| `GET /Account/v1/User/{UUID}` | Automated — 3 functional + 2 contract tests             |\n+| `POST /Account/v1/User`       | Specified in `docs/test-cases/`, not yet automated      |\n+| BookStore API (`/BookStore`)  | Specified in `docs/api-spec/`, not yet automated        |\n+| UI (all flows)                | Planned — `src/pages/` and `tests/ui/` are placeholders |\n+\n+## Project structure\n+\n+```\n+src/\n+  api/         Typed API clients — send requests, return the raw response, never assert\n+  types/       Zod schemas and the types inferred from them\n+  data/        Pure test-data factories (unique usernames, valid/invalid passwords)\n+  fixtures/    Setup and teardown — seed a user, hand it to the test, delete it after\n+  utils/       Cross-cutting helpers: logging, secret redaction, response parsing\n+  pages/       Page objects (UI — not yet populated)\n+tests/\n+  api/         *.api.spec.ts (functional) and *.contract.spec.ts (schema validation)\n+  ui/          UI specs (not yet populated)\n+docs/          Test plan, coding standards, API spec, test conditions and test cases\n+scripts/       CI maintenance — report publishing\n+```\n+\n+Each layer has one job and depends only on the layer below it: a test never constructs a\n+client directly, a client never asserts, a factory never makes a network call. The rules\n+and the reasoning behind them are in [`docs/coding-standards.md`](docs/coding-standards.md).\n+\n+---\n+\n+## Base setup\n+\n+### Prerequisites\n+\n+| Tool        | Minimum version             | Download                                 |\n+| ----------- | --------------------------- | ---------------------------------------- |\n+| **Node.js** | `>=22.22.1` — 24 LTS tested | <https://nodejs.org/en/download>         |\n+| **npm**     | Bundled with Node.js        | —                                        |\n+| **Git**     | Any recent version          | <https://git-scm.com/downloads>          |\n+| **VS Code** | Optional, recommended       | <https://code.visualstudio.com/download> |\n+\n+CI runs the current Node LTS (24.x). The `22.22.1` floor comes from `lint-staged`; ESLint additionally excludes 23.x, so use **22 LTS or 24 LTS** — odd-numbered Node releases are unsupported.\n+\n+Verify your installation:\n+\n+```bash\n+node --version\n+npm --version\n+git --version\n+```\n+\n+### Installation\n+\n+```bash\n+# 1. Clone the repository\n+git clone https://github.com/olenamkolesnik/demoqa-test-automation.git\n+cd demoqa-test-automation\n+\n+# 2. Install dependencies (uses package-lock.json for a reproducible install)\n+npm ci\n+\n+# 3. Install the Playwright browser\n+#    Only Chromium is configured; omit the argument to install all browsers.\n+npx playwright install --with-deps chromium\n+\n+# 4. Create your local environment file\n+cp .env.example .env\n+```\n+\n+The suite fails immediately with an explicit message if `.env` is missing or `BASE_URL` is unset — see [Environment variables](#environment-variables).\n+\n+---\n+\n+## How to use the test solution\n+\n+### VS Code setup\n+\n+Install the official **[Playwright Test for VS Code](https://marketplace.visualstudio.com/items?itemName=ms-playwright.playwright)** extension (`ms-playwright.playwright`). It adds:\n+\n+- A **Testing** sidebar to run or debug any test by clicking the gutter icon\n+- **Pick locator** — hover the running page to generate a locator\n+- **Record new** — generate a test by interacting with the browser\n+- Inline pass/fail annotations directly in the editor\n+\n+```bash\n+code --install-extension ms-playwright.playwright\n+```\n+\n+Recommended companions: `dbaeumer.vscode-eslint` and `esbenp.prettier-vscode`.\n+\n+### Test execution\n+\n+| Command                                       | Description                                                           |\n+| --------------------------------------------- | --------------------------------------------------------------------- |\n+| `npm test`                                    | Run the entire suite                                                  |\n+| `npm run test:api`                            | Run API tests only (`tests/api`)                                      |\n+| `npm run test:ui`                             | Run UI tests only — no tests yet, see [Current scope](#current-scope) |\n+| `npm run test:headed`                         | Run with a visible browser window                                     |\n+| `npm run test:debug`                          | Run with the Playwright Inspector attached                            |\n+| `npm run test:report`                         | Open the HTML report from the last run                                |\n+| `npx playwright test --grep @contract`        | Run only schema/contract tests                                        |\n+| `npx playwright test --grep @negative`        | Run only negative-path tests                                          |\n+| `npx playwright test --grep @AUTH-012`        | Run one specific test case by its traceability ID                     |\n+| `npx playwright test --grep-invert @contract` | Exclude a tag — here, functional tests only                           |\n+| `npx playwright test get-user`                | Run tests whose file path matches a substring                         |\n+| `npx playwright test --repeat-each 5`         | Re-run tests repeatedly to expose flakiness                           |\n+| `npx playwright test --workers 1`             | Run serially — useful when debugging shared-state interference        |\n+\n+Available tags: `@positive`, `@negative`, `@contract`, `@AUTH`, plus one per test case (`@AUTH-012`, `@AUTH-013`, `@AUTH-014`) linking each test back to `docs/test-cases/`.\n+\n+### Playwright-specific commands\n+\n+**Record a test (Codegen)** — opens a browser and writes test code as you interact:\n+\n+```bash\n+# Record against the configured base URL\n+npx playwright codegen https://demoqa.com\n+\n+# Record and save straight to a file\n+npx playwright codegen --target typescript -o tests/ui/new-test.spec.ts https://demoqa.com\n+```\n+\n+**UI Mode** — the recommended way to develop and debug tests. Provides a watch mode, time-travel through each step, a DOM snapshot per action, and a locator picker:\n+\n+```bash\n+npx playwright test --ui\n+```\n+\n+**Trace viewer** — step through a recorded run with a DOM snapshot per action:\n+\n+```bash\n+# Force a trace locally (config records only on the first retry, and retries\n+# are disabled outside CI, so a plain local failure produces no trace)\n+npx playwright test --trace on\n+\n+npx playwright show-trace test-results/<test-name>/trace.zip\n+```\n+\n+In CI, `retries: 2` means a failing test is retried and its trace is captured automatically — download the `playwright-report` artifact from the run to inspect it.\n+\n+**Update visual snapshots** — regenerate baseline screenshots after an intentional UI change:\n+\n+```bash\n+# Update every snapshot\n+npx playwright test --update-snapshots\n+\n+# Update snapshots for one spec only\n+npx playwright test tests/ui/book-store.spec.ts --update-snapshots\n+```\n+\n+> **Note:** this project does not yet contain visual regression tests. The command is documented for when UI coverage with `toHaveScreenshot()` is added. Review every regenerated baseline before committing — `--update-snapshots` accepts whatever the page currently renders, including a genuine regression.\n+\n+---\n+\n+## Authorization data & environment variables\n+\n+### Environment variables\n+\n+All environment-specific configuration lives in a local `.env` file. It is listed in `.gitignore` and **must never be committed**.\n+\n+```bash\n+cp .env.example .env\n+```\n+\n+| Variable   | Required | Description                                                                       |\n+| ---------- | -------- | --------------------------------------------------------------------------------- |\n+| `BASE_URL` | Yes      | Base URL of the system under test. `playwright.config.ts` fails fast if unset.    |\n+| `DEBUG`    | No       | Set to the literal string `true` to log request and response bodies. Default off. |\n+\n+In CI, `BASE_URL` is set directly in `.github/workflows/playwright.yml`. Any future secret must be stored as a **GitHub Actions repository secret** and referenced with `${{ secrets.NAME }}` — never hard-coded in the workflow.\n+\n+### Authorization data\n+\n+The system under test is a **public sandbox with no shared credentials**. Each test creates its own user through the API and deletes it during teardown, so there is no shared account to obtain or rotate.\n+\n+Test users are generated by `src/data/user.factory.ts`:\n+\n+- **Usernames** are prefixed `qa_` and suffixed with a random value, so parallel workers never collide and any orphaned record left by a crashed run is identifiable.\n+- **Passwords** are constructed to satisfy every complexity rule by design, rather than relying on a random generator that may not.\n+\n+Tests never read credentials from `.env`. If this solution is ever pointed at an environment that **does** require shared credentials, add them to `.env` for local runs and store them as GitHub Actions repository secrets for CI — never commit them, and never share them over chat.\n+\n+### Session state (`storageState`)\n+\n+Playwright can persist an authenticated browser session to a JSON file and reuse it, so each test starts logged in without repeating the login flow through the UI:\n+\n+```ts\n+// Save once in a setup project\n+await page.context().storageState({ path: 'playwright/.auth/user.json' });\n+\n+// Reuse in playwright.config.ts\n+use: {\n+  storageState: 'playwright/.auth/user.json';\n+}\n+```\n+\n+> **Note:** not yet implemented. Current API tests authenticate with a bearer token acquired per test via fixtures (`src/fixtures/account.fixtures.ts`), which needs no stored browser state. `storageState` becomes relevant once UI tests exist. When added, `playwright/.auth/` is already gitignored — an auth state file is a live credential and must not be committed.\n+\n+---\n+\n+## CI & reporting\n+\n+The GitHub Actions workflow runs the suite on every push to `main` and on every pull request.\n+\n+- **Pull requests** — the report is published and a bot comments the direct link on the PR.\n+- **`main`** — the report is published as the site's front page.\n+\n+| Destination                                                                         | Contents                               |\n+| ----------------------------------------------------------------------------------- | -------------------------------------- |\n+| [Latest report](https://olenamkolesnik.github.io/demoqa-test-automation/)           | Latest report from `main`              |\n+| [Run history](https://olenamkolesnik.github.io/demoqa-test-automation/history.html) | Index of recent runs, with pass/fail   |\n+| `https://olenamkolesnik.github.io/demoqa-test-automation/runs/<run-number>/`        | Permanent archive of an individual run |\n+\n+## Contributing\n+\n+Branch from `main`, open a pull request, and squash merge once CI is green.\n+\n+```bash\n+git checkout main && git pull\n+git checkout -b feat/short-description   # feat/ | docs/ | chore/\n+# ...changes...\n+git add -A && git commit -m \"Describe the change\"\n+git push -u origin feat/short-description\n+\n+# after the pull request is squash merged\n+git checkout main && git pull\n+git branch -D feat/short-description\n+```\n+\n+`main` is protected: the Playwright check must pass before a pull request can be merged. A Husky pre-commit hook runs ESLint and Prettier on staged files.\n+\n+> Squash merging rewrites the branch's commits into one, so `git branch -d` will not recognise it as merged — use `-D`.\n+\n+Before writing code, read [`docs/coding-standards.md`](docs/coding-standards.md); before adding coverage, read [`docs/test-plan.md`](docs/test-plan.md).\n+\n+---\n+\n+## Useful links & contacts\n+\n+### Project documentation\n+\n+| Document          | Location                                                                         |\n+| ----------------- | -------------------------------------------------------------------------------- |\n+| Test plan         | [`docs/test-plan.md`](docs/test-plan.md)                                         |\n+| Coding standards  | [`docs/coding-standards.md`](docs/coding-standards.md)                           |\n+| API specification | [`docs/api-spec/`](docs/api-spec/)                                               |\n+| Test conditions   | [`docs/test-conditions/`](docs/test-conditions/)                                 |\n+| Test cases        | [`docs/test-cases/`](docs/test-cases/)                                           |\n+| Issue tracker     | [GitHub Issues](https://github.com/olenamkolesnik/demoqa-test-automation/issues) |\n+\n+### External documentation\n+\n+- [Playwright documentation](https://playwright.dev/docs/intro)\n+- [Playwright API reference](https://playwright.dev/docs/api/class-playwright)\n+- [Playwright best practices](https://playwright.dev/docs/best-practices)\n+- [Playwright test annotations & tags](https://playwright.dev/docs/test-annotations)\n+- [TypeScript handbook](https://www.typescriptlang.org/docs/)\n+- [Zod documentation](https://zod.dev/)\n+- [System under test — DemoQA](https://demoqa.com)\n+\n+### Contributors & contacts\n+\n+| Role             | Name           | Contact                                                                                                   |\n+| ---------------- | -------------- | --------------------------------------------------------------------------------------------------------- |\n+| Automation Owner | Olena Kolesnik | [GitHub](https://github.com/olenamkolesnik) · [olenamkolesnik@gmail.com](mailto:olenamkolesnik@gmail.com) |\n+\n+Questions, suggestions, or bug reports: open an [issue](https://github.com/olenamkolesnik/demoqa-test-automation/issues) or a pull request.\ndiff --git a/package.json b/package.json\nindex bd6e480..dd15793 100644\n--- a/package.json\n+++ b/package.json\n@@ -1,8 +1,11 @@\n {\n   \"name\": \"demoqa-test-automation\",\n   \"version\": \"1.0.0\",\n-  \"description\": \"\",\n+  \"description\": \"ISTQB-aligned Playwright test automation for the DemoQA Book Store application (API and UI).\",\n   \"main\": \"index.js\",\n+  \"engines\": {\n+    \"node\": \"^22.22.1 || >=24\"\n+  },\n   \"scripts\": {\n     \"test\": \"playwright test\",\n     \"test:ui\": \"playwright test tests/ui\",",
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/runner/work/demoqa-test-automation/demoqa-test-automation/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "html",
+        {
+          "open": "never"
+        }
+      ],
+      [
+        "github",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "playwright-report/results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "api/get-user.api.spec.ts",
+      "file": "api/get-user.api.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Get own user profile with a valid token",
+          "ok": true,
+          "tags": [
+            "AUTH-012",
+            "positive"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3953,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-02T15:29:47.608Z [w0] [Get own user profile with a valid token] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-02T15:29:48.709Z [w0] [Get own user profile with a valid token] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-02T15:29:48.996Z [w0] [Get own user profile with a valid token] [INFO] GET /Account/v1/User/1f3d760d-5aa5-4dd7-a3c7-728da8bf8b27 -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-02T15:29:49.694Z [w0] [Get own user profile with a valid token] [INFO] DELETE /Account/v1/User/1f3d760d-5aa5-4dd7-a3c7-728da8bf8b27 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-02T15:29:45.719Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b2bd4494f98d86f87e56-32ad40df7066e9bdb050",
+          "file": "api/get-user.api.spec.ts",
+          "line": 6,
+          "column": 5
+        },
+        {
+          "title": "Get user profile with no Authorization header",
+          "ok": true,
+          "tags": [
+            "AUTH-013",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3925,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-02T15:29:50.829Z [w0] [Get user profile with no Authorization header] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-02T15:29:52.115Z [w0] [Get user profile with no Authorization header] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-02T15:29:53.631Z [w0] [Get user profile with no Authorization header] [INFO] DELETE /Account/v1/User/cf60ffa6-9d3f-4f62-bff7-ee769a4be6a9 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-02T15:29:49.703Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b2bd4494f98d86f87e56-3fb93e5e045cf0980325",
+          "file": "api/get-user.api.spec.ts",
+          "line": 23,
+          "column": 5
+        },
+        {
+          "title": "Get user profile with an invalid or malformed token",
+          "ok": true,
+          "tags": [
+            "AUTH-014",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4454,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-02T15:29:55.046Z [w0] [Get user profile with an invalid or malformed token] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-02T15:29:55.376Z [w0] [Get user profile with an invalid or malformed token] [INFO] GET /Account/v1/User/a5bd8b9f-53b0-4aca-acef-a406494c97f5 -> 401\n"
+                    },
+                    {
+                      "text": "2026-09-02T15:29:56.676Z [w0] [Get user profile with an invalid or malformed token] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-02T15:29:58.091Z [w0] [Get user profile with an invalid or malformed token] [INFO] DELETE /Account/v1/User/a5bd8b9f-53b0-4aca-acef-a406494c97f5 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-02T15:29:53.636Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b2bd4494f98d86f87e56-e533c1170ef109b3681a",
+          "file": "api/get-user.api.spec.ts",
+          "line": 39,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "api/get-user.contract.spec.ts",
+      "file": "api/get-user.contract.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "GET /Account/v1/User/{UUID} success response matches schema",
+          "ok": true,
+          "tags": [
+            "contract",
+            "AUTH"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2827,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-02T15:29:59.187Z [w0] [GET /Account/v1/User/{UUID} success response matches schema] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-02T15:30:00.130Z [w0] [GET /Account/v1/User/{UUID} success response matches schema] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-02T15:30:00.439Z [w0] [GET /Account/v1/User/{UUID} success response matches schema] [INFO] GET /Account/v1/User/21bd3f7e-44f4-4d65-aa93-323d42fa48c0 -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-02T15:30:00.926Z [w0] [GET /Account/v1/User/{UUID} success response matches schema] [INFO] DELETE /Account/v1/User/21bd3f7e-44f4-4d65-aa93-323d42fa48c0 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-02T15:29:58.097Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a8aca4f3c5f83291ff47-47c4a5c015f20272a343",
+          "file": "api/get-user.contract.spec.ts",
+          "line": 5,
+          "column": 5
+        },
+        {
+          "title": "GET /Account/v1/User/{UUID} error response matches schema",
+          "ok": true,
+          "tags": [
+            "contract",
+            "AUTH"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5633,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-02T15:30:02.024Z [w0] [GET /Account/v1/User/{UUID} error response matches schema] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-02T15:30:03.037Z [w0] [GET /Account/v1/User/{UUID} error response matches schema] [INFO] GET /Account/v1/User/151123da-a0a6-4533-b76e-9922220ba234 -> 401\n"
+                    },
+                    {
+                      "text": "2026-09-02T15:30:05.433Z [w0] [GET /Account/v1/User/{UUID} error response matches schema] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-02T15:30:06.568Z [w0] [GET /Account/v1/User/{UUID} error response matches schema] [INFO] DELETE /Account/v1/User/151123da-a0a6-4533-b76e-9922220ba234 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-02T15:30:00.931Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a8aca4f3c5f83291ff47-a5594ebaa638cac36726",
+          "file": "api/get-user.contract.spec.ts",
+          "line": 20,
+          "column": 5
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-09-02T15:29:44.593Z",
+    "duration": 21996.734,
+    "expected": 5,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
