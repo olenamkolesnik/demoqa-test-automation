@@ -174,7 +174,7 @@ npx playwright test --grep-invert @negative
 Naming the patterns already implicit in the layer structure above, so the vocabulary is explicit rather than left for a reader to infer from the shapes alone:
 
 - **Factory** — `src/data/*.factory.ts`. `buildNewUserPayload()`, `buildValidPassword()`, etc. construct fully-formed objects so callers never assemble a request payload by hand field-by-field. Kept a plain-function factory (not a class) since there's no polymorphic family of products to select between — just one shape per resource.
-- **Facade** — `BaseApiClient` (and every class extending it). A test or fixture calls one method (`client.getUser(userId, token)`) that internally hides request construction, logging, and redaction — the caller never touches `APIRequestContext`, `logger`, or `redact()` directly. This is also why "API clients never assert" matters for the pattern to hold: a facade that also threw on your behalf would be leaking the complexity it exists to hide.
+- **Facade** — `BaseApiClient` (and every class extending it). A test or fixture calls one method (`client.getUser({ userId, token })`) that internally hides request construction, logging, and redaction — the caller never touches `APIRequestContext`, `logger`, or `redact()` directly. This is also why "API clients never assert" matters for the pattern to hold: a facade that also threw on your behalf would be leaking the complexity it exists to hide.
 - **Page Object (Model)** — `src/pages/`, composing **Component** objects (`src/components/`) for widgets shared across pages. See UI test architecture below for the full shape; this is the standard UI-automation pattern, not a project-specific invention, which is exactly why the tests/pages/components/flows layering should look familiar to anyone who has used Playwright or Selenium's POM conventions before.
 - **Flow (Journey) object** — `src/flows/`, one level above Page Objects. See "Flows compose page objects" below for the full shape. Not a universally standardized name the way Page Object is — some teams call this a "workflow" or "scenario" object — but the role is the same wherever it appears: a class that orchestrates a multi-page sequence by composing page objects, exposing one method per journey rather than per page, so a test that needs "log in" doesn't re-describe the login page's steps itself.
 - **Builder-ish factories with overrides** — `buildNewUserPayload(overrides?)` accepts a partial override object rather than requiring every field on every call, similar in spirit to a Builder without the fluent chaining — appropriate here because the shape being built is small and flat, not deep enough to need a true Builder's step-by-step assembly.
@@ -188,12 +188,12 @@ An identifier should say what it holds or does without needing its surrounding l
 
 ```ts
 // Bad — says nothing about what's inside
-const r = await client.getUser(userId, token);
+const r = await client.getUser({ userId, token });
 const temp = buildNewUserPayload();
 const data2 = await parseJsonBody(response, GetUserResponseSchema);
 
 // Good — the name is the documentation
-const getUserResponse = await client.getUser(userId, token);
+const getUserResponse = await client.getUser({ userId, token });
 const newUserPayload = buildNewUserPayload();
 const userProfile = await parseJsonBody(response, GetUserResponseSchema);
 ```

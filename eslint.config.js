@@ -16,6 +16,20 @@ module.exports = tseslint.config(
     },
   },
   {
+    // CI maintenance scripts run under plain Node, outside the test framework —
+    // console is their only output channel, so the src/ ban doesn't apply.
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+      },
+    },
+    rules: {
+      'no-console': 'off',
+    },
+  },
+  {
     // Type-aware TS rules (e.g. no-floating-promises) — scoped to .ts only so
     // eslint.config.js (plain CommonJS, not part of tsconfig) isn't affected.
     files: ['**/*.ts'],

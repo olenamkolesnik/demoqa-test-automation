@@ -1,7 +1,17 @@
 import { defineConfig, devices } from '@playwright/test';
 import dotenv from 'dotenv';
+import './src/utils/matchers.util';
 
 dotenv.config();
+
+// Fail fast with an actionable message rather than letting an undefined
+// baseURL surface later as an opaque "Invalid URL" inside an API client.
+const baseURL = process.env.BASE_URL;
+if (!baseURL) {
+  throw new Error(
+    'BASE_URL is not set. Copy .env.example to .env for local runs, or set it in the CI workflow environment.'
+  );
+}
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -17,10 +27,19 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
+  reporter: process.env.CI
+    ? [
+        // never auto-open the report in CI — it would hang the runner
+        ['html', { open: 'never' }],
+        // renders pass/fail counts directly in the GitHub Actions run summary
+        ['github'],
+        // machine-readable results, published alongside the HTML report
+        ['json', { outputFile: 'playwright-report/results.json' }],
+      ]
+    : [['html', { open: 'on-failure' }], ['list']],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
-    baseURL: process.env.BASE_URL,
+    baseURL,
     trace: 'on-first-retry', //trace collection on retries
     video: 'retain-on-failure', //record videos only when tests fail
   },

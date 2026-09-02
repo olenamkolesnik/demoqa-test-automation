@@ -1,0 +1,16 @@
+# Normalise line endings so `prettier --check` (endOfLine: "lf" by default)
+# gives the same result on a Windows dev machine and on Linux CI.
+# Without this, core.autocrlf=true checks files out as CRLF locally while CI
+# sees LF, and the format gate fails on every file.
+* text=auto eol=lf
+
+# Binary files must never be normalised.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.zip binary
+*.webm binary

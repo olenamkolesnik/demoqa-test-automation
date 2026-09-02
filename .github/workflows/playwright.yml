@@ -1,27 +1,123 @@
 name: Playwright Tests
+
 on:
   push:
     branches: [main, master]
   pull_request:
     branches: [main, master]
+  # Allows re-publishing a report or running against the sandbox on demand.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
 jobs:
   test:
-    timeout-minutes: 60
+    name: Playwright tests
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # DemoQA is a public sandbox with no credentials, so this is not a secret.
+      # Kept as a workflow-level env var so the SUT can be repointed in one place.
+      BASE_URL: https://demoqa.com
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: lts/*
-      - name: Install dependencies
-        run: npm ci
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
+          cache: npm
+      - run: npm ci
+
+      # Only Chromium is configured in playwright.config.ts — installing the
+      # full browser set would add several minutes per run for no coverage.
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
       - name: Run Playwright tests
         run: npx playwright test
-      - uses: actions/upload-artifact@v4
+
+      # Uploaded on failure too — the report is most useful precisely when the
+      # run is red. This is how PR runs get their report, since PRs don't publish.
+      - name: Upload HTML report
+        uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
-          name: playwright-report
+          name: playwright-report-${{ github.run_number }}
           path: playwright-report/
           retention-days: 30
+
+  # Publishes to the gh-pages branch: root = newest report, /runs/<n>/ = archive.
+  # main only — a PR publish would overwrite main's report, and a fork PR would
+  # fail outright on the missing write permission.
+  publish-report:
+    name: Publish report to Pages
+    needs: test
+    # `always()` so a failing test run still publishes its (red) report — a
+    # report you only get when tests pass is a report you can't debug with.
+    if: ${{ always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      # The publish script lives on the source branch, not on gh-pages, so it is
+      # checked out separately into its own directory.
+      - name: Checkout scripts from source branch
+        uses: actions/checkout@v4
+        with:
+          path: source
+          sparse-checkout: scripts
+          sparse-checkout-cone-mode: false
+
+      - name: Checkout gh-pages
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: pages
+
+      # Downloaded straight into the archive slot for this run; the root copy
+      # below is taken from there.
+      - name: Download report
+        uses: actions/download-artifact@v4
+        with:
+          name: playwright-report-${{ github.run_number }}
+          path: pages/runs/${{ github.run_number }}
+
+      - name: Copy report to site root as latest
+        working-directory: pages
+        run: |
+          set -euo pipefail
+
+          # Clear the previous root report, keeping the archive, the history data,
+          # and .nojekyll (which stops Pages running the report through Jekyll).
+          find . -maxdepth 1 ! -name . ! -name .git ! -name runs \
+                 ! -name history.json ! -name .nojekyll -exec rm -rf {} +
+
+          cp -r "runs/${{ github.run_number }}/." .
+          touch .nojekyll
+
+      # Records the run, prunes aged-out archives, and rebuilds history.html.
+      # Lives in scripts/ so it is linted, formatted, and runnable locally —
+      # see the header of that file for the expected environment.
+      - name: Update history and index
+        env:
+          RUN: ${{ github.run_number }}
+          STATUS: ${{ needs.test.result }}
+          SHA: ${{ github.sha }}
+          REF: ${{ github.ref_name }}
+          ACTOR: ${{ github.actor }}
+          SERVER: ${{ github.server_url }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        working-directory: pages
+        run: node ../source/scripts/publish-report.mjs
+
+      - name: Commit and push
+        working-directory: pages
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --staged --quiet && echo "nothing to publish" && exit 0
+          git commit -m "Publish report for run #${{ github.run_number }} (${{ needs.test.result }})"
+          git push "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" gh-pages

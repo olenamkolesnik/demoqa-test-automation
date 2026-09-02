@@ -1,5 +1,4 @@
 import { test as base } from '@playwright/test';
-import '../utils/matchers.util';
 import { AccountApiClient } from '../api/account-api.client';
 import { buildNewUserPayload } from '../data/user.factory';
 import { parseJsonBody } from '../utils/api-response.util';
