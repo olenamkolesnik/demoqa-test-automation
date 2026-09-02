@@ -66,7 +66,7 @@ Deliberate redundancy across levels, accepted because the lower level is unavail
 | Category   | Input field                                                                                                                    |
 | Technique  | EP                                                                                                                             |
 | Source     | Spec: RegisterViewModel; Business rule: password complexity (from live error message); Observed behavior: account-endpoints.md |
-| Test cases | —                                                                                                                              |
+| Test cases | AUTH-001                                                                                                                       |
 
 **What to cover**
 The valid equivalence class for both required fields together — a unique username paired with a password satisfying all five complexity rules — producing `201` with the live-confirmed response shape `{ userID, username, books: [] }`. Also confirms the capital-ID casing, since swagger's `CreateUserResult` disagrees with live behavior on this exact field name.
@@ -99,7 +99,7 @@ The response-shape assertion is deliberately explicit: it exists to catch a regr
 | Category   | Input field                                                  |
 | Technique  | EP                                                           |
 | Source     | Business rule: password complexity (from live error message) |
-| Test cases | —                                                            |
+| Test cases | AUTH-002                                                     |
 
 **What to cover**
 Invalid equivalence class: password missing the required uppercase character, all other complexity rules satisfied.
@@ -127,7 +127,7 @@ Isolated to violate exactly one rule, so the condition exercises that specific i
 | Category   | Input field                                                  |
 | Technique  | EP                                                           |
 | Source     | Business rule: password complexity (from live error message) |
-| Test cases | —                                                            |
+| Test cases | AUTH-003                                                     |
 
 **What to cover**
 Invalid equivalence class: password missing the required lowercase character, all other complexity rules satisfied.
@@ -155,7 +155,7 @@ See COND-AUTH-002 on the shared complexity message.
 | Category   | Input field                                                  |
 | Technique  | EP                                                           |
 | Source     | Business rule: password complexity (from live error message) |
-| Test cases | —                                                            |
+| Test cases | AUTH-004                                                     |
 
 **What to cover**
 Invalid equivalence class: password missing the required digit, all other complexity rules satisfied.
@@ -183,7 +183,7 @@ See COND-AUTH-002 on the shared complexity message.
 | Category   | Input field                                                  |
 | Technique  | EP                                                           |
 | Source     | Business rule: password complexity (from live error message) |
-| Test cases | —                                                            |
+| Test cases | AUTH-005                                                     |
 
 **What to cover**
 Invalid equivalence class: password missing the required special/non-alphanumeric character, all other complexity rules satisfied.
@@ -211,7 +211,7 @@ See COND-AUTH-002 on the shared complexity message.
 | Category   | Input field                                                                                                                                                               |
 | Technique  | BVA                                                                                                                                                                       |
 | Source     | Spec: RegisterViewModel (required field); Business rule: password complexity (min 8 chars); Observed behavior: docs/api-spec/account-endpoints.md (live check 2026-09-02) |
-| Test cases | —                                                                                                                                                                         |
+| Test cases | AUTH-006                                                                                                                                                                  |
 
 **What to cover**
 Lower boundary at zero for `password` — the empty string is both a required-field violation and the extreme case of the length-minimum boundary.
@@ -243,7 +243,7 @@ Confirmed distinct from the complexity path by a control in the same pass: a pre
 | Category   | Input field                                                                  |
 | Technique  | BVA                                                                          |
 | Source     | Business rule: password complexity (minimum 8 characters, from live message) |
-| Test cases | —                                                                            |
+| Test cases | AUTH-007                                                                     |
 
 **What to cover**
 The boundary immediately below the documented minimum length — 7 characters, otherwise satisfying every complexity class, so length is the only rule violated.
@@ -273,7 +273,7 @@ This condition and COND-AUTH-006 sit at opposite ends of the same length boundar
 | Category   | Input field                                                                                                                               |
 | Technique  | EP                                                                                                                                        |
 | Source     | Spec: RegisterViewModel (`required: [userName, password]`); Observed behavior: docs/api-spec/account-endpoints.md (live check 2026-09-02) |
-| Test cases | —                                                                                                                                         |
+| Test cases | AUTH-008                                                                                                                                  |
 
 **What to cover**
 Required-field violation: `userName` entirely absent from the request body — the key itself is missing, as distinct from being present with an empty value (COND-AUTH-010).
@@ -305,7 +305,7 @@ Live-verified 2026-09-02 against `https://demoqa.com`. Neither source documents 
 | Category   | Input field                                                                                                                               |
 | Technique  | EP                                                                                                                                        |
 | Source     | Spec: RegisterViewModel (`required: [userName, password]`); Observed behavior: docs/api-spec/account-endpoints.md (live check 2026-09-02) |
-| Test cases | —                                                                                                                                         |
+| Test cases | AUTH-009                                                                                                                                  |
 
 **What to cover**
 Required-field violation: `password` entirely absent from the request body.
@@ -335,7 +335,7 @@ Kept separate from COND-AUTH-008 because each required field needs its own inval
 | Category   | Input field                                                                                                                          |
 | Technique  | BVA                                                                                                                                  |
 | Source     | Spec: RegisterViewModel (required field, type string); Observed behavior: docs/api-spec/account-endpoints.md (live check 2026-09-02) |
-| Test cases | —                                                                                                                                    |
+| Test cases | AUTH-010                                                                                                                             |
 
 **What to cover**
 Lower boundary at zero for `userName` — an empty string is a distinct case from the field being entirely absent (COND-AUTH-008).
@@ -367,7 +367,7 @@ Live-verified 2026-09-02 against `https://demoqa.com`: it does **not** distingui
 | Category   | State                                                 |
 | Technique  | Decision table                                        |
 | Source     | Observed behavior: docs/api-spec/account-endpoints.md |
-| Test cases | —                                                     |
+| Test cases | AUTH-011                                              |
 
 **What to cover**
 Registering with a `userName` that already exists — created by a prior successful registration — is rejected with a conflict, distinct from any input-validation failure.
