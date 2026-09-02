@@ -18,14 +18,18 @@ if (!baseURL) {
  */
 export default defineConfig({
   testDir: './tests',
-  /* Run tests in files in parallel */
+  /* Every test seeds and tears down its own data (src/fixtures), so no test
+     depends on another's state or on execution order. */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
+  /* Fixed worker count on CI rather than the core-count default: these are
+     I/O-bound API tests waiting on a remote sandbox, so useful concurrency is
+     not limited by the runner's 2 cores. Locally, Playwright's default (half
+     the available cores) is left alone. */
+  workers: process.env.CI ? 4 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: process.env.CI
     ? [
