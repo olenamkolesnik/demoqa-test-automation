@@ -1,8 +1,11 @@
 {
   "name": "demoqa-test-automation",
   "version": "1.0.0",
-  "description": "",
+  "description": "ISTQB-aligned Playwright test automation for the DemoQA Book Store application (API and UI).",
   "main": "index.js",
+  "engines": {
+    "node": "^22.22.1 || >=24"
+  },
   "scripts": {
     "test": "playwright test",
     "test:ui": "playwright test tests/ui",
