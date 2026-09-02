@@ -17,10 +17,25 @@ interface SeededAuthorizedUser extends SeededUser {
   token: string;
 }
 
+// For tests where the registration call is itself under test, so seedUser
+// cannot make it. The test registers using `payload`, then assigns the id it
+// gets back to `createdUserId`; teardown deletes it afterwards.
+//
+// The assignment is what lets cleanup live in the fixture's post-use phase,
+// which Playwright runs whatever the test does — including on a failed
+// assertion or a thrown parse error. Deleting in the test body instead would
+// silently skip cleanup on exactly those paths and orphan a real account on
+// the shared backend.
+interface UserUnderTest {
+  payload: LoginPayload;
+  createdUserId: string | undefined;
+}
+
 interface AccountFixtures {
   accountApiClient: AccountApiClient;
   seedUser: SeededUser;
   seedAuthorizedUser: SeededAuthorizedUser;
+  userUnderTest: UserUnderTest;
 }
 
 async function deleteUserAndLogOrphanOnFailure(
@@ -97,6 +112,26 @@ export const test = base.extend<AccountFixtures>({
     });
 
     await deleteUserAndLogOrphanOnFailure(accountApiClient, payload, created.userID, token);
+  },
+
+  userUnderTest: async ({ accountApiClient }, use) => {
+    const userUnderTest: UserUnderTest = {
+      payload: buildNewUserPayload(),
+      createdUserId: undefined,
+    };
+
+    await use(userUnderTest);
+
+    // Runs even if the test threw — that is the point of cleaning up here
+    // rather than in the test body. Undefined means the registration under
+    // test was expected to fail, so there is nothing to delete.
+    if (userUnderTest.createdUserId !== undefined) {
+      await deleteUserAndLogOrphanOnFailure(
+        accountApiClient,
+        userUnderTest.payload,
+        userUnderTest.createdUserId
+      );
+    }
   },
 });
 

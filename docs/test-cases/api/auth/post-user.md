@@ -16,7 +16,7 @@ Generated from reviewed conditions in `docs/test-conditions/api/auth/post-user.m
 | Preconditions  | None                                                                                                                                                                                                  |
 | Test data      | userName: "qa_reg_valid_001" (unique) / password: "Aa1!aaaa" (8 chars — meets complexity: upper, lower, digit, special)                                                                               |
 | Postconditions | User "qa_reg_valid_001" deleted via DELETE /Account/v1/User/{UUID}, using the `userID` returned by the registration call (requires a token acquired via POST /Account/v1/GenerateToken for this user) |
-| Automation     | Not automated                                                                                                                                                                                         |
+| Automation     | Automated → `post-user.api.spec.ts`                                                                                                                                                                   |
 
 **Steps & expected results**
 
@@ -45,7 +45,7 @@ Username must be unique on the shared backend; use a random suffix in the automa
 | Preconditions  | None                                                                                                           |
 | Test data      | userName: "qa_reg_no_upper_002" (unique) / password: "aa1!aaaa" (missing uppercase, all other rules satisfied) |
 | Postconditions | None — registration is expected to fail, no user created                                                       |
-| Automation     | Not automated                                                                                                  |
+| Automation     | Automated → `post-user.api.spec.ts`                                                                            |
 
 **Steps & expected results**
 
@@ -70,7 +70,7 @@ The password violates exactly one complexity rule so the case exercises that spe
 | Preconditions  | None                                                                                                           |
 | Test data      | userName: "qa_reg_no_lower_003" (unique) / password: "AA1!AAAA" (missing lowercase, all other rules satisfied) |
 | Postconditions | None — registration is expected to fail, no user created                                                       |
-| Automation     | Not automated                                                                                                  |
+| Automation     | Automated → `post-user.api.spec.ts`                                                                            |
 
 **Steps & expected results**
 
@@ -93,7 +93,7 @@ See AUTH-002 on the shared complexity message.
 | Preconditions  | None                                                                                                       |
 | Test data      | userName: "qa_reg_no_digit_004" (unique) / password: "Aaaa!aaa" (missing digit, all other rules satisfied) |
 | Postconditions | None — registration is expected to fail, no user created                                                   |
-| Automation     | Not automated                                                                                              |
+| Automation     | Automated → `post-user.api.spec.ts`                                                                        |
 
 **Steps & expected results**
 
@@ -116,7 +116,7 @@ See AUTH-002 on the shared complexity message.
 | Preconditions  | None                                                                                                                     |
 | Test data      | userName: "qa_reg_no_special_005" (unique) / password: "Aa1aaaaa" (missing special character, all other rules satisfied) |
 | Postconditions | None — registration is expected to fail, no user created                                                                 |
-| Automation     | Not automated                                                                                                            |
+| Automation     | Automated → `post-user.api.spec.ts`                                                                                      |
 
 **Steps & expected results**
 
@@ -139,7 +139,7 @@ See AUTH-002 on the shared complexity message.
 | Preconditions  | None                                                              |
 | Test data      | userName: "qa_reg_empty_pw_006" (unique) / password: "" (0 chars) |
 | Postconditions | None — registration is expected to fail, no user created          |
-| Automation     | Not automated                                                     |
+| Automation     | Automated → `post-user.api.spec.ts`                               |
 
 **Steps & expected results**
 
@@ -164,7 +164,7 @@ Contrast AUTH-007, where a present 7-character password does return `1300`. The 
 | Preconditions  | None                                                                                                                                                     |
 | Test data      | userName: "qa_reg_short_pw_007" (unique) / password: "Aa1!aaa" (7 chars — one below the documented 8-char minimum, all other complexity rules satisfied) |
 | Postconditions | None — registration is expected to fail, no user created                                                                                                 |
-| Automation     | Not automated                                                                                                                                            |
+| Automation     | Automated → `post-user.api.spec.ts`                                                                                                                      |
 
 **Steps & expected results**
 
@@ -189,7 +189,7 @@ Live-verified 2026-09-02 as the control that established the distinction describ
 | Preconditions  | None                                                                   |
 | Test data      | Request body: `{ "password": "Aa1!aaaa" }` — no `userName` key present |
 | Postconditions | None — registration is expected to fail, no user created               |
-| Automation     | Not automated                                                          |
+| Automation     | Automated → `post-user.api.spec.ts`                                    |
 
 **Steps & expected results**
 
@@ -214,7 +214,7 @@ Same status and body as AUTH-009 (missing password), AUTH-010 (empty userName), 
 | Preconditions  | None                                                                                 |
 | Test data      | Request body: `{ "userName": "qa_reg_no_pw_field_009" }` — no `password` key present |
 | Postconditions | None — registration is expected to fail, no user created                             |
-| Automation     | Not automated                                                                        |
+| Automation     | Automated → `post-user.api.spec.ts`                                                  |
 
 **Steps & expected results**
 
@@ -237,7 +237,7 @@ Live-verified 2026-09-02. Same response as AUTH-008 — see that test case's Not
 | Preconditions  | None                                                     |
 | Test data      | userName: "" (0 chars) / password: "Aa1!aaaa" (valid)    |
 | Postconditions | None — registration is expected to fail, no user created |
-| Automation     | Not automated                                            |
+| Automation     | Automated → `post-user.api.spec.ts`                      |
 
 **Steps & expected results**
 
@@ -262,7 +262,7 @@ That equivalence is an observed property of the current implementation, not a do
 | Preconditions  | User account exists (created via API: POST /Account/v1/User) with userName "qa_reg_dup_011" and password "Aa1!aaaa"                                                                                                 |
 | Test data      | userName: "qa_reg_dup_011" (already registered) / password: "Aa1!aaaa" (valid)                                                                                                                                      |
 | Postconditions | User "qa_reg_dup_011" (created during precondition setup) deleted via DELETE /Account/v1/User/{UUID}, using the `userID` returned by that setup call (requires a token acquired via POST /Account/v1/GenerateToken) |
-| Automation     | Not automated                                                                                                                                                                                                       |
+| Automation     | Automated → `post-user.api.spec.ts`                                                                                                                                                                                 |
 
 **Steps & expected results**
 
