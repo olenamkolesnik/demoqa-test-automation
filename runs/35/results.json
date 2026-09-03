@@ -1,0 +1,1317 @@
+{
+  "config": {
+    "argv": [
+      "/opt/hostedtoolcache/node/24.19.0/x64/bin/node",
+      "/home/runner/work/demoqa-test-automation/demoqa-test-automation/node_modules/.bin/playwright",
+      "test"
+    ],
+    "configFile": "/home/runner/work/demoqa-test-automation/demoqa-test-automation/playwright.config.ts",
+    "rootDir": "/home/runner/work/demoqa-test-automation/demoqa-test-automation/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/olenamkolesnik/demoqa-test-automation/commit/7d4604be2238afb1db077b78fcd474442cbcfb99",
+        "commitHash": "7d4604be2238afb1db077b78fcd474442cbcfb99",
+        "prHref": "https://github.com/olenamkolesnik/demoqa-test-automation/pull/17",
+        "prTitle": "Automate DELETE /Account/v1/User/{UUID} test cases",
+        "prBaseHash": "8c44b4f22926d30fa6176b9b88650bfb61a0453e",
+        "buildHref": "https://github.com/olenamkolesnik/demoqa-test-automation/actions/runs/33797654017"
+      },
+      "gitCommit": {
+        "shortHash": "7d4604b",
+        "hash": "7d4604be2238afb1db077b78fcd474442cbcfb99",
+        "subject": "Merge 4ac87065ff2eb99c77211d20a809d8b82d69a9c9 into 8c44b4f22926d30fa6176b9b88650bfb61a0453e",
+        "body": "Merge 4ac87065ff2eb99c77211d20a809d8b82d69a9c9 into 8c44b4f22926d30fa6176b9b88650bfb61a0453e\n",
+        "author": {
+          "name": "olenamkolesnik",
+          "email": "33692828+olenamkolesnik@users.noreply.github.com",
+          "time": 1788464326000
+        },
+        "committer": {
+          "name": "GitHub",
+          "email": "noreply@github.com",
+          "time": 1788464326000
+        },
+        "branch": "HEAD"
+      },
+      "gitDiff": "diff --git a/.claude/commands/api-pipeline.md b/.claude/commands/api-pipeline.md\nnew file mode 100644\nindex 0000000..689ade7\n--- /dev/null\n+++ b/.claude/commands/api-pipeline.md\n@@ -0,0 +1,81 @@\n+---\n+description: Run the full API test-authoring pipeline for one endpoint — test conditions, test cases, infrastructure, and specs — stopping after each stage's review agent for your sign-off.\n+---\n+\n+Run the API test-authoring pipeline for: **$ARGUMENTS**\n+\n+You are orchestrating four existing skills and four existing review agents. You do not write test conditions, test cases, or code yourself — each stage is delegated to its skill, and each artifact is checked by its review agent. Your job is sequencing, carrying file paths between stages, and stopping for the user at every gate.\n+\n+## Input\n+\n+`$ARGUMENTS` should be an endpoint, e.g. `GET /BookStore/v1/Books`. If no endpoint was given, ask for one and stop — do not guess or pick one from the spec docs.\n+\n+Source the endpoint's requirements the same way every skill in this pipeline already does:\n+\n+1. A live-verified `.md` doc under `docs/api-spec/` covering this resource — trusted over Swagger wherever they disagree\n+2. `docs/api-spec/*.swagger.json` where no corrected doc covers it\n+3. Ask the user **only** for what neither source has (an undocumented business rule)\n+\n+Do not ask the user to restate requirements the spec docs already hold, and do not ask them to paste spec content — read it.\n+\n+## Before starting: resume check\n+\n+Derive the path stems from the endpoint (mechanical — the skills define these transforms; don't ask the user to confirm them):\n+\n+- `<feature>` — functional area: `auth`, `bookstore`, `collection`, `profile`\n+- `<verb>-<resource>` — method lowercased plus the entity segment, e.g. `GET /BookStore/v1/Books` → `get-books`\n+- `<resource>` — the resource path segment kebab-cased, e.g. `BookStore` → `book-store`\n+\n+Check what already exists:\n+\n+| Stage | Artifact                                                                                                                                      |\n+| ----- | --------------------------------------------------------------------------------------------------------------------------------------------- |\n+| 1     | `docs/test-conditions/api/<feature>/<verb>-<resource>.md`                                                                                     |\n+| 2     | `docs/test-cases/api/<feature>/<verb>-<resource>.md`                                                                                          |\n+| 3     | `src/types/<resource>.schema.ts`, `src/api/<resource>-api.client.ts`, `src/data/<resource>.factory.ts`, `src/fixtures/<resource>.fixtures.ts` |\n+| 4     | `tests/api/<verb>-<resource>.api.spec.ts`, `tests/api/<verb>-<resource>.contract.spec.ts`                                                     |\n+\n+Report what you found, then start at the earliest stage whose artifact is missing.\n+\n+Two rules about what you found:\n+\n+- **An existing file is not a completed stage.** Nothing in this repo records that an artifact passed review. So for every pre-existing artifact, run that stage's review agent against it and present the verdict as that stage's gate before moving on. Do not skip a stage just because its file is on disk. Regenerate an existing artifact only if the user asks.\n+- **Stage 3 is per-resource, not per-endpoint.** One set of four infrastructure files serves every endpoint on that resource, so they can already exist on this endpoint's very first pipeline run because a sibling endpoint built them earlier. That is normal. Re-review them (they may need a new client method for this endpoint), but don't treat their existence as evidence this endpoint was already processed.\n+\n+## The four stages\n+\n+Each stage has the same shape: generate → review → **stop** → interpret the user's reply.\n+\n+| #   | Generate with skill           | Review with agent                 | Gate verdict                   |\n+| --- | ----------------------------- | --------------------------------- | ------------------------------ |\n+| 1   | `write-test-conditions`       | `review-test-conditions`          | Ready for test case generation |\n+| 2   | `write-manual-test-case`      | `review-test-cases`               | Ready for automation           |\n+| 3   | `generate-api-infrastructure` | `review-generated-infrastructure` | Ready for test generation      |\n+| 4   | `generate-api-tests`          | `review-generated-tests`          | Ready to merge                 |\n+\n+Pass each review agent the file path the skill just produced — every one of them requires a named target and will stop if it doesn't get one.\n+\n+Stage 3 takes the endpoint spec, not the reviewed test cases, so it does not depend on stages 1–2. Stage 4 needs both the reviewed test-cases file from stage 2 and the reviewed infrastructure from stage 3.\n+\n+## At every gate\n+\n+Print the review agent's **full findings table and verdict, verbatim** — not a summary, not just the verdict line. Then end your turn and wait.\n+\n+When the user replies:\n+\n+- **Approval** (\"looks good\", \"proceed\", \"ok\") — move to the next stage.\n+- **A fix instruction** (\"fix #2\", \"the boundary condition is wrong\") — apply it, then re-invoke **the same review agent** on the revised artifact and stop again. Never advance to the next stage on the strength of your own fix; the agent re-checks it.\n+- **Anything ambiguous** — ask, don't assume. A wrong guess here silently propagates into every later stage.\n+\n+## Rules\n+\n+- Never skip a stage's review agent, even when the artifact looks obviously fine. The gates are the point of the pipeline.\n+- Never proceed past a gate without a reply from the user in that turn. Ending your turn at each gate is the design, not overhead to optimize away.\n+- If a review agent reports its own source-of-truth file missing, stop the entire pipeline and say so. Do not improvise criteria on its behalf.\n+- If a skill reports something it cannot generate — `generate-api-tests` explicitly refuses multi-actor test cases, for instance — stop and surface that rather than pushing through with a best-effort attempt.\n+- Never run the test suite or a live smoke check as part of this pipeline. Both create real data on the shared public DemoQA backend (Risk-1 in `docs/test-plan.md`). Lint, format, and `--list` are the only verification commands the review agents are permitted, and they run those themselves.\n+- **One narrow exception:** stage 1's `write-test-conditions` may make targeted live requests to resolve a case it would otherwise mark infeasible, under the rules in that skill's **Resolving undocumented behavior** section — a handful of `qa_`-prefixed requests, repeated to confirm, with the finding pushed into `docs/api-spec/`. This is not a smoke check: it establishes unknown behavior once, so every later stage and endpoint reads it from the spec doc instead. No other stage and no review agent may call the live API.\n+\n+## When stage 4 is approved\n+\n+Print a closing summary: the file path produced at each stage, and which test cases were automated versus skipped by the priority filter. Note that `generate-api-tests` has already back-written the `Automation` field in the test-cases file — no manual update is needed.\ndiff --git a/docs/api-spec/account-endpoints.md b/docs/api-spec/account-endpoints.md\nindex 8f003bd..22cdf2f 100644\n--- a/docs/api-spec/account-endpoints.md\n+++ b/docs/api-spec/account-endpoints.md\n@@ -1,6 +1,6 @@\n # DemoQA Book Store — Account API (Confirmed)\n \n-Source: raw Swagger spec extracted from `https://demoqa.com/swagger/swagger-ui-init.js` (saved as [`book-store-api.swagger.json`](./book-store-api.swagger.json)), cross-checked against live API calls on 2026-08-25, re-verified with no drift on 2026-09-01. Extended 2026-09-02 with the required-field behavior of `POST /Account/v1/User`, which no earlier pass had covered; the previously documented cases were re-confirmed unchanged in that pass. Where the Swagger doc and live behavior disagreed, **live behavior wins** — the doc has several inaccuracies, noted below. See [`book-store-endpoints.md`](./book-store-endpoints.md) for the `/BookStore` endpoints verified the same way.\n+Source: raw Swagger spec extracted from `https://demoqa.com/swagger/swagger-ui-init.js` (saved as [`book-store-api.swagger.json`](./book-store-api.swagger.json)), cross-checked against live API calls on 2026-08-25, re-verified with no drift on 2026-09-01. Extended 2026-09-02 with the required-field behavior of `POST /Account/v1/User`, which no earlier pass had covered; the previously documented cases were re-confirmed unchanged in that pass. Extended 2026-09-03 with the unknown-UUID behavior of `DELETE /Account/v1/User/{UUID}` (non-existent and already-deleted), also uncovered by earlier passes; the DELETE success and auth-failure rows were re-confirmed unchanged. Where the Swagger doc and live behavior disagreed, **live behavior wins** — the doc has several inaccuracies, noted below. See [`book-store-endpoints.md`](./book-store-endpoints.md) for the `/BookStore` endpoints verified the same way.\n \n ## POST /Account/v1/User (Create User)\n \n@@ -61,13 +61,25 @@ Auth: `Authorization: Bearer <token>` header required.\n \n Auth: `Authorization: Bearer <token>` header required.\n \n-| Case                  | Status | Body                                                |\n-| --------------------- | ------ | --------------------------------------------------- |\n-| Success               | `204`  | (empty)                                             |\n-| Missing/invalid token | `401`  | `{ code: \"1200\", message: \"User not authorized!\" }` |\n+| Case                                     | Status | Body                                                                      |\n+| ---------------------------------------- | ------ | ------------------------------------------------------------------------- |\n+| Success                                  | `204`  | (empty)                                                                   |\n+| Missing/invalid token                    | `401`  | `{ code: \"1200\", message: \"User not authorized!\" }`                       |\n+| Non-existent UUID, valid unrelated token | `200`  | `{ code: \"1207\", message: \"User Id not correct!\" }` — verified 2026-09-03 |\n+| Already-deleted UUID, stale token        | `200`  | `{ code: \"1207\", message: \"User Id not correct!\" }` — verified 2026-09-03 |\n \n **Doc discrepancy:** the Swagger doc's response table for this endpoint is essentially scrambled — it labels `200` as \"Success\" (schema `MessageModal`) and `204` as \"Unauthorized\" (schema `BooksResult`), which is backwards from confirmed live behavior (`204` empty body = success, `401` = unauthorized). Do not trust the doc's response descriptions for this endpoint.\n \n+**Unknown-user handling (verified 2026-09-03, undocumented in Swagger):** one shared `1207` code path covers both \"this UUID was never issued\" and \"this UUID was deleted already\" — the two are indistinguishable from the response alone. Confirmed deterministic across three independent runs with three separate users.\n+\n+Two things about this response are worth not glossing over:\n+\n+`200` carries an error body. Unlike the `401` auth failures above, an unknown UUID returns HTTP `200` with a `MessageModal`-shaped error payload, so status code alone cannot be used to detect this case — the same trap as `POST /Account/v1/GenerateToken`, which also always returns `200` and differentiates by body. A client that branches on `res.ok` treats a failed delete as a success.\n+\n+The `1207` message text is endpoint-specific. `GET /Account/v1/User/{UUID}` returns `1207` with `\"User not found!\"` under HTTP `401`; DELETE returns `1207` with `\"User Id not correct!\"` under HTTP `200`. Same code, different message, different status. So `1207` identifies \"no such user\" as a concept, but neither its wrapper status nor its message text is shared across endpoints — do not assert one endpoint's pairing against another.\n+\n+Repeat deletion is therefore **not** idempotent in the REST sense: the second call returns `200`/`1207` rather than `204`.\n+\n ## Auth mechanism (from spec `securityDefinitions`)\n \n The API declares both `Basic` (HTTP Basic Auth) and `Bearer` (JWT via `Authorization` header) as valid security schemes for protected endpoints. Only `Bearer` was tested/confirmed above; `Basic` auth is documented but not exercised in this verification pass.\ndiff --git a/docs/test-cases/api/auth/delete-user.md b/docs/test-cases/api/auth/delete-user.md\nnew file mode 100644\nindex 0000000..b1c9adb\n--- /dev/null\n+++ b/docs/test-cases/api/auth/delete-user.md\n@@ -0,0 +1,133 @@\n+# Test Cases — DELETE /Account/v1/User/{UUID}\n+\n+Generated from reviewed conditions in `docs/test-conditions/api/auth/delete-user.md`. Every test case traces to exactly one condition; no test case exists without a condition behind it.\n+\n+---\n+\n+### TC: Delete own user account with a valid token\n+\n+| Field          | Value                                                                                                                                                                        |\n+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |\n+| ID             | AUTH-017                                                                                                                                                                     |\n+| Condition      | COND-AUTH-017                                                                                                                                                                |\n+| Risk           | Risk-1                                                                                                                                                                       |\n+| Preconditions  | User account exists and token generated (POST /Account/v1/User, then POST /Account/v1/GenerateToken) for userName \"qa_deluser_valid_017\" and password \"Aa1!aaaa\"             |\n+| Test data      | UUID: the userId returned when the precondition user was created / Authorization header: Bearer \\<token\\> (the valid token acquired in the precondition, for this same user) |\n+| Postconditions | None — the test itself deletes the user, which is the behavior under test. No teardown call is needed or possible.                                                           |\n+| Automation     | Automated → `delete-user.api.spec.ts`                                                                                                                                        |\n+\n+**Steps & expected results**\n+\n+| #   | Action                                                                                  | Expected result                                                  |\n+| --- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |\n+| 1   | Send DELETE /Account/v1/User/{userId} with header `Authorization: Bearer <valid token>` | Status 204; response body is empty — no JSON payload of any kind |\n+\n+**Notes**\n+Assert the body is genuinely empty, not merely that the status is 204. Swagger documents a `BooksResult` schema for this status and labels `204` \"Unauthorized\" — both wrong. The empty-body assertion is what pins live behavior against the incorrect documented contract.\n+\n+This is the only test case in this file with no teardown: deleting the user _is_ the test. Every other case here must clean up after itself.\n+\n+---\n+\n+### TC: Delete user account with no Authorization header\n+\n+| Field          | Value                                                                                                                                                                                         |\n+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |\n+| ID             | AUTH-018                                                                                                                                                                                      |\n+| Condition      | COND-AUTH-018                                                                                                                                                                                 |\n+| Risk           | Risk-1, Risk-4                                                                                                                                                                                |\n+| Preconditions  | User account exists (created via API: POST /Account/v1/User) with userName \"qa_deluser_noauth_018\" and password \"Aa1!aaaa\"                                                                    |\n+| Test data      | UUID: the userId returned when the precondition user was created / no Authorization header is sent                                                                                            |\n+| Postconditions | User \"qa_deluser_noauth_018\" deleted via DELETE /Account/v1/User/{userId} (requires a token acquired via POST /Account/v1/GenerateToken for this user, since none was generated during setup) |\n+| Automation     | Automated → `delete-user.api.spec.ts`                                                                                                                                                         |\n+\n+**Steps & expected results**\n+\n+| #   | Action                                                             | Expected result                                                                 |\n+| --- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------- |\n+| 1   | Send DELETE /Account/v1/User/{userId} with no Authorization header | Status 401; body equals `{ \"code\": \"1200\", \"message\": \"User not authorized!\" }` |\n+\n+**Notes**\n+The teardown matters more here than in the equivalent GET case: if the endpoint were to wrongly accept this unauthenticated request, the user would already be gone and the teardown would fail — that failure is itself a signal worth reading, not just noise.\n+\n+Same response as AUTH-019 (invalid/malformed token) — DemoQA groups missing and invalid token under one documented, identical response.\n+\n+---\n+\n+### TC: Delete user account with an invalid or malformed token\n+\n+| Field          | Value                                                                                                                                                                                           |\n+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |\n+| ID             | AUTH-019                                                                                                                                                                                        |\n+| Condition      | COND-AUTH-019                                                                                                                                                                                   |\n+| Risk           | Risk-1, Risk-4                                                                                                                                                                                  |\n+| Preconditions  | User account exists (created via API: POST /Account/v1/User) with userName \"qa_deluser_badtoken_019\" and password \"Aa1!aaaa\"                                                                    |\n+| Test data      | UUID: the userId returned when the precondition user was created / Authorization header: `Bearer not-a-real-token-abc123`                                                                       |\n+| Postconditions | User \"qa_deluser_badtoken_019\" deleted via DELETE /Account/v1/User/{userId} (requires a token acquired via POST /Account/v1/GenerateToken for this user, since none was generated during setup) |\n+| Automation     | Automated → `delete-user.api.spec.ts`                                                                                                                                                           |\n+\n+**Steps & expected results**\n+\n+| #   | Action                                                                                            | Expected result                                                                 |\n+| --- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |\n+| 1   | Send DELETE /Account/v1/User/{userId} with header `Authorization: Bearer not-a-real-token-abc123` | Status 401; body equals `{ \"code\": \"1200\", \"message\": \"User not authorized!\" }` |\n+\n+**Notes**\n+Kept separate from AUTH-018 despite the identical expected response: absent header and present-but-invalid header are distinct invalid input classes, and a future API change could plausibly start distinguishing them.\n+\n+---\n+\n+### TC: Delete a non-existent user UUID with a valid unrelated token\n+\n+| Field          | Value                                                                                                                                                                                                                                     |\n+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |\n+| ID             | AUTH-020                                                                                                                                                                                                                                  |\n+| Condition      | COND-AUTH-020                                                                                                                                                                                                                             |\n+| Risk           | Risk-1, Risk-4                                                                                                                                                                                                                            |\n+| Preconditions  | User account exists and token generated (POST /Account/v1/User, then POST /Account/v1/GenerateToken) for userName \"qa_deluser_nouuid_020\" and password \"Aa1!aaaa\" — this user supplies the valid token but is **not** the deletion target |\n+| Test data      | UUID: \"00000000-0000-0000-0000-000000000000\" (well-formed but never issued) / Authorization header: Bearer \\<token\\> (the valid token belonging to \"qa_deluser_nouuid_020\")                                                               |\n+| Postconditions | User \"qa_deluser_nouuid_020\" deleted via DELETE /Account/v1/User/{userId} (reuse the token already acquired in the precondition) — the target UUID never existed, so nothing else needs cleanup                                           |\n+| Automation     | Automated → `delete-user.api.spec.ts`                                                                                                                                                                                                     |\n+\n+**Steps & expected results**\n+\n+| #   | Action                                                                                                              | Expected result                                                                 |\n+| --- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |\n+| 1   | Send DELETE /Account/v1/User/00000000-0000-0000-0000-000000000000 with header `Authorization: Bearer <valid token>` | Status 200; body equals `{ \"code\": \"1207\", \"message\": \"User Id not correct!\" }` |\n+\n+**Notes**\n+Live-verified 2026-09-03. The `200` is the substantive assertion — an error body under a success status. A client branching on `res.ok` would read this failed deletion as a success, so asserting the status explicitly is the point of the case.\n+\n+Do not assert this against `GET /Account/v1/User/{UUID}`'s behavior for the same scenario: GET returns `1207` as `401` with message \"User not found!\". Same code, different status, different message text.\n+\n+The precondition user is deliberately unrelated to the target UUID — this case tests an unknown UUID, not an authorization mismatch, so the token must be valid.\n+\n+---\n+\n+### TC: Delete an already-deleted user account\n+\n+| Field          | Value                                                                                                                                                                             |\n+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |\n+| ID             | AUTH-021                                                                                                                                                                          |\n+| Condition      | COND-AUTH-021                                                                                                                                                                     |\n+| Risk           | Risk-1, Risk-4                                                                                                                                                                    |\n+| Preconditions  | User account exists and token generated (POST /Account/v1/User, then POST /Account/v1/GenerateToken) for userName \"qa_deluser_repeat_021\" and password \"Aa1!aaaa\"                 |\n+| Test data      | UUID: the userId returned when the precondition user was created / Authorization header: Bearer \\<token\\> (the same token for both requests — it is not regenerated between them) |\n+| Postconditions | None — the user is deleted by step 1 of the test itself                                                                                                                           |\n+| Automation     | Automated → `delete-user.api.spec.ts`                                                                                                                                             |\n+\n+**Steps & expected results**\n+\n+| #   | Action                                                                                                    | Expected result                                                                 |\n+| --- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |\n+| 1   | Send DELETE /Account/v1/User/{userId} with header `Authorization: Bearer <valid token>`                   | Status 204; response body is empty                                              |\n+| 2   | Send the identical request again — same URL, same `Authorization: Bearer <token>` header, not regenerated | Status 200; body equals `{ \"code\": \"1207\", \"message\": \"User Id not correct!\" }` |\n+\n+**Notes**\n+Live-verified 2026-09-03 across three independent runs with three separate users — deterministic, not a one-off.\n+\n+This is the only two-step case in the file, and the second step is the actual assertion: step 1 establishes the deleted state. It confirms the endpoint is **not** idempotent in the REST sense — a second DELETE returns `200`/`1207`, not a repeated `204`.\n+\n+The stale token is deliberately reused rather than regenerated. That is what rules out the `1200` authorization branch: the token still authenticates fine after its user is gone, and the failure is reported against the UUID instead. Regenerating a token here would test something else entirely (and would fail, since the user no longer exists).\n+\n+Response is byte-identical to AUTH-020's — the API does not distinguish \"never issued\" from \"issued then deleted\".\ndiff --git a/docs/test-conditions/api/auth/delete-user.md b/docs/test-conditions/api/auth/delete-user.md\nnew file mode 100644\nindex 0000000..9d0cfa7\n--- /dev/null\n+++ b/docs/test-conditions/api/auth/delete-user.md\n@@ -0,0 +1,243 @@\n+# Test Conditions — DELETE /Account/v1/User/{UUID}\n+\n+## Endpoint analysis\n+\n+**Endpoint:** DELETE /Account/v1/User/{UUID}\n+**Source:** OpenAPI spec (`docs/api-spec/book-store-api.swagger.json`) cross-checked against observed live behavior (`docs/api-spec/account-endpoints.md`). Live behavior wins wherever the two disagree — and for this endpoint they disagree substantially (see Status codes table).\n+\n+**Happy path**\n+\n+- Valid bearer token for an existing user, deleting that same user's own UUID → the account is deleted, `204` with an empty body.\n+\n+**Negative cases**\n+\n+- Missing `Authorization` header entirely.\n+- `Authorization` header present but the token is invalid/malformed.\n+- Non-existent `UUID` (a syntactically plausible but never-issued user ID) with a valid, unrelated token — live-confirmed 2026-09-03, see Status codes table.\n+\n+**Boundary cases**\n+\n+- `UUID` path parameter: no length or format rule is documented anywhere (spec or live-verified doc) beyond it being a required string. No BVA is derivable without inventing an undocumented rule — the same gap already accepted for the same parameter in `docs/test-conditions/api/auth/get-user.md` (COND-AUTH-INF-005), which this file reuses rather than restating as a new infeasible condition.\n+\n+**Authorization states**\n+\n+- Valid token, own UUID → 204, empty body.\n+- Missing token → 401, `{code: \"1200\", message: \"User not authorized!\"}`.\n+- Invalid/malformed token → 401, same response as missing token (the live-verified doc groups both under a single \"Missing/invalid token\" row).\n+\n+**Idempotency / state**\n+\n+- Deleting an already-deleted user (repeating the DELETE with the now-stale token) — the state transition this endpoint uniquely owns among the `/Account` endpoints. Live-confirmed 2026-09-03: **not** idempotent, see Status codes table.\n+\n+**Status codes and response shape**\n+\n+| Scenario                                 | Status | Response                                                                                                                                                                                                                                                                |\n+| ---------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |\n+| Success                                  | 204    | Empty body — **live-confirmed**. Swagger is actively wrong here: it labels `200` as \"Success\" (schema `MessageModal`) and `204` as \"Unauthorized\" (schema `BooksResult`), which is scrambled relative to live behavior. Do not trust swagger's table for this endpoint. |\n+| Missing or invalid/malformed token       | 401    | `{ code: \"1200\", message: \"User not authorized!\" }` — live-confirmed; swagger documents `code` as `number`, but every endpoint sharing the `MessageModal` schema is confirmed live as a **string**                                                                      |\n+| Non-existent UUID, valid unrelated token | 200    | `{ code: \"1207\", message: \"User Id not correct!\" }` — **live-confirmed 2026-09-03**, undocumented in swagger. Note the `200`: an error body under a success status                                                                                                      |\n+| Already-deleted UUID, stale token        | 200    | `{ code: \"1207\", message: \"User Id not correct!\" }` — **live-confirmed 2026-09-03** across three independent runs; byte-identical to the row above                                                                                                                      |\n+\n+**Spec ambiguities / unknowns**\n+\n+- ~~A non-existent `UUID` combined with a valid, unrelated token is not documented by either spec source.~~ Resolved by live check 2026-09-03 — see COND-AUTH-020 and the status table above.\n+- ~~Deleting an already-deleted user is likewise unverified.~~ Resolved by live check 2026-09-03 — see COND-AUTH-021. The pre-verification concern that the token might die with its user proved unfounded: the failure is reported against the UUID (`1207`), not the credential (`1200`).\n+- Both resolved cases return byte-identical responses, so the API does not distinguish \"never issued\" from \"issued then deleted\". Whether that is deliberate or incidental is unknowable from the outside; the conditions assert the observed response without claiming to know which.\n+- No length or format constraint on the `UUID` path parameter is documented anywhere — do not invent one. Already captured as COND-AUTH-INF-005 in `get-user.md`; not duplicated here.\n+- Whether a malformed-but-present token produces byte-identical behavior to an absent header is not independently confirmed — the live-verified doc groups them into one row. Treated the same way as in `get-user.md` (COND-AUTH-013 / COND-AUTH-014): two conditions for two distinct invalid-input classes, despite an identical documented outcome.\n+\n+---\n+\n+## Authorization\n+\n+### COND-AUTH-017: Valid token deletes the requesting user's own account\n+\n+| Field      | Value                                                 |\n+| ---------- | ----------------------------------------------------- |\n+| ID         | COND-AUTH-017                                         |\n+| Priority   | High                                                  |\n+| Category   | Authorization                                         |\n+| Technique  | EP                                                    |\n+| Source     | Observed behavior: docs/api-spec/account-endpoints.md |\n+| Test cases | AUTH-017                                              |\n+\n+**What to cover**\n+The valid equivalence class: a user with a valid bearer token deletes their own UUID — resulting in `204` with an empty body. This is the sole happy path for the endpoint, and the one case where swagger's documented response table is actively misleading (it labels `204` \"Unauthorized\").\n+\n+**Values / boundaries**\n+\n+```\n+# EP\n+Valid class: a previously-created user's own UUID, deleted with that same user's valid bearer token\n+Expected status: 204\n+Expected body: empty — no JSON payload at all\n+```\n+\n+**Notes**\n+Following the merge principle applied throughout this feature area (COND-AUTH-001, COND-AUTH-012): the trigger (valid token + own UUID) and its effect (204, empty body) are not independently testable, so they are one condition rather than two.\n+\n+Confirming the body is genuinely empty is the substantive assertion here, not incidental — swagger claims a `BooksResult` schema for this status, so an empty-body check is what distinguishes live behavior from the documented contract.\n+\n+---\n+\n+### COND-AUTH-018: Missing Authorization header is rejected\n+\n+| Field      | Value                                                 |\n+| ---------- | ----------------------------------------------------- |\n+| ID         | COND-AUTH-018                                         |\n+| Priority   | High                                                  |\n+| Category   | Authorization                                         |\n+| Technique  | EP                                                    |\n+| Source     | Observed behavior: docs/api-spec/account-endpoints.md |\n+| Test cases | AUTH-018                                              |\n+\n+**What to cover**\n+Invalid equivalence class: the request is sent with no `Authorization` header at all, against an otherwise valid, existing user's UUID. Confirms the account is protected from unauthenticated deletion.\n+\n+**Values / boundaries**\n+\n+```\n+# EP\n+Invalid class — header absent: request to DELETE /Account/v1/User/{validUUID} with no Authorization header\n+Expected status: 401\n+Expected body: { code: \"1200\", message: \"User not authorized!\" }\n+```\n+\n+**Notes**\n+Higher stakes than the equivalent GET condition (COND-AUTH-013): an authorization gap on a destructive endpoint means unauthenticated account deletion, not merely an information leak. Priority High on that basis.\n+\n+---\n+\n+### COND-AUTH-019: Invalid or malformed token is rejected\n+\n+| Field      | Value                                                 |\n+| ---------- | ----------------------------------------------------- |\n+| ID         | COND-AUTH-019                                         |\n+| Priority   | High                                                  |\n+| Category   | Authorization                                         |\n+| Technique  | EP                                                    |\n+| Source     | Observed behavior: docs/api-spec/account-endpoints.md |\n+| Test cases | AUTH-019                                              |\n+\n+**What to cover**\n+Invalid equivalence class: the `Authorization` header is present but carries a token that is not a valid, currently-issued token (e.g. a garbage string), against an otherwise valid, existing user's UUID.\n+\n+**Values / boundaries**\n+\n+```\n+# EP\n+Invalid class — malformed token: Authorization: Bearer not-a-real-token-abc123\n+Expected status: 401\n+Expected body: { code: \"1200\", message: \"User not authorized!\" }\n+```\n+\n+**Notes**\n+Kept separate from COND-AUTH-018 rather than merged: absent-header and present-but-wrong-header are genuinely distinct invalid input classes, and the EP coverage rule requires a condition per invalid class even when the documented outcome is identical. Same treatment as COND-AUTH-013 / COND-AUTH-014 in `get-user.md`.\n+\n+---\n+\n+### COND-AUTH-020: Non-existent UUID returns the unknown-user error, not an authorization error\n+\n+| Field      | Value                                                                        |\n+| ---------- | ---------------------------------------------------------------------------- |\n+| ID         | COND-AUTH-020                                                                |\n+| Priority   | Medium                                                                       |\n+| Category   | Authorization                                                                |\n+| Technique  | EP                                                                           |\n+| Source     | Observed behavior: live check 2026-09-03; docs/api-spec/account-endpoints.md |\n+| Test cases | AUTH-020                                                                     |\n+\n+**What to cover**\n+Invalid equivalence class: a syntactically valid but never-issued UUID is deleted with a valid, unrelated token. Confirms the API reports the user as unknown (`1207`) rather than treating it as an authorization failure (`1200`), and — the substantive part — that it does so under HTTP `200`, not a 4xx.\n+\n+**Values / boundaries**\n+\n+```\n+# EP\n+Invalid class — non-existent UUID: a well-formed UUID that was never issued (e.g. all-zeros), deleted with any other valid token\n+Expected status: 200\n+Expected body: { code: \"1207\", message: \"User Id not correct!\" }\n+```\n+\n+**Notes**\n+Promoted from COND-AUTH-INF-007 after live verification 2026-09-03, following the same precedent as COND-AUTH-INF-004 → COND-AUTH-016 in `get-user.md`.\n+\n+The `200` status is the point of the condition, not incidental: a client branching on `res.ok` would read this failed deletion as a success. Asserting the status explicitly is what makes the test worth having.\n+\n+Two comparisons worth keeping straight, both confirmed rather than assumed:\n+\n+- Against `GET /Account/v1/User/{UUID}`, which returns `1207` as `401`/\"User not found!\" — same code, different status **and** different message text. Neither endpoint's pairing may be asserted against the other.\n+- Against COND-AUTH-021 (already-deleted user), which returns a byte-identical response. Kept as a separate condition because the two represent genuinely distinct invalid classes (never issued vs. issued then deleted), the same reasoning that keeps COND-AUTH-018 and COND-AUTH-019 separate despite their identical outcome.\n+\n+---\n+\n+### COND-AUTH-021: Repeat deletion of an already-deleted user is not idempotent\n+\n+| Field      | Value                                                                        |\n+| ---------- | ---------------------------------------------------------------------------- |\n+| ID         | COND-AUTH-021                                                                |\n+| Priority   | Medium                                                                       |\n+| Category   | State                                                                        |\n+| Technique  | Exploratory heuristic                                                        |\n+| Source     | Observed behavior: live check 2026-09-03; docs/api-spec/account-endpoints.md |\n+| Test cases | AUTH-021                                                                     |\n+\n+**What to cover**\n+The state transition unique to this endpoint: a successful DELETE, followed by a second DELETE of the same UUID using the now-stale token. Confirms the endpoint is **not** idempotent in the REST sense — the second call returns `200`/`1207` rather than repeating `204`.\n+\n+**Values / boundaries**\n+\n+```\n+# EP\n+Invalid class — already-deleted UUID: seed a user, delete it successfully (204), then repeat the identical request with the same token\n+Expected status: 200\n+Expected body: { code: \"1207\", message: \"User Id not correct!\" }\n+```\n+\n+**Notes**\n+Promoted from COND-AUTH-INF-008 after live verification 2026-09-03 — confirmed deterministic across three independent runs with three separate users.\n+\n+The pre-verification file rated this three-way ambiguous (`204` again / `1207` / `1200`, the last on the theory that the token dies with its user). The live answer is `1207`: the token remains valid enough to authenticate, and the failure is reported against the UUID, not the credential. That rules out the `1200` branch specifically — which is why this condition asserts the absence of an authorization error, not merely the presence of `1207`.\n+\n+Unlike every other condition in this file, this one is inherently sequential within a single test — delete, then delete again. That is a sequence internal to the condition, not a dependency on another condition having run, so independence still holds.\n+\n+---\n+\n+## Infeasible conditions\n+\n+None specific to this endpoint. The one applicable gap — no documented length or format constraint on the `UUID` path parameter — is already recorded as COND-AUTH-INF-005 in `get-user.md` for the same parameter and is not duplicated here. Cross-user access remains out of project scope per COND-AUTH-INF-006.\n+\n+---\n+\n+## Coverage completeness check\n+\n+| Question                                                                               | Answer                                                                                                                                                                                                                                                                                                                       |\n+| -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |\n+| Does every required input field have a valid EP condition?                             | Yes — COND-AUTH-017 covers the valid-token, own-UUID class                                                                                                                                                                                                                                                                   |\n+| Does every required input field have at least one invalid EP condition?                | Yes — COND-AUTH-018 (missing token), COND-AUTH-019 (invalid/malformed token), COND-AUTH-020 (non-existent UUID)                                                                                                                                                                                                              |\n+| Are all BVA boundaries covered (min, min-1, empty)?                                    | Not applicable — no length/format rule exists for the UUID parameter to bound; that gap is already documented as COND-AUTH-INF-005 in `get-user.md` for the same parameter and is not duplicated here                                                                                                                        |\n+| Does every authorization state produce a distinct condition?                           | Yes — COND-AUTH-017 (valid), COND-AUTH-018 (missing), COND-AUTH-019 (invalid), COND-AUTH-020 (valid token, unknown UUID). Cross-user access remains out of project scope per COND-AUTH-INF-006.                                                                                                                              |\n+| Are all infeasible conditions documented?                                              | Yes — none remain specific to this endpoint. COND-AUTH-INF-007 and COND-AUTH-INF-008 were promoted to COND-AUTH-020 and COND-AUTH-021 after live verification 2026-09-03; COND-AUTH-INF-005 covers the one remaining gap and lives in `get-user.md`                                                                          |\n+| Does every analysis bullet map to at least one condition?                              | Yes — see mapping below                                                                                                                                                                                                                                                                                                      |\n+| Are all conditions independently testable?                                             | Yes — each seeds its own user and token; none depends on another having run first. COND-AUTH-017 consumes the user it seeds, which is precisely why no other condition may depend on its outcome. COND-AUTH-021 deletes twice within its own scope — a sequence internal to the condition, not a cross-condition dependency. |\n+| Does any condition pair only ever get exercised together (trigger vs. its own effect)? | No — COND-AUTH-017 already merges its trigger (valid token + own UUID) with its effect (204, empty body), following the precedent in `post-user.md` and `get-user.md`. COND-AUTH-020 and COND-AUTH-021 return identical responses but are reached through different preconditions, so neither is the other's effect.         |\n+\n+**Analysis-to-condition mapping**\n+\n+- Happy path (valid token, own UUID, 204 empty body) → COND-AUTH-017\n+- Negative: missing Authorization header → COND-AUTH-018\n+- Negative: invalid/malformed token → COND-AUTH-019\n+- Negative: non-existent UUID with a valid token → COND-AUTH-020\n+- Boundary: UUID undocumented length/format constraint → COND-AUTH-INF-005 in `get-user.md` (same parameter, not duplicated)\n+- Idempotency/state: deleting an already-deleted user → COND-AUTH-021\n+- Authorization states: valid/missing/invalid/unknown-UUID → COND-AUTH-017, COND-AUTH-018, COND-AUTH-019, COND-AUTH-020\n+- Status codes/response shape: 204 empty body, 401 shared auth error, 200 shared `1207` unknown-user error → COND-AUTH-017, COND-AUTH-018, COND-AUTH-019, COND-AUTH-020, COND-AUTH-021\n+- Spec ambiguities: non-existent UUID resolved 2026-09-03 → COND-AUTH-020; already-deleted user resolved 2026-09-03 → COND-AUTH-021; UUID format → COND-AUTH-INF-005 (`get-user.md`); missing-vs-invalid-token distinction → addressed in COND-AUTH-019's Notes\n+\n+**Coverage gaps identified**\n+\n+- None. The two previously-deferred behaviors were live-verified 2026-09-03 and promoted to COND-AUTH-020 and COND-AUTH-021; `docs/api-spec/account-endpoints.md` was updated in the same pass so the project's source of truth now carries them.\n+\n+**Deferred conditions**\n+\n+- None for this endpoint. COND-AUTH-INF-005 (UUID format/length) remains deferred but is owned by `get-user.md`, which covers the same parameter.\ndiff --git a/src/fixtures/account.fixtures.ts b/src/fixtures/account.fixtures.ts\nindex eb39f30..9f65ec6 100644\n--- a/src/fixtures/account.fixtures.ts\n+++ b/src/fixtures/account.fixtures.ts\n@@ -17,6 +17,17 @@ interface SeededAuthorizedUser extends SeededUser {\n   token: string;\n }\n \n+// For tests whose own DELETE call under test is expected to actually delete\n+// the user (the success case, or a repeat-delete case proving\n+// non-idempotency). The test must set `deleted = true` after its own\n+// successful delete so teardown does not attempt a second one — the\n+// already-deleted-user response is confirmed 200/1207, not 204\n+// (docs/api-spec/account-endpoints.md), so an unconditional teardown delete\n+// would misread that as a failed cleanup and log a false orphan.\n+interface SelfDeletingAuthorizedUser extends SeededAuthorizedUser {\n+  deleted: boolean;\n+}\n+\n // For tests where the registration call is itself under test, so seedUser\n // cannot make it. The test registers using `payload`, then assigns the id it\n // gets back to `createdUserId`; teardown deletes it afterwards.\n@@ -35,6 +46,7 @@ interface AccountFixtures {\n   accountApiClient: AccountApiClient;\n   seedUser: SeededUser;\n   seedAuthorizedUser: SeededAuthorizedUser;\n+  seedAuthorizedUserForSelfDelete: SelfDeletingAuthorizedUser;\n   userUnderTest: UserUnderTest;\n }\n \n@@ -114,6 +126,39 @@ export const test = base.extend<AccountFixtures>({\n     await deleteUserAndLogOrphanOnFailure(accountApiClient, payload, created.userID, token);\n   },\n \n+  seedAuthorizedUserForSelfDelete: async ({ accountApiClient }, use) => {\n+    const payload = buildNewUserPayload();\n+    const createResponse = await accountApiClient.createUser(payload);\n+    const created = await parseJsonBody(createResponse, CreateUserResponseSchema);\n+    const tokenResponse = await accountApiClient.generateToken(payload);\n+    const { token } = await parseJsonBody(tokenResponse, GenerateTokenResponseSchema);\n+\n+    if (!token) {\n+      logger.error(\n+        `seedAuthorizedUserForSelfDelete could not acquire a token for userId=${created.userID} userName=${payload.userName}`\n+      );\n+      throw new Error('seedAuthorizedUserForSelfDelete: token acquisition failed');\n+    }\n+\n+    const state: SelfDeletingAuthorizedUser = {\n+      userName: payload.userName,\n+      password: payload.password,\n+      userId: created.userID,\n+      token,\n+      deleted: false,\n+    };\n+\n+    await use(state);\n+\n+    // The test sets state.deleted = true after its own successful delete.\n+    // Skip teardown's delete in that case — the user is already gone, and a\n+    // second delete attempt would return 200/1207 rather than 204, which\n+    // deleteUserAndLogOrphanOnFailure would misread as a failed cleanup.\n+    if (!state.deleted) {\n+      await deleteUserAndLogOrphanOnFailure(accountApiClient, payload, created.userID, token);\n+    }\n+  },\n+\n   userUnderTest: async ({ accountApiClient }, use) => {\n     const userUnderTest: UserUnderTest = {\n       payload: buildNewUserPayload(),\ndiff --git a/tests/api/delete-user.api.spec.ts b/tests/api/delete-user.api.spec.ts\nnew file mode 100644\nindex 0000000..2ed2087\n--- /dev/null\n+++ b/tests/api/delete-user.api.spec.ts\n@@ -0,0 +1,96 @@\n+import { test, expect } from '../../src/fixtures/account.fixtures';\n+import { parseJsonBody } from '../../src/utils/api-response.util';\n+import { ApiErrorResponseSchema } from '../../src/types/api-error.schema';\n+\n+test(\n+  'Delete own user account with a valid token',\n+  { tag: ['@AUTH-017', '@positive'] },\n+  async ({ accountApiClient, seedAuthorizedUserForSelfDelete }) => {\n+    const response = await accountApiClient.deleteUser({\n+      userId: seedAuthorizedUserForSelfDelete.userId,\n+      token: seedAuthorizedUserForSelfDelete.token,\n+    });\n+    const body = await response.text();\n+\n+    expect.soft(response.status()).toBe(204);\n+    expect.soft(body).toBe('');\n+\n+    // Marks the delete done so the fixture's teardown doesn't attempt a\n+    // second one — see the SelfDeletingAuthorizedUser doc in account.fixtures.ts.\n+    seedAuthorizedUserForSelfDelete.deleted = true;\n+  }\n+);\n+\n+test(\n+  'Delete user account with no Authorization header',\n+  { tag: ['@AUTH-018', '@negative'] },\n+  async ({ request, seedUser }) => {\n+    // AccountApiClient.deleteUser always sets an Authorization header via\n+    // authHeader(token); this case needs the header absent entirely, so it\n+    // bypasses the client and calls the raw request fixture directly.\n+    const response = await request.delete(`/Account/v1/User/${seedUser.userId}`);\n+    const body = await parseJsonBody(response, ApiErrorResponseSchema);\n+\n+    expect.soft(response.status()).toBe(401);\n+    expect.soft(body.code).toBe('1200');\n+    expect.soft(body.message).toBe('User not authorized!');\n+  }\n+);\n+\n+test(\n+  'Delete user account with an invalid or malformed token',\n+  { tag: ['@AUTH-019', '@negative'] },\n+  async ({ accountApiClient, seedUser }) => {\n+    const response = await accountApiClient.deleteUser({\n+      userId: seedUser.userId,\n+      token: 'not-a-real-token-abc123',\n+    });\n+    const body = await parseJsonBody(response, ApiErrorResponseSchema);\n+\n+    expect.soft(response.status()).toBe(401);\n+    expect.soft(body.code).toBe('1200');\n+    expect.soft(body.message).toBe('User not authorized!');\n+  }\n+);\n+\n+test(\n+  'Delete a non-existent user UUID with a valid unrelated token',\n+  { tag: ['@AUTH-020', '@negative'] },\n+  async ({ accountApiClient, seedAuthorizedUser }) => {\n+    const response = await accountApiClient.deleteUser({\n+      userId: '00000000-0000-0000-0000-000000000000',\n+      token: seedAuthorizedUser.token,\n+    });\n+    const body = await parseJsonBody(response, ApiErrorResponseSchema);\n+\n+    expect.soft(response.status()).toBe(200);\n+    expect.soft(body.code).toBe('1207');\n+    expect.soft(body.message).toBe('User Id not correct!');\n+  }\n+);\n+\n+test(\n+  'Delete an already-deleted user account',\n+  { tag: ['@AUTH-021', '@negative'] },\n+  async ({ accountApiClient, seedAuthorizedUserForSelfDelete }) => {\n+    const firstDelete = await accountApiClient.deleteUser({\n+      userId: seedAuthorizedUserForSelfDelete.userId,\n+      token: seedAuthorizedUserForSelfDelete.token,\n+    });\n+    expect.soft(firstDelete.status()).toBe(204);\n+    seedAuthorizedUserForSelfDelete.deleted = true;\n+\n+    // Same stale token reused deliberately — this is what rules out a 1200\n+    // authorization error and confirms the failure is reported against the\n+    // UUID instead. Regenerating a token here would test something else.\n+    const secondDelete = await accountApiClient.deleteUser({\n+      userId: seedAuthorizedUserForSelfDelete.userId,\n+      token: seedAuthorizedUserForSelfDelete.token,\n+    });\n+    const body = await parseJsonBody(secondDelete, ApiErrorResponseSchema);\n+\n+    expect.soft(secondDelete.status()).toBe(200);\n+    expect.soft(body.code).toBe('1207');\n+    expect.soft(body.message).toBe('User Id not correct!');\n+  }\n+);\ndiff --git a/tests/api/delete-user.contract.spec.ts b/tests/api/delete-user.contract.spec.ts\nnew file mode 100644\nindex 0000000..6a0b8d8\n--- /dev/null\n+++ b/tests/api/delete-user.contract.spec.ts\n@@ -0,0 +1,34 @@\n+import { test, expect } from '../../src/fixtures/account.fixtures';\n+import { ApiErrorResponseSchema } from '../../src/types/api-error.schema';\n+\n+test(\n+  'DELETE /Account/v1/User/{UUID} success response has no body',\n+  { tag: ['@contract', '@AUTH'] },\n+  async ({ accountApiClient, seedAuthorizedUserForSelfDelete }) => {\n+    const response = await accountApiClient.deleteUser({\n+      userId: seedAuthorizedUserForSelfDelete.userId,\n+      token: seedAuthorizedUserForSelfDelete.token,\n+    });\n+    const body = await response.text();\n+\n+    expect(response.status()).toBe(204);\n+    expect(body).toBe('');\n+\n+    seedAuthorizedUserForSelfDelete.deleted = true;\n+  }\n+);\n+\n+test(\n+  'DELETE /Account/v1/User/{UUID} error response matches schema',\n+  { tag: ['@contract', '@AUTH'] },\n+  async ({ accountApiClient, seedUser }) => {\n+    const response = await accountApiClient.deleteUser({\n+      userId: seedUser.userId,\n+      token: 'not-a-real-token-abc123',\n+    });\n+    const body: unknown = await response.json();\n+\n+    expect(response.status()).toBe(401);\n+    expect(body).toMatchSchema(ApiErrorResponseSchema);\n+  }\n+);",
+      "actualWorkers": 4
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/demoqa-test-automation/demoqa-test-automation/test-results",
+        "repeatEach": 1,
+        "retries": 2,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/olenamkolesnik/demoqa-test-automation/commit/7d4604be2238afb1db077b78fcd474442cbcfb99",
+            "commitHash": "7d4604be2238afb1db077b78fcd474442cbcfb99",
+            "prHref": "https://github.com/olenamkolesnik/demoqa-test-automation/pull/17",
+            "prTitle": "Automate DELETE /Account/v1/User/{UUID} test cases",
+            "prBaseHash": "8c44b4f22926d30fa6176b9b88650bfb61a0453e",
+            "buildHref": "https://github.com/olenamkolesnik/demoqa-test-automation/actions/runs/33797654017"
+          },
+          "gitCommit": {
+            "shortHash": "7d4604b",
+            "hash": "7d4604be2238afb1db077b78fcd474442cbcfb99",
+            "subject": "Merge 4ac87065ff2eb99c77211d20a809d8b82d69a9c9 into 8c44b4f22926d30fa6176b9b88650bfb61a0453e",
+            "body": "Merge 4ac87065ff2eb99c77211d20a809d8b82d69a9c9 into 8c44b4f22926d30fa6176b9b88650bfb61a0453e\n",
+            "author": {
+              "name": "olenamkolesnik",
+              "email": "33692828+olenamkolesnik@users.noreply.github.com",
+              "time": 1788464326000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1788464326000
+            },
+            "branch": "HEAD"
+          },
+          "gitDiff": "diff --git a/.claude/commands/api-pipeline.md b/.claude/commands/api-pipeline.md\nnew file mode 100644\nindex 0000000..689ade7\n--- /dev/null\n+++ b/.claude/commands/api-pipeline.md\n@@ -0,0 +1,81 @@\n+---\n+description: Run the full API test-authoring pipeline for one endpoint — test conditions, test cases, infrastructure, and specs — stopping after each stage's review agent for your sign-off.\n+---\n+\n+Run the API test-authoring pipeline for: **$ARGUMENTS**\n+\n+You are orchestrating four existing skills and four existing review agents. You do not write test conditions, test cases, or code yourself — each stage is delegated to its skill, and each artifact is checked by its review agent. Your job is sequencing, carrying file paths between stages, and stopping for the user at every gate.\n+\n+## Input\n+\n+`$ARGUMENTS` should be an endpoint, e.g. `GET /BookStore/v1/Books`. If no endpoint was given, ask for one and stop — do not guess or pick one from the spec docs.\n+\n+Source the endpoint's requirements the same way every skill in this pipeline already does:\n+\n+1. A live-verified `.md` doc under `docs/api-spec/` covering this resource — trusted over Swagger wherever they disagree\n+2. `docs/api-spec/*.swagger.json` where no corrected doc covers it\n+3. Ask the user **only** for what neither source has (an undocumented business rule)\n+\n+Do not ask the user to restate requirements the spec docs already hold, and do not ask them to paste spec content — read it.\n+\n+## Before starting: resume check\n+\n+Derive the path stems from the endpoint (mechanical — the skills define these transforms; don't ask the user to confirm them):\n+\n+- `<feature>` — functional area: `auth`, `bookstore`, `collection`, `profile`\n+- `<verb>-<resource>` — method lowercased plus the entity segment, e.g. `GET /BookStore/v1/Books` → `get-books`\n+- `<resource>` — the resource path segment kebab-cased, e.g. `BookStore` → `book-store`\n+\n+Check what already exists:\n+\n+| Stage | Artifact                                                                                                                                      |\n+| ----- | --------------------------------------------------------------------------------------------------------------------------------------------- |\n+| 1     | `docs/test-conditions/api/<feature>/<verb>-<resource>.md`                                                                                     |\n+| 2     | `docs/test-cases/api/<feature>/<verb>-<resource>.md`                                                                                          |\n+| 3     | `src/types/<resource>.schema.ts`, `src/api/<resource>-api.client.ts`, `src/data/<resource>.factory.ts`, `src/fixtures/<resource>.fixtures.ts` |\n+| 4     | `tests/api/<verb>-<resource>.api.spec.ts`, `tests/api/<verb>-<resource>.contract.spec.ts`                                                     |\n+\n+Report what you found, then start at the earliest stage whose artifact is missing.\n+\n+Two rules about what you found:\n+\n+- **An existing file is not a completed stage.** Nothing in this repo records that an artifact passed review. So for every pre-existing artifact, run that stage's review agent against it and present the verdict as that stage's gate before moving on. Do not skip a stage just because its file is on disk. Regenerate an existing artifact only if the user asks.\n+- **Stage 3 is per-resource, not per-endpoint.** One set of four infrastructure files serves every endpoint on that resource, so they can already exist on this endpoint's very first pipeline run because a sibling endpoint built them earlier. That is normal. Re-review them (they may need a new client method for this endpoint), but don't treat their existence as evidence this endpoint was already processed.\n+\n+## The four stages\n+\n+Each stage has the same shape: generate → review → **stop** → interpret the user's reply.\n+\n+| #   | Generate with skill           | Review with agent                 | Gate verdict                   |\n+| --- | ----------------------------- | --------------------------------- | ------------------------------ |\n+| 1   | `write-test-conditions`       | `review-test-conditions`          | Ready for test case generation |\n+| 2   | `write-manual-test-case`      | `review-test-cases`               | Ready for automation           |\n+| 3   | `generate-api-infrastructure` | `review-generated-infrastructure` | Ready for test generation      |\n+| 4   | `generate-api-tests`          | `review-generated-tests`          | Ready to merge                 |\n+\n+Pass each review agent the file path the skill just produced — every one of them requires a named target and will stop if it doesn't get one.\n+\n+Stage 3 takes the endpoint spec, not the reviewed test cases, so it does not depend on stages 1–2. Stage 4 needs both the reviewed test-cases file from stage 2 and the reviewed infrastructure from stage 3.\n+\n+## At every gate\n+\n+Print the review agent's **full findings table and verdict, verbatim** — not a summary, not just the verdict line. Then end your turn and wait.\n+\n+When the user replies:\n+\n+- **Approval** (\"looks good\", \"proceed\", \"ok\") — move to the next stage.\n+- **A fix instruction** (\"fix #2\", \"the boundary condition is wrong\") — apply it, then re-invoke **the same review agent** on the revised artifact and stop again. Never advance to the next stage on the strength of your own fix; the agent re-checks it.\n+- **Anything ambiguous** — ask, don't assume. A wrong guess here silently propagates into every later stage.\n+\n+## Rules\n+\n+- Never skip a stage's review agent, even when the artifact looks obviously fine. The gates are the point of the pipeline.\n+- Never proceed past a gate without a reply from the user in that turn. Ending your turn at each gate is the design, not overhead to optimize away.\n+- If a review agent reports its own source-of-truth file missing, stop the entire pipeline and say so. Do not improvise criteria on its behalf.\n+- If a skill reports something it cannot generate — `generate-api-tests` explicitly refuses multi-actor test cases, for instance — stop and surface that rather than pushing through with a best-effort attempt.\n+- Never run the test suite or a live smoke check as part of this pipeline. Both create real data on the shared public DemoQA backend (Risk-1 in `docs/test-plan.md`). Lint, format, and `--list` are the only verification commands the review agents are permitted, and they run those themselves.\n+- **One narrow exception:** stage 1's `write-test-conditions` may make targeted live requests to resolve a case it would otherwise mark infeasible, under the rules in that skill's **Resolving undocumented behavior** section — a handful of `qa_`-prefixed requests, repeated to confirm, with the finding pushed into `docs/api-spec/`. This is not a smoke check: it establishes unknown behavior once, so every later stage and endpoint reads it from the spec doc instead. No other stage and no review agent may call the live API.\n+\n+## When stage 4 is approved\n+\n+Print a closing summary: the file path produced at each stage, and which test cases were automated versus skipped by the priority filter. Note that `generate-api-tests` has already back-written the `Automation` field in the test-cases file — no manual update is needed.\ndiff --git a/docs/api-spec/account-endpoints.md b/docs/api-spec/account-endpoints.md\nindex 8f003bd..22cdf2f 100644\n--- a/docs/api-spec/account-endpoints.md\n+++ b/docs/api-spec/account-endpoints.md\n@@ -1,6 +1,6 @@\n # DemoQA Book Store — Account API (Confirmed)\n \n-Source: raw Swagger spec extracted from `https://demoqa.com/swagger/swagger-ui-init.js` (saved as [`book-store-api.swagger.json`](./book-store-api.swagger.json)), cross-checked against live API calls on 2026-08-25, re-verified with no drift on 2026-09-01. Extended 2026-09-02 with the required-field behavior of `POST /Account/v1/User`, which no earlier pass had covered; the previously documented cases were re-confirmed unchanged in that pass. Where the Swagger doc and live behavior disagreed, **live behavior wins** — the doc has several inaccuracies, noted below. See [`book-store-endpoints.md`](./book-store-endpoints.md) for the `/BookStore` endpoints verified the same way.\n+Source: raw Swagger spec extracted from `https://demoqa.com/swagger/swagger-ui-init.js` (saved as [`book-store-api.swagger.json`](./book-store-api.swagger.json)), cross-checked against live API calls on 2026-08-25, re-verified with no drift on 2026-09-01. Extended 2026-09-02 with the required-field behavior of `POST /Account/v1/User`, which no earlier pass had covered; the previously documented cases were re-confirmed unchanged in that pass. Extended 2026-09-03 with the unknown-UUID behavior of `DELETE /Account/v1/User/{UUID}` (non-existent and already-deleted), also uncovered by earlier passes; the DELETE success and auth-failure rows were re-confirmed unchanged. Where the Swagger doc and live behavior disagreed, **live behavior wins** — the doc has several inaccuracies, noted below. See [`book-store-endpoints.md`](./book-store-endpoints.md) for the `/BookStore` endpoints verified the same way.\n \n ## POST /Account/v1/User (Create User)\n \n@@ -61,13 +61,25 @@ Auth: `Authorization: Bearer <token>` header required.\n \n Auth: `Authorization: Bearer <token>` header required.\n \n-| Case                  | Status | Body                                                |\n-| --------------------- | ------ | --------------------------------------------------- |\n-| Success               | `204`  | (empty)                                             |\n-| Missing/invalid token | `401`  | `{ code: \"1200\", message: \"User not authorized!\" }` |\n+| Case                                     | Status | Body                                                                      |\n+| ---------------------------------------- | ------ | ------------------------------------------------------------------------- |\n+| Success                                  | `204`  | (empty)                                                                   |\n+| Missing/invalid token                    | `401`  | `{ code: \"1200\", message: \"User not authorized!\" }`                       |\n+| Non-existent UUID, valid unrelated token | `200`  | `{ code: \"1207\", message: \"User Id not correct!\" }` — verified 2026-09-03 |\n+| Already-deleted UUID, stale token        | `200`  | `{ code: \"1207\", message: \"User Id not correct!\" }` — verified 2026-09-03 |\n \n **Doc discrepancy:** the Swagger doc's response table for this endpoint is essentially scrambled — it labels `200` as \"Success\" (schema `MessageModal`) and `204` as \"Unauthorized\" (schema `BooksResult`), which is backwards from confirmed live behavior (`204` empty body = success, `401` = unauthorized). Do not trust the doc's response descriptions for this endpoint.\n \n+**Unknown-user handling (verified 2026-09-03, undocumented in Swagger):** one shared `1207` code path covers both \"this UUID was never issued\" and \"this UUID was deleted already\" — the two are indistinguishable from the response alone. Confirmed deterministic across three independent runs with three separate users.\n+\n+Two things about this response are worth not glossing over:\n+\n+`200` carries an error body. Unlike the `401` auth failures above, an unknown UUID returns HTTP `200` with a `MessageModal`-shaped error payload, so status code alone cannot be used to detect this case — the same trap as `POST /Account/v1/GenerateToken`, which also always returns `200` and differentiates by body. A client that branches on `res.ok` treats a failed delete as a success.\n+\n+The `1207` message text is endpoint-specific. `GET /Account/v1/User/{UUID}` returns `1207` with `\"User not found!\"` under HTTP `401`; DELETE returns `1207` with `\"User Id not correct!\"` under HTTP `200`. Same code, different message, different status. So `1207` identifies \"no such user\" as a concept, but neither its wrapper status nor its message text is shared across endpoints — do not assert one endpoint's pairing against another.\n+\n+Repeat deletion is therefore **not** idempotent in the REST sense: the second call returns `200`/`1207` rather than `204`.\n+\n ## Auth mechanism (from spec `securityDefinitions`)\n \n The API declares both `Basic` (HTTP Basic Auth) and `Bearer` (JWT via `Authorization` header) as valid security schemes for protected endpoints. Only `Bearer` was tested/confirmed above; `Basic` auth is documented but not exercised in this verification pass.\ndiff --git a/docs/test-cases/api/auth/delete-user.md b/docs/test-cases/api/auth/delete-user.md\nnew file mode 100644\nindex 0000000..b1c9adb\n--- /dev/null\n+++ b/docs/test-cases/api/auth/delete-user.md\n@@ -0,0 +1,133 @@\n+# Test Cases — DELETE /Account/v1/User/{UUID}\n+\n+Generated from reviewed conditions in `docs/test-conditions/api/auth/delete-user.md`. Every test case traces to exactly one condition; no test case exists without a condition behind it.\n+\n+---\n+\n+### TC: Delete own user account with a valid token\n+\n+| Field          | Value                                                                                                                                                                        |\n+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |\n+| ID             | AUTH-017                                                                                                                                                                     |\n+| Condition      | COND-AUTH-017                                                                                                                                                                |\n+| Risk           | Risk-1                                                                                                                                                                       |\n+| Preconditions  | User account exists and token generated (POST /Account/v1/User, then POST /Account/v1/GenerateToken) for userName \"qa_deluser_valid_017\" and password \"Aa1!aaaa\"             |\n+| Test data      | UUID: the userId returned when the precondition user was created / Authorization header: Bearer \\<token\\> (the valid token acquired in the precondition, for this same user) |\n+| Postconditions | None — the test itself deletes the user, which is the behavior under test. No teardown call is needed or possible.                                                           |\n+| Automation     | Automated → `delete-user.api.spec.ts`                                                                                                                                        |\n+\n+**Steps & expected results**\n+\n+| #   | Action                                                                                  | Expected result                                                  |\n+| --- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |\n+| 1   | Send DELETE /Account/v1/User/{userId} with header `Authorization: Bearer <valid token>` | Status 204; response body is empty — no JSON payload of any kind |\n+\n+**Notes**\n+Assert the body is genuinely empty, not merely that the status is 204. Swagger documents a `BooksResult` schema for this status and labels `204` \"Unauthorized\" — both wrong. The empty-body assertion is what pins live behavior against the incorrect documented contract.\n+\n+This is the only test case in this file with no teardown: deleting the user _is_ the test. Every other case here must clean up after itself.\n+\n+---\n+\n+### TC: Delete user account with no Authorization header\n+\n+| Field          | Value                                                                                                                                                                                         |\n+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |\n+| ID             | AUTH-018                                                                                                                                                                                      |\n+| Condition      | COND-AUTH-018                                                                                                                                                                                 |\n+| Risk           | Risk-1, Risk-4                                                                                                                                                                                |\n+| Preconditions  | User account exists (created via API: POST /Account/v1/User) with userName \"qa_deluser_noauth_018\" and password \"Aa1!aaaa\"                                                                    |\n+| Test data      | UUID: the userId returned when the precondition user was created / no Authorization header is sent                                                                                            |\n+| Postconditions | User \"qa_deluser_noauth_018\" deleted via DELETE /Account/v1/User/{userId} (requires a token acquired via POST /Account/v1/GenerateToken for this user, since none was generated during setup) |\n+| Automation     | Automated → `delete-user.api.spec.ts`                                                                                                                                                         |\n+\n+**Steps & expected results**\n+\n+| #   | Action                                                             | Expected result                                                                 |\n+| --- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------- |\n+| 1   | Send DELETE /Account/v1/User/{userId} with no Authorization header | Status 401; body equals `{ \"code\": \"1200\", \"message\": \"User not authorized!\" }` |\n+\n+**Notes**\n+The teardown matters more here than in the equivalent GET case: if the endpoint were to wrongly accept this unauthenticated request, the user would already be gone and the teardown would fail — that failure is itself a signal worth reading, not just noise.\n+\n+Same response as AUTH-019 (invalid/malformed token) — DemoQA groups missing and invalid token under one documented, identical response.\n+\n+---\n+\n+### TC: Delete user account with an invalid or malformed token\n+\n+| Field          | Value                                                                                                                                                                                           |\n+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |\n+| ID             | AUTH-019                                                                                                                                                                                        |\n+| Condition      | COND-AUTH-019                                                                                                                                                                                   |\n+| Risk           | Risk-1, Risk-4                                                                                                                                                                                  |\n+| Preconditions  | User account exists (created via API: POST /Account/v1/User) with userName \"qa_deluser_badtoken_019\" and password \"Aa1!aaaa\"                                                                    |\n+| Test data      | UUID: the userId returned when the precondition user was created / Authorization header: `Bearer not-a-real-token-abc123`                                                                       |\n+| Postconditions | User \"qa_deluser_badtoken_019\" deleted via DELETE /Account/v1/User/{userId} (requires a token acquired via POST /Account/v1/GenerateToken for this user, since none was generated during setup) |\n+| Automation     | Automated → `delete-user.api.spec.ts`                                                                                                                                                           |\n+\n+**Steps & expected results**\n+\n+| #   | Action                                                                                            | Expected result                                                                 |\n+| --- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |\n+| 1   | Send DELETE /Account/v1/User/{userId} with header `Authorization: Bearer not-a-real-token-abc123` | Status 401; body equals `{ \"code\": \"1200\", \"message\": \"User not authorized!\" }` |\n+\n+**Notes**\n+Kept separate from AUTH-018 despite the identical expected response: absent header and present-but-invalid header are distinct invalid input classes, and a future API change could plausibly start distinguishing them.\n+\n+---\n+\n+### TC: Delete a non-existent user UUID with a valid unrelated token\n+\n+| Field          | Value                                                                                                                                                                                                                                     |\n+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |\n+| ID             | AUTH-020                                                                                                                                                                                                                                  |\n+| Condition      | COND-AUTH-020                                                                                                                                                                                                                             |\n+| Risk           | Risk-1, Risk-4                                                                                                                                                                                                                            |\n+| Preconditions  | User account exists and token generated (POST /Account/v1/User, then POST /Account/v1/GenerateToken) for userName \"qa_deluser_nouuid_020\" and password \"Aa1!aaaa\" — this user supplies the valid token but is **not** the deletion target |\n+| Test data      | UUID: \"00000000-0000-0000-0000-000000000000\" (well-formed but never issued) / Authorization header: Bearer \\<token\\> (the valid token belonging to \"qa_deluser_nouuid_020\")                                                               |\n+| Postconditions | User \"qa_deluser_nouuid_020\" deleted via DELETE /Account/v1/User/{userId} (reuse the token already acquired in the precondition) — the target UUID never existed, so nothing else needs cleanup                                           |\n+| Automation     | Automated → `delete-user.api.spec.ts`                                                                                                                                                                                                     |\n+\n+**Steps & expected results**\n+\n+| #   | Action                                                                                                              | Expected result                                                                 |\n+| --- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |\n+| 1   | Send DELETE /Account/v1/User/00000000-0000-0000-0000-000000000000 with header `Authorization: Bearer <valid token>` | Status 200; body equals `{ \"code\": \"1207\", \"message\": \"User Id not correct!\" }` |\n+\n+**Notes**\n+Live-verified 2026-09-03. The `200` is the substantive assertion — an error body under a success status. A client branching on `res.ok` would read this failed deletion as a success, so asserting the status explicitly is the point of the case.\n+\n+Do not assert this against `GET /Account/v1/User/{UUID}`'s behavior for the same scenario: GET returns `1207` as `401` with message \"User not found!\". Same code, different status, different message text.\n+\n+The precondition user is deliberately unrelated to the target UUID — this case tests an unknown UUID, not an authorization mismatch, so the token must be valid.\n+\n+---\n+\n+### TC: Delete an already-deleted user account\n+\n+| Field          | Value                                                                                                                                                                             |\n+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |\n+| ID             | AUTH-021                                                                                                                                                                          |\n+| Condition      | COND-AUTH-021                                                                                                                                                                     |\n+| Risk           | Risk-1, Risk-4                                                                                                                                                                    |\n+| Preconditions  | User account exists and token generated (POST /Account/v1/User, then POST /Account/v1/GenerateToken) for userName \"qa_deluser_repeat_021\" and password \"Aa1!aaaa\"                 |\n+| Test data      | UUID: the userId returned when the precondition user was created / Authorization header: Bearer \\<token\\> (the same token for both requests — it is not regenerated between them) |\n+| Postconditions | None — the user is deleted by step 1 of the test itself                                                                                                                           |\n+| Automation     | Automated → `delete-user.api.spec.ts`                                                                                                                                             |\n+\n+**Steps & expected results**\n+\n+| #   | Action                                                                                                    | Expected result                                                                 |\n+| --- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |\n+| 1   | Send DELETE /Account/v1/User/{userId} with header `Authorization: Bearer <valid token>`                   | Status 204; response body is empty                                              |\n+| 2   | Send the identical request again — same URL, same `Authorization: Bearer <token>` header, not regenerated | Status 200; body equals `{ \"code\": \"1207\", \"message\": \"User Id not correct!\" }` |\n+\n+**Notes**\n+Live-verified 2026-09-03 across three independent runs with three separate users — deterministic, not a one-off.\n+\n+This is the only two-step case in the file, and the second step is the actual assertion: step 1 establishes the deleted state. It confirms the endpoint is **not** idempotent in the REST sense — a second DELETE returns `200`/`1207`, not a repeated `204`.\n+\n+The stale token is deliberately reused rather than regenerated. That is what rules out the `1200` authorization branch: the token still authenticates fine after its user is gone, and the failure is reported against the UUID instead. Regenerating a token here would test something else entirely (and would fail, since the user no longer exists).\n+\n+Response is byte-identical to AUTH-020's — the API does not distinguish \"never issued\" from \"issued then deleted\".\ndiff --git a/docs/test-conditions/api/auth/delete-user.md b/docs/test-conditions/api/auth/delete-user.md\nnew file mode 100644\nindex 0000000..9d0cfa7\n--- /dev/null\n+++ b/docs/test-conditions/api/auth/delete-user.md\n@@ -0,0 +1,243 @@\n+# Test Conditions — DELETE /Account/v1/User/{UUID}\n+\n+## Endpoint analysis\n+\n+**Endpoint:** DELETE /Account/v1/User/{UUID}\n+**Source:** OpenAPI spec (`docs/api-spec/book-store-api.swagger.json`) cross-checked against observed live behavior (`docs/api-spec/account-endpoints.md`). Live behavior wins wherever the two disagree — and for this endpoint they disagree substantially (see Status codes table).\n+\n+**Happy path**\n+\n+- Valid bearer token for an existing user, deleting that same user's own UUID → the account is deleted, `204` with an empty body.\n+\n+**Negative cases**\n+\n+- Missing `Authorization` header entirely.\n+- `Authorization` header present but the token is invalid/malformed.\n+- Non-existent `UUID` (a syntactically plausible but never-issued user ID) with a valid, unrelated token — live-confirmed 2026-09-03, see Status codes table.\n+\n+**Boundary cases**\n+\n+- `UUID` path parameter: no length or format rule is documented anywhere (spec or live-verified doc) beyond it being a required string. No BVA is derivable without inventing an undocumented rule — the same gap already accepted for the same parameter in `docs/test-conditions/api/auth/get-user.md` (COND-AUTH-INF-005), which this file reuses rather than restating as a new infeasible condition.\n+\n+**Authorization states**\n+\n+- Valid token, own UUID → 204, empty body.\n+- Missing token → 401, `{code: \"1200\", message: \"User not authorized!\"}`.\n+- Invalid/malformed token → 401, same response as missing token (the live-verified doc groups both under a single \"Missing/invalid token\" row).\n+\n+**Idempotency / state**\n+\n+- Deleting an already-deleted user (repeating the DELETE with the now-stale token) — the state transition this endpoint uniquely owns among the `/Account` endpoints. Live-confirmed 2026-09-03: **not** idempotent, see Status codes table.\n+\n+**Status codes and response shape**\n+\n+| Scenario                                 | Status | Response                                                                                                                                                                                                                                                                |\n+| ---------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |\n+| Success                                  | 204    | Empty body — **live-confirmed**. Swagger is actively wrong here: it labels `200` as \"Success\" (schema `MessageModal`) and `204` as \"Unauthorized\" (schema `BooksResult`), which is scrambled relative to live behavior. Do not trust swagger's table for this endpoint. |\n+| Missing or invalid/malformed token       | 401    | `{ code: \"1200\", message: \"User not authorized!\" }` — live-confirmed; swagger documents `code` as `number`, but every endpoint sharing the `MessageModal` schema is confirmed live as a **string**                                                                      |\n+| Non-existent UUID, valid unrelated token | 200    | `{ code: \"1207\", message: \"User Id not correct!\" }` — **live-confirmed 2026-09-03**, undocumented in swagger. Note the `200`: an error body under a success status                                                                                                      |\n+| Already-deleted UUID, stale token        | 200    | `{ code: \"1207\", message: \"User Id not correct!\" }` — **live-confirmed 2026-09-03** across three independent runs; byte-identical to the row above                                                                                                                      |\n+\n+**Spec ambiguities / unknowns**\n+\n+- ~~A non-existent `UUID` combined with a valid, unrelated token is not documented by either spec source.~~ Resolved by live check 2026-09-03 — see COND-AUTH-020 and the status table above.\n+- ~~Deleting an already-deleted user is likewise unverified.~~ Resolved by live check 2026-09-03 — see COND-AUTH-021. The pre-verification concern that the token might die with its user proved unfounded: the failure is reported against the UUID (`1207`), not the credential (`1200`).\n+- Both resolved cases return byte-identical responses, so the API does not distinguish \"never issued\" from \"issued then deleted\". Whether that is deliberate or incidental is unknowable from the outside; the conditions assert the observed response without claiming to know which.\n+- No length or format constraint on the `UUID` path parameter is documented anywhere — do not invent one. Already captured as COND-AUTH-INF-005 in `get-user.md`; not duplicated here.\n+- Whether a malformed-but-present token produces byte-identical behavior to an absent header is not independently confirmed — the live-verified doc groups them into one row. Treated the same way as in `get-user.md` (COND-AUTH-013 / COND-AUTH-014): two conditions for two distinct invalid-input classes, despite an identical documented outcome.\n+\n+---\n+\n+## Authorization\n+\n+### COND-AUTH-017: Valid token deletes the requesting user's own account\n+\n+| Field      | Value                                                 |\n+| ---------- | ----------------------------------------------------- |\n+| ID         | COND-AUTH-017                                         |\n+| Priority   | High                                                  |\n+| Category   | Authorization                                         |\n+| Technique  | EP                                                    |\n+| Source     | Observed behavior: docs/api-spec/account-endpoints.md |\n+| Test cases | AUTH-017                                              |\n+\n+**What to cover**\n+The valid equivalence class: a user with a valid bearer token deletes their own UUID — resulting in `204` with an empty body. This is the sole happy path for the endpoint, and the one case where swagger's documented response table is actively misleading (it labels `204` \"Unauthorized\").\n+\n+**Values / boundaries**\n+\n+```\n+# EP\n+Valid class: a previously-created user's own UUID, deleted with that same user's valid bearer token\n+Expected status: 204\n+Expected body: empty — no JSON payload at all\n+```\n+\n+**Notes**\n+Following the merge principle applied throughout this feature area (COND-AUTH-001, COND-AUTH-012): the trigger (valid token + own UUID) and its effect (204, empty body) are not independently testable, so they are one condition rather than two.\n+\n+Confirming the body is genuinely empty is the substantive assertion here, not incidental — swagger claims a `BooksResult` schema for this status, so an empty-body check is what distinguishes live behavior from the documented contract.\n+\n+---\n+\n+### COND-AUTH-018: Missing Authorization header is rejected\n+\n+| Field      | Value                                                 |\n+| ---------- | ----------------------------------------------------- |\n+| ID         | COND-AUTH-018                                         |\n+| Priority   | High                                                  |\n+| Category   | Authorization                                         |\n+| Technique  | EP                                                    |\n+| Source     | Observed behavior: docs/api-spec/account-endpoints.md |\n+| Test cases | AUTH-018                                              |\n+\n+**What to cover**\n+Invalid equivalence class: the request is sent with no `Authorization` header at all, against an otherwise valid, existing user's UUID. Confirms the account is protected from unauthenticated deletion.\n+\n+**Values / boundaries**\n+\n+```\n+# EP\n+Invalid class — header absent: request to DELETE /Account/v1/User/{validUUID} with no Authorization header\n+Expected status: 401\n+Expected body: { code: \"1200\", message: \"User not authorized!\" }\n+```\n+\n+**Notes**\n+Higher stakes than the equivalent GET condition (COND-AUTH-013): an authorization gap on a destructive endpoint means unauthenticated account deletion, not merely an information leak. Priority High on that basis.\n+\n+---\n+\n+### COND-AUTH-019: Invalid or malformed token is rejected\n+\n+| Field      | Value                                                 |\n+| ---------- | ----------------------------------------------------- |\n+| ID         | COND-AUTH-019                                         |\n+| Priority   | High                                                  |\n+| Category   | Authorization                                         |\n+| Technique  | EP                                                    |\n+| Source     | Observed behavior: docs/api-spec/account-endpoints.md |\n+| Test cases | AUTH-019                                              |\n+\n+**What to cover**\n+Invalid equivalence class: the `Authorization` header is present but carries a token that is not a valid, currently-issued token (e.g. a garbage string), against an otherwise valid, existing user's UUID.\n+\n+**Values / boundaries**\n+\n+```\n+# EP\n+Invalid class — malformed token: Authorization: Bearer not-a-real-token-abc123\n+Expected status: 401\n+Expected body: { code: \"1200\", message: \"User not authorized!\" }\n+```\n+\n+**Notes**\n+Kept separate from COND-AUTH-018 rather than merged: absent-header and present-but-wrong-header are genuinely distinct invalid input classes, and the EP coverage rule requires a condition per invalid class even when the documented outcome is identical. Same treatment as COND-AUTH-013 / COND-AUTH-014 in `get-user.md`.\n+\n+---\n+\n+### COND-AUTH-020: Non-existent UUID returns the unknown-user error, not an authorization error\n+\n+| Field      | Value                                                                        |\n+| ---------- | ---------------------------------------------------------------------------- |\n+| ID         | COND-AUTH-020                                                                |\n+| Priority   | Medium                                                                       |\n+| Category   | Authorization                                                                |\n+| Technique  | EP                                                                           |\n+| Source     | Observed behavior: live check 2026-09-03; docs/api-spec/account-endpoints.md |\n+| Test cases | AUTH-020                                                                     |\n+\n+**What to cover**\n+Invalid equivalence class: a syntactically valid but never-issued UUID is deleted with a valid, unrelated token. Confirms the API reports the user as unknown (`1207`) rather than treating it as an authorization failure (`1200`), and — the substantive part — that it does so under HTTP `200`, not a 4xx.\n+\n+**Values / boundaries**\n+\n+```\n+# EP\n+Invalid class — non-existent UUID: a well-formed UUID that was never issued (e.g. all-zeros), deleted with any other valid token\n+Expected status: 200\n+Expected body: { code: \"1207\", message: \"User Id not correct!\" }\n+```\n+\n+**Notes**\n+Promoted from COND-AUTH-INF-007 after live verification 2026-09-03, following the same precedent as COND-AUTH-INF-004 → COND-AUTH-016 in `get-user.md`.\n+\n+The `200` status is the point of the condition, not incidental: a client branching on `res.ok` would read this failed deletion as a success. Asserting the status explicitly is what makes the test worth having.\n+\n+Two comparisons worth keeping straight, both confirmed rather than assumed:\n+\n+- Against `GET /Account/v1/User/{UUID}`, which returns `1207` as `401`/\"User not found!\" — same code, different status **and** different message text. Neither endpoint's pairing may be asserted against the other.\n+- Against COND-AUTH-021 (already-deleted user), which returns a byte-identical response. Kept as a separate condition because the two represent genuinely distinct invalid classes (never issued vs. issued then deleted), the same reasoning that keeps COND-AUTH-018 and COND-AUTH-019 separate despite their identical outcome.\n+\n+---\n+\n+### COND-AUTH-021: Repeat deletion of an already-deleted user is not idempotent\n+\n+| Field      | Value                                                                        |\n+| ---------- | ---------------------------------------------------------------------------- |\n+| ID         | COND-AUTH-021                                                                |\n+| Priority   | Medium                                                                       |\n+| Category   | State                                                                        |\n+| Technique  | Exploratory heuristic                                                        |\n+| Source     | Observed behavior: live check 2026-09-03; docs/api-spec/account-endpoints.md |\n+| Test cases | AUTH-021                                                                     |\n+\n+**What to cover**\n+The state transition unique to this endpoint: a successful DELETE, followed by a second DELETE of the same UUID using the now-stale token. Confirms the endpoint is **not** idempotent in the REST sense — the second call returns `200`/`1207` rather than repeating `204`.\n+\n+**Values / boundaries**\n+\n+```\n+# EP\n+Invalid class — already-deleted UUID: seed a user, delete it successfully (204), then repeat the identical request with the same token\n+Expected status: 200\n+Expected body: { code: \"1207\", message: \"User Id not correct!\" }\n+```\n+\n+**Notes**\n+Promoted from COND-AUTH-INF-008 after live verification 2026-09-03 — confirmed deterministic across three independent runs with three separate users.\n+\n+The pre-verification file rated this three-way ambiguous (`204` again / `1207` / `1200`, the last on the theory that the token dies with its user). The live answer is `1207`: the token remains valid enough to authenticate, and the failure is reported against the UUID, not the credential. That rules out the `1200` branch specifically — which is why this condition asserts the absence of an authorization error, not merely the presence of `1207`.\n+\n+Unlike every other condition in this file, this one is inherently sequential within a single test — delete, then delete again. That is a sequence internal to the condition, not a dependency on another condition having run, so independence still holds.\n+\n+---\n+\n+## Infeasible conditions\n+\n+None specific to this endpoint. The one applicable gap — no documented length or format constraint on the `UUID` path parameter — is already recorded as COND-AUTH-INF-005 in `get-user.md` for the same parameter and is not duplicated here. Cross-user access remains out of project scope per COND-AUTH-INF-006.\n+\n+---\n+\n+## Coverage completeness check\n+\n+| Question                                                                               | Answer                                                                                                                                                                                                                                                                                                                       |\n+| -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |\n+| Does every required input field have a valid EP condition?                             | Yes — COND-AUTH-017 covers the valid-token, own-UUID class                                                                                                                                                                                                                                                                   |\n+| Does every required input field have at least one invalid EP condition?                | Yes — COND-AUTH-018 (missing token), COND-AUTH-019 (invalid/malformed token), COND-AUTH-020 (non-existent UUID)                                                                                                                                                                                                              |\n+| Are all BVA boundaries covered (min, min-1, empty)?                                    | Not applicable — no length/format rule exists for the UUID parameter to bound; that gap is already documented as COND-AUTH-INF-005 in `get-user.md` for the same parameter and is not duplicated here                                                                                                                        |\n+| Does every authorization state produce a distinct condition?                           | Yes — COND-AUTH-017 (valid), COND-AUTH-018 (missing), COND-AUTH-019 (invalid), COND-AUTH-020 (valid token, unknown UUID). Cross-user access remains out of project scope per COND-AUTH-INF-006.                                                                                                                              |\n+| Are all infeasible conditions documented?                                              | Yes — none remain specific to this endpoint. COND-AUTH-INF-007 and COND-AUTH-INF-008 were promoted to COND-AUTH-020 and COND-AUTH-021 after live verification 2026-09-03; COND-AUTH-INF-005 covers the one remaining gap and lives in `get-user.md`                                                                          |\n+| Does every analysis bullet map to at least one condition?                              | Yes — see mapping below                                                                                                                                                                                                                                                                                                      |\n+| Are all conditions independently testable?                                             | Yes — each seeds its own user and token; none depends on another having run first. COND-AUTH-017 consumes the user it seeds, which is precisely why no other condition may depend on its outcome. COND-AUTH-021 deletes twice within its own scope — a sequence internal to the condition, not a cross-condition dependency. |\n+| Does any condition pair only ever get exercised together (trigger vs. its own effect)? | No — COND-AUTH-017 already merges its trigger (valid token + own UUID) with its effect (204, empty body), following the precedent in `post-user.md` and `get-user.md`. COND-AUTH-020 and COND-AUTH-021 return identical responses but are reached through different preconditions, so neither is the other's effect.         |\n+\n+**Analysis-to-condition mapping**\n+\n+- Happy path (valid token, own UUID, 204 empty body) → COND-AUTH-017\n+- Negative: missing Authorization header → COND-AUTH-018\n+- Negative: invalid/malformed token → COND-AUTH-019\n+- Negative: non-existent UUID with a valid token → COND-AUTH-020\n+- Boundary: UUID undocumented length/format constraint → COND-AUTH-INF-005 in `get-user.md` (same parameter, not duplicated)\n+- Idempotency/state: deleting an already-deleted user → COND-AUTH-021\n+- Authorization states: valid/missing/invalid/unknown-UUID → COND-AUTH-017, COND-AUTH-018, COND-AUTH-019, COND-AUTH-020\n+- Status codes/response shape: 204 empty body, 401 shared auth error, 200 shared `1207` unknown-user error → COND-AUTH-017, COND-AUTH-018, COND-AUTH-019, COND-AUTH-020, COND-AUTH-021\n+- Spec ambiguities: non-existent UUID resolved 2026-09-03 → COND-AUTH-020; already-deleted user resolved 2026-09-03 → COND-AUTH-021; UUID format → COND-AUTH-INF-005 (`get-user.md`); missing-vs-invalid-token distinction → addressed in COND-AUTH-019's Notes\n+\n+**Coverage gaps identified**\n+\n+- None. The two previously-deferred behaviors were live-verified 2026-09-03 and promoted to COND-AUTH-020 and COND-AUTH-021; `docs/api-spec/account-endpoints.md` was updated in the same pass so the project's source of truth now carries them.\n+\n+**Deferred conditions**\n+\n+- None for this endpoint. COND-AUTH-INF-005 (UUID format/length) remains deferred but is owned by `get-user.md`, which covers the same parameter.\ndiff --git a/src/fixtures/account.fixtures.ts b/src/fixtures/account.fixtures.ts\nindex eb39f30..9f65ec6 100644\n--- a/src/fixtures/account.fixtures.ts\n+++ b/src/fixtures/account.fixtures.ts\n@@ -17,6 +17,17 @@ interface SeededAuthorizedUser extends SeededUser {\n   token: string;\n }\n \n+// For tests whose own DELETE call under test is expected to actually delete\n+// the user (the success case, or a repeat-delete case proving\n+// non-idempotency). The test must set `deleted = true` after its own\n+// successful delete so teardown does not attempt a second one — the\n+// already-deleted-user response is confirmed 200/1207, not 204\n+// (docs/api-spec/account-endpoints.md), so an unconditional teardown delete\n+// would misread that as a failed cleanup and log a false orphan.\n+interface SelfDeletingAuthorizedUser extends SeededAuthorizedUser {\n+  deleted: boolean;\n+}\n+\n // For tests where the registration call is itself under test, so seedUser\n // cannot make it. The test registers using `payload`, then assigns the id it\n // gets back to `createdUserId`; teardown deletes it afterwards.\n@@ -35,6 +46,7 @@ interface AccountFixtures {\n   accountApiClient: AccountApiClient;\n   seedUser: SeededUser;\n   seedAuthorizedUser: SeededAuthorizedUser;\n+  seedAuthorizedUserForSelfDelete: SelfDeletingAuthorizedUser;\n   userUnderTest: UserUnderTest;\n }\n \n@@ -114,6 +126,39 @@ export const test = base.extend<AccountFixtures>({\n     await deleteUserAndLogOrphanOnFailure(accountApiClient, payload, created.userID, token);\n   },\n \n+  seedAuthorizedUserForSelfDelete: async ({ accountApiClient }, use) => {\n+    const payload = buildNewUserPayload();\n+    const createResponse = await accountApiClient.createUser(payload);\n+    const created = await parseJsonBody(createResponse, CreateUserResponseSchema);\n+    const tokenResponse = await accountApiClient.generateToken(payload);\n+    const { token } = await parseJsonBody(tokenResponse, GenerateTokenResponseSchema);\n+\n+    if (!token) {\n+      logger.error(\n+        `seedAuthorizedUserForSelfDelete could not acquire a token for userId=${created.userID} userName=${payload.userName}`\n+      );\n+      throw new Error('seedAuthorizedUserForSelfDelete: token acquisition failed');\n+    }\n+\n+    const state: SelfDeletingAuthorizedUser = {\n+      userName: payload.userName,\n+      password: payload.password,\n+      userId: created.userID,\n+      token,\n+      deleted: false,\n+    };\n+\n+    await use(state);\n+\n+    // The test sets state.deleted = true after its own successful delete.\n+    // Skip teardown's delete in that case — the user is already gone, and a\n+    // second delete attempt would return 200/1207 rather than 204, which\n+    // deleteUserAndLogOrphanOnFailure would misread as a failed cleanup.\n+    if (!state.deleted) {\n+      await deleteUserAndLogOrphanOnFailure(accountApiClient, payload, created.userID, token);\n+    }\n+  },\n+\n   userUnderTest: async ({ accountApiClient }, use) => {\n     const userUnderTest: UserUnderTest = {\n       payload: buildNewUserPayload(),\ndiff --git a/tests/api/delete-user.api.spec.ts b/tests/api/delete-user.api.spec.ts\nnew file mode 100644\nindex 0000000..2ed2087\n--- /dev/null\n+++ b/tests/api/delete-user.api.spec.ts\n@@ -0,0 +1,96 @@\n+import { test, expect } from '../../src/fixtures/account.fixtures';\n+import { parseJsonBody } from '../../src/utils/api-response.util';\n+import { ApiErrorResponseSchema } from '../../src/types/api-error.schema';\n+\n+test(\n+  'Delete own user account with a valid token',\n+  { tag: ['@AUTH-017', '@positive'] },\n+  async ({ accountApiClient, seedAuthorizedUserForSelfDelete }) => {\n+    const response = await accountApiClient.deleteUser({\n+      userId: seedAuthorizedUserForSelfDelete.userId,\n+      token: seedAuthorizedUserForSelfDelete.token,\n+    });\n+    const body = await response.text();\n+\n+    expect.soft(response.status()).toBe(204);\n+    expect.soft(body).toBe('');\n+\n+    // Marks the delete done so the fixture's teardown doesn't attempt a\n+    // second one — see the SelfDeletingAuthorizedUser doc in account.fixtures.ts.\n+    seedAuthorizedUserForSelfDelete.deleted = true;\n+  }\n+);\n+\n+test(\n+  'Delete user account with no Authorization header',\n+  { tag: ['@AUTH-018', '@negative'] },\n+  async ({ request, seedUser }) => {\n+    // AccountApiClient.deleteUser always sets an Authorization header via\n+    // authHeader(token); this case needs the header absent entirely, so it\n+    // bypasses the client and calls the raw request fixture directly.\n+    const response = await request.delete(`/Account/v1/User/${seedUser.userId}`);\n+    const body = await parseJsonBody(response, ApiErrorResponseSchema);\n+\n+    expect.soft(response.status()).toBe(401);\n+    expect.soft(body.code).toBe('1200');\n+    expect.soft(body.message).toBe('User not authorized!');\n+  }\n+);\n+\n+test(\n+  'Delete user account with an invalid or malformed token',\n+  { tag: ['@AUTH-019', '@negative'] },\n+  async ({ accountApiClient, seedUser }) => {\n+    const response = await accountApiClient.deleteUser({\n+      userId: seedUser.userId,\n+      token: 'not-a-real-token-abc123',\n+    });\n+    const body = await parseJsonBody(response, ApiErrorResponseSchema);\n+\n+    expect.soft(response.status()).toBe(401);\n+    expect.soft(body.code).toBe('1200');\n+    expect.soft(body.message).toBe('User not authorized!');\n+  }\n+);\n+\n+test(\n+  'Delete a non-existent user UUID with a valid unrelated token',\n+  { tag: ['@AUTH-020', '@negative'] },\n+  async ({ accountApiClient, seedAuthorizedUser }) => {\n+    const response = await accountApiClient.deleteUser({\n+      userId: '00000000-0000-0000-0000-000000000000',\n+      token: seedAuthorizedUser.token,\n+    });\n+    const body = await parseJsonBody(response, ApiErrorResponseSchema);\n+\n+    expect.soft(response.status()).toBe(200);\n+    expect.soft(body.code).toBe('1207');\n+    expect.soft(body.message).toBe('User Id not correct!');\n+  }\n+);\n+\n+test(\n+  'Delete an already-deleted user account',\n+  { tag: ['@AUTH-021', '@negative'] },\n+  async ({ accountApiClient, seedAuthorizedUserForSelfDelete }) => {\n+    const firstDelete = await accountApiClient.deleteUser({\n+      userId: seedAuthorizedUserForSelfDelete.userId,\n+      token: seedAuthorizedUserForSelfDelete.token,\n+    });\n+    expect.soft(firstDelete.status()).toBe(204);\n+    seedAuthorizedUserForSelfDelete.deleted = true;\n+\n+    // Same stale token reused deliberately — this is what rules out a 1200\n+    // authorization error and confirms the failure is reported against the\n+    // UUID instead. Regenerating a token here would test something else.\n+    const secondDelete = await accountApiClient.deleteUser({\n+      userId: seedAuthorizedUserForSelfDelete.userId,\n+      token: seedAuthorizedUserForSelfDelete.token,\n+    });\n+    const body = await parseJsonBody(secondDelete, ApiErrorResponseSchema);\n+\n+    expect.soft(secondDelete.status()).toBe(200);\n+    expect.soft(body.code).toBe('1207');\n+    expect.soft(body.message).toBe('User Id not correct!');\n+  }\n+);\ndiff --git a/tests/api/delete-user.contract.spec.ts b/tests/api/delete-user.contract.spec.ts\nnew file mode 100644\nindex 0000000..6a0b8d8\n--- /dev/null\n+++ b/tests/api/delete-user.contract.spec.ts\n@@ -0,0 +1,34 @@\n+import { test, expect } from '../../src/fixtures/account.fixtures';\n+import { ApiErrorResponseSchema } from '../../src/types/api-error.schema';\n+\n+test(\n+  'DELETE /Account/v1/User/{UUID} success response has no body',\n+  { tag: ['@contract', '@AUTH'] },\n+  async ({ accountApiClient, seedAuthorizedUserForSelfDelete }) => {\n+    const response = await accountApiClient.deleteUser({\n+      userId: seedAuthorizedUserForSelfDelete.userId,\n+      token: seedAuthorizedUserForSelfDelete.token,\n+    });\n+    const body = await response.text();\n+\n+    expect(response.status()).toBe(204);\n+    expect(body).toBe('');\n+\n+    seedAuthorizedUserForSelfDelete.deleted = true;\n+  }\n+);\n+\n+test(\n+  'DELETE /Account/v1/User/{UUID} error response matches schema',\n+  { tag: ['@contract', '@AUTH'] },\n+  async ({ accountApiClient, seedUser }) => {\n+    const response = await accountApiClient.deleteUser({\n+      userId: seedUser.userId,\n+      token: 'not-a-real-token-abc123',\n+    });\n+    const body: unknown = await response.json();\n+\n+    expect(response.status()).toBe(401);\n+    expect(body).toMatchSchema(ApiErrorResponseSchema);\n+  }\n+);",
+          "actualWorkers": 4
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/runner/work/demoqa-test-automation/demoqa-test-automation/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "html",
+        {
+          "open": "never"
+        }
+      ],
+      [
+        "github",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "playwright-report/results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 4,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "api/delete-user.api.spec.ts",
+      "file": "api/delete-user.api.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Delete own user account with a valid token",
+          "ok": true,
+          "tags": [
+            "AUTH-017",
+            "positive"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10028,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-03T19:39:32.248Z [w0] [Delete own user account with a valid token] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:39:36.324Z [w0] [Delete own user account with a valid token] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:39:39.640Z [w0] [Delete own user account with a valid token] [INFO] DELETE /Account/v1/User/79ac29d4-ba95-4135-b4c9-62ea5bca407b -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-03T19:39:29.587Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a3471163437ebe190827-429eab5e5e1da595ee5e",
+          "file": "api/delete-user.api.spec.ts",
+          "line": 5,
+          "column": 5
+        },
+        {
+          "title": "Delete user account with no Authorization header",
+          "ok": true,
+          "tags": [
+            "AUTH-018",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 13703,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-03T19:39:32.239Z [w1] [Delete user account with no Authorization header] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:39:38.870Z [w1] [Delete user account with no Authorization header] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:39:43.337Z [w1] [Delete user account with no Authorization header] [INFO] DELETE /Account/v1/User/ca0f5aea-1dd0-4faa-b311-985a486e4416 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-03T19:39:29.594Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a3471163437ebe190827-163646e00eaf65478818",
+          "file": "api/delete-user.api.spec.ts",
+          "line": 24,
+          "column": 5
+        },
+        {
+          "title": "Delete user account with an invalid or malformed token",
+          "ok": true,
+          "tags": [
+            "AUTH-019",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 14605,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-03T19:39:32.233Z [w2] [Delete user account with an invalid or malformed token] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:39:32.798Z [w2] [Delete user account with an invalid or malformed token] [INFO] DELETE /Account/v1/User/e6c7c5b3-0e81-491f-abeb-a811cbbab59a -> 401\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:39:42.519Z [w2] [Delete user account with an invalid or malformed token] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:39:44.260Z [w2] [Delete user account with an invalid or malformed token] [INFO] DELETE /Account/v1/User/e6c7c5b3-0e81-491f-abeb-a811cbbab59a -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-03T19:39:29.614Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a3471163437ebe190827-c831a3e83369a89b5722",
+          "file": "api/delete-user.api.spec.ts",
+          "line": 40,
+          "column": 5
+        },
+        {
+          "title": "Delete a non-existent user UUID with a valid unrelated token",
+          "ok": true,
+          "tags": [
+            "AUTH-020",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "passed",
+                  "duration": 10919,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-03T19:39:32.240Z [w3] [Delete a non-existent user UUID with a valid unrelated token] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:39:34.061Z [w3] [Delete a non-existent user UUID with a valid unrelated token] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:39:34.224Z [w3] [Delete a non-existent user UUID with a valid unrelated token] [INFO] DELETE /Account/v1/User/00000000-0000-0000-0000-000000000000 -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:39:40.542Z [w3] [Delete a non-existent user UUID with a valid unrelated token] [INFO] DELETE /Account/v1/User/050a4e07-3e26-4ded-8afd-04be85bc68e9 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-03T19:39:29.583Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a3471163437ebe190827-d6d79755d598b53d2eeb",
+          "file": "api/delete-user.api.spec.ts",
+          "line": 56,
+          "column": 5
+        },
+        {
+          "title": "Delete an already-deleted user account",
+          "ok": true,
+          "tags": [
+            "AUTH-021",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9661,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-03T19:39:42.511Z [w0] [Delete an already-deleted user account] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:39:45.746Z [w0] [Delete an already-deleted user account] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:39:49.190Z [w0] [Delete an already-deleted user account] [INFO] DELETE /Account/v1/User/61521799-b5c7-4f60-9aa6-a7467442f089 -> 204\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:39:49.341Z [w0] [Delete an already-deleted user account] [INFO] DELETE /Account/v1/User/61521799-b5c7-4f60-9aa6-a7467442f089 -> 200\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-03T19:39:39.668Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a3471163437ebe190827-7c7edb403c6da0d94596",
+          "file": "api/delete-user.api.spec.ts",
+          "line": 72,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "api/delete-user.contract.spec.ts",
+      "file": "api/delete-user.contract.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "DELETE /Account/v1/User/{UUID} success response has no body",
+          "ok": true,
+          "tags": [
+            "contract",
+            "AUTH"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "passed",
+                  "duration": 11589,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-03T19:39:43.206Z [w3] [DELETE /Account/v1/User/{UUID} success response has no body] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:39:48.585Z [w3] [DELETE /Account/v1/User/{UUID} success response has no body] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:39:52.140Z [w3] [DELETE /Account/v1/User/{UUID} success response has no body] [INFO] DELETE /Account/v1/User/62481b1c-3d16-49ed-b44a-9640e9a95936 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-03T19:39:40.550Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "5bbc055b6a9b2397881c-fb5a79ab6480cbf0abcf",
+          "file": "api/delete-user.contract.spec.ts",
+          "line": 4,
+          "column": 5
+        },
+        {
+          "title": "DELETE /Account/v1/User/{UUID} error response matches schema",
+          "ok": true,
+          "tags": [
+            "contract",
+            "AUTH"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 9410,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-03T19:39:45.753Z [w1] [DELETE /Account/v1/User/{UUID} error response matches schema] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:39:46.528Z [w1] [DELETE /Account/v1/User/{UUID} error response matches schema] [INFO] DELETE /Account/v1/User/349b3d20-dcfc-44e1-af74-b89f0298962c -> 401\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:39:51.520Z [w1] [DELETE /Account/v1/User/{UUID} error response matches schema] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:39:52.756Z [w1] [DELETE /Account/v1/User/{UUID} error response matches schema] [INFO] DELETE /Account/v1/User/349b3d20-dcfc-44e1-af74-b89f0298962c -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-03T19:39:43.344Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "5bbc055b6a9b2397881c-90ee53d4d73a404b00ee",
+          "file": "api/delete-user.contract.spec.ts",
+          "line": 21,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "api/get-user.api.spec.ts",
+      "file": "api/get-user.api.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Get own user profile with a valid token",
+          "ok": true,
+          "tags": [
+            "AUTH-012",
+            "positive"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 12678,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-03T19:39:46.803Z [w2] [Get own user profile with a valid token] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:39:53.665Z [w2] [Get own user profile with a valid token] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:39:54.395Z [w2] [Get own user profile with a valid token] [INFO] GET /Account/v1/User/427f3023-c63d-4f39-b770-f7168ecb78cb -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:39:56.948Z [w2] [Get own user profile with a valid token] [INFO] DELETE /Account/v1/User/427f3023-c63d-4f39-b770-f7168ecb78cb -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-03T19:39:44.267Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b2bd4494f98d86f87e56-32ad40df7066e9bdb050",
+          "file": "api/get-user.api.spec.ts",
+          "line": 6,
+          "column": 5
+        },
+        {
+          "title": "Get user profile with no Authorization header",
+          "ok": true,
+          "tags": [
+            "AUTH-013",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9960,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-03T19:39:51.516Z [w0] [Get user profile with no Authorization header] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:39:56.376Z [w0] [Get user profile with no Authorization header] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:39:59.311Z [w0] [Get user profile with no Authorization header] [INFO] DELETE /Account/v1/User/071099c6-e2ee-46a4-bc93-915be948c7fa -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-03T19:39:49.349Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b2bd4494f98d86f87e56-3fb93e5e045cf0980325",
+          "file": "api/get-user.api.spec.ts",
+          "line": 23,
+          "column": 5
+        },
+        {
+          "title": "Get user profile with an invalid or malformed token",
+          "ok": true,
+          "tags": [
+            "AUTH-014",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "passed",
+                  "duration": 10525,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-03T19:39:53.662Z [w3] [Get user profile with an invalid or malformed token] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:39:56.365Z [w3] [Get user profile with an invalid or malformed token] [INFO] GET /Account/v1/User/093a410f-cd82-4c61-9a89-fd8f1e7dcd5c -> 401\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:39:58.387Z [w3] [Get user profile with an invalid or malformed token] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:40:02.676Z [w3] [Get user profile with an invalid or malformed token] [INFO] DELETE /Account/v1/User/093a410f-cd82-4c61-9a89-fd8f1e7dcd5c -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-03T19:39:52.148Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b2bd4494f98d86f87e56-e533c1170ef109b3681a",
+          "file": "api/get-user.api.spec.ts",
+          "line": 39,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "api/get-user.contract.spec.ts",
+      "file": "api/get-user.contract.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "GET /Account/v1/User/{UUID} success response matches schema",
+          "ok": true,
+          "tags": [
+            "contract",
+            "AUTH"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 13316,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-03T19:39:56.373Z [w1] [GET /Account/v1/User/{UUID} success response matches schema] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:40:01.993Z [w1] [GET /Account/v1/User/{UUID} success response matches schema] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:40:02.411Z [w1] [GET /Account/v1/User/{UUID} success response matches schema] [INFO] GET /Account/v1/User/0c87a26d-77d1-4d0c-a0d0-ccd4e1119ba6 -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:40:06.084Z [w1] [GET /Account/v1/User/{UUID} success response matches schema] [INFO] DELETE /Account/v1/User/0c87a26d-77d1-4d0c-a0d0-ccd4e1119ba6 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-03T19:39:52.764Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a8aca4f3c5f83291ff47-47c4a5c015f20272a343",
+          "file": "api/get-user.contract.spec.ts",
+          "line": 5,
+          "column": 5
+        },
+        {
+          "title": "GET /Account/v1/User/{UUID} error response matches schema",
+          "ok": true,
+          "tags": [
+            "contract",
+            "AUTH"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 9822,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-03T19:39:58.391Z [w2] [GET /Account/v1/User/{UUID} error response matches schema] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:39:59.129Z [w2] [GET /Account/v1/User/{UUID} error response matches schema] [INFO] GET /Account/v1/User/f640d871-35fb-434c-821d-36b8fd07bdcc -> 401\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:40:03.680Z [w2] [GET /Account/v1/User/{UUID} error response matches schema] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:40:06.797Z [w2] [GET /Account/v1/User/{UUID} error response matches schema] [INFO] DELETE /Account/v1/User/f640d871-35fb-434c-821d-36b8fd07bdcc -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-03T19:39:56.966Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a8aca4f3c5f83291ff47-a5594ebaa638cac36726",
+          "file": "api/get-user.contract.spec.ts",
+          "line": 20,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "api/post-user.api.spec.ts",
+      "file": "api/post-user.api.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Register user with valid credentials",
+          "ok": true,
+          "tags": [
+            "AUTH-001",
+            "positive"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9125,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-03T19:40:01.995Z [w0] [Register user with valid credentials] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:40:05.418Z [w0] [Register user with valid credentials] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:40:08.447Z [w0] [Register user with valid credentials] [INFO] DELETE /Account/v1/User/c0be521c-3fc2-4ae5-ae70-9aaaa1dc4653 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-03T19:39:59.320Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd58d1e8feec03df9eb4-3bb152e3b223428f8d3f",
+          "file": "api/post-user.api.spec.ts",
+          "line": 19,
+          "column": 5
+        },
+        {
+          "title": "Register user with password missing an uppercase letter",
+          "ok": true,
+          "tags": [
+            "AUTH-002",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "passed",
+                  "duration": 136,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-03T19:40:02.827Z [w3] [Register user with password missing an uppercase letter] [INFO] POST /Account/v1/User -> 400\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-03T19:40:02.690Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd58d1e8feec03df9eb4-07562c4bf414746ac5c3",
+          "file": "api/post-user.api.spec.ts",
+          "line": 41,
+          "column": 5
+        },
+        {
+          "title": "Register user with password missing a lowercase letter",
+          "ok": true,
+          "tags": [
+            "AUTH-003",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "passed",
+                  "duration": 137,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-03T19:40:02.973Z [w3] [Register user with password missing a lowercase letter] [INFO] POST /Account/v1/User -> 400\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-03T19:40:02.835Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd58d1e8feec03df9eb4-bdb96a4cb94450d9c0de",
+          "file": "api/post-user.api.spec.ts",
+          "line": 57,
+          "column": 5
+        },
+        {
+          "title": "Register user with password missing a digit",
+          "ok": true,
+          "tags": [
+            "AUTH-004",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "passed",
+                  "duration": 136,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-03T19:40:03.118Z [w3] [Register user with password missing a digit] [INFO] POST /Account/v1/User -> 400\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-03T19:40:02.981Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd58d1e8feec03df9eb4-289a4f58f47ec1974cb6",
+          "file": "api/post-user.api.spec.ts",
+          "line": 73,
+          "column": 5
+        },
+        {
+          "title": "Register user with password missing a special character",
+          "ok": true,
+          "tags": [
+            "AUTH-005",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "passed",
+                  "duration": 136,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-03T19:40:03.263Z [w3] [Register user with password missing a special character] [INFO] POST /Account/v1/User -> 400\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-03T19:40:03.126Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd58d1e8feec03df9eb4-1d7b3085543890abb82a",
+          "file": "api/post-user.api.spec.ts",
+          "line": 89,
+          "column": 5
+        },
+        {
+          "title": "Register user with an empty password",
+          "ok": true,
+          "tags": [
+            "AUTH-006",
+            "boundary"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "passed",
+                  "duration": 136,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-03T19:40:03.407Z [w3] [Register user with an empty password] [INFO] POST /Account/v1/User -> 400\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-03T19:40:03.270Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd58d1e8feec03df9eb4-ba687391f7b94f76d5c7",
+          "file": "api/post-user.api.spec.ts",
+          "line": 105,
+          "column": 5
+        },
+        {
+          "title": "Register user with a password one character below the minimum length",
+          "ok": true,
+          "tags": [
+            "AUTH-007",
+            "boundary"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "passed",
+                  "duration": 137,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-03T19:40:03.570Z [w3] [Register user with a password one character below the minimum length] [INFO] POST /Account/v1/User -> 400\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-03T19:40:03.426Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd58d1e8feec03df9eb4-df5c27e8ef9db3ffe907",
+          "file": "api/post-user.api.spec.ts",
+          "line": 124,
+          "column": 5
+        },
+        {
+          "title": "Register user with the userName field entirely absent from the request",
+          "ok": true,
+          "tags": [
+            "AUTH-008",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "passed",
+                  "duration": 135,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-03T19:40:03.576Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd58d1e8feec03df9eb4-3db4ac1b4f4b8c02e55f",
+          "file": "api/post-user.api.spec.ts",
+          "line": 140,
+          "column": 5
+        },
+        {
+          "title": "Register user with the password field entirely absent from the request",
+          "ok": true,
+          "tags": [
+            "AUTH-009",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "passed",
+                  "duration": 136,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-03T19:40:03.717Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd58d1e8feec03df9eb4-1cddf256dc50f2fcfe86",
+          "file": "api/post-user.api.spec.ts",
+          "line": 157,
+          "column": 5
+        },
+        {
+          "title": "Register user with an empty userName",
+          "ok": true,
+          "tags": [
+            "AUTH-010",
+            "boundary"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "passed",
+                  "duration": 135,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-03T19:40:03.993Z [w3] [Register user with an empty userName] [INFO] POST /Account/v1/User -> 400\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-03T19:40:03.858Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd58d1e8feec03df9eb4-09bfd6acbb5f88fb7bde",
+          "file": "api/post-user.api.spec.ts",
+          "line": 174,
+          "column": 5
+        },
+        {
+          "title": "Register a username, then register again with the same username",
+          "ok": true,
+          "tags": [
+            "AUTH-011",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "passed",
+                  "duration": 6256,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-03T19:40:05.423Z [w3] [Register a username, then register again with the same username] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:40:06.219Z [w3] [Register a username, then register again with the same username] [INFO] POST /Account/v1/User -> 406\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:40:07.879Z [w3] [Register a username, then register again with the same username] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:40:10.257Z [w3] [Register a username, then register again with the same username] [INFO] DELETE /Account/v1/User/955094fe-48d0-4868-a042-82d61be6fffa -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-03T19:40:03.998Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd58d1e8feec03df9eb4-484fad944f2c5b90cc0e",
+          "file": "api/post-user.api.spec.ts",
+          "line": 190,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "api/post-user.contract.spec.ts",
+      "file": "api/post-user.contract.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "POST /Account/v1/User success response matches schema",
+          "ok": true,
+          "tags": [
+            "contract",
+            "AUTH"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 4373,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-03T19:40:07.354Z [w1] [POST /Account/v1/User success response matches schema] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:40:09.941Z [w1] [POST /Account/v1/User success response matches schema] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-03T19:40:10.465Z [w1] [POST /Account/v1/User success response matches schema] [INFO] DELETE /Account/v1/User/b13eb4cf-1dd1-4865-b2bc-54f8675666b6 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-03T19:40:06.089Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "46188633b2ed85ce494d-c84ef7e2370dd37c772a",
+          "file": "api/post-user.contract.spec.ts",
+          "line": 7,
+          "column": 5
+        },
+        {
+          "title": "POST /Account/v1/User error response matches schema",
+          "ok": true,
+          "tags": [
+            "contract",
+            "AUTH"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 135,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-03T19:40:06.938Z [w2] [POST /Account/v1/User error response matches schema] [INFO] POST /Account/v1/User -> 400\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-03T19:40:06.802Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "46188633b2ed85ce494d-8239bb7abf398e44a53e",
+          "file": "api/post-user.contract.spec.ts",
+          "line": 25,
+          "column": 5
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-09-03T19:39:27.921Z",
+    "duration": 42561.66499999999,
+    "expected": 25,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
