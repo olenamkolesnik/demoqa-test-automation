@@ -1,5 +1,15 @@
 [
   {
+    "run": 37,
+    "status": "success",
+    "sha": "a81366a",
+    "ref": "docs/kiss-yagni-and-istqb-standards",
+    "pr": 18,
+    "actor": "olenamkolesnik",
+    "date": "2026-09-03T19:45:58.873Z",
+    "workflowUrl": "https://github.com/olenamkolesnik/demoqa-test-automation/actions/runs/33798200305"
+  },
+  {
     "run": 36,
     "status": "success",
     "sha": "5a50d7d",
