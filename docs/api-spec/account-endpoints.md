@@ -1,6 +1,6 @@
 # DemoQA Book Store — Account API (Confirmed)
 
-Source: raw Swagger spec extracted from `https://demoqa.com/swagger/swagger-ui-init.js` (saved as [`book-store-api.swagger.json`](./book-store-api.swagger.json)), cross-checked against live API calls on 2026-08-25, re-verified with no drift on 2026-09-01. Extended 2026-09-02 with the required-field behavior of `POST /Account/v1/User`, which no earlier pass had covered; the previously documented cases were re-confirmed unchanged in that pass. Where the Swagger doc and live behavior disagreed, **live behavior wins** — the doc has several inaccuracies, noted below. See [`book-store-endpoints.md`](./book-store-endpoints.md) for the `/BookStore` endpoints verified the same way.
+Source: raw Swagger spec extracted from `https://demoqa.com/swagger/swagger-ui-init.js` (saved as [`book-store-api.swagger.json`](./book-store-api.swagger.json)), cross-checked against live API calls on 2026-08-25, re-verified with no drift on 2026-09-01. Extended 2026-09-02 with the required-field behavior of `POST /Account/v1/User`, which no earlier pass had covered; the previously documented cases were re-confirmed unchanged in that pass. Extended 2026-09-03 with the unknown-UUID behavior of `DELETE /Account/v1/User/{UUID}` (non-existent and already-deleted), also uncovered by earlier passes; the DELETE success and auth-failure rows were re-confirmed unchanged. Where the Swagger doc and live behavior disagreed, **live behavior wins** — the doc has several inaccuracies, noted below. See [`book-store-endpoints.md`](./book-store-endpoints.md) for the `/BookStore` endpoints verified the same way.
 
 ## POST /Account/v1/User (Create User)
 
@@ -61,12 +61,24 @@ Auth: `Authorization: Bearer <token>` header required.
 
 Auth: `Authorization: Bearer <token>` header required.
 
-| Case                  | Status | Body                                                |
-| --------------------- | ------ | --------------------------------------------------- |
-| Success               | `204`  | (empty)                                             |
-| Missing/invalid token | `401`  | `{ code: "1200", message: "User not authorized!" }` |
+| Case                                     | Status | Body                                                                      |
+| ---------------------------------------- | ------ | ------------------------------------------------------------------------- |
+| Success                                  | `204`  | (empty)                                                                   |
+| Missing/invalid token                    | `401`  | `{ code: "1200", message: "User not authorized!" }`                       |
+| Non-existent UUID, valid unrelated token | `200`  | `{ code: "1207", message: "User Id not correct!" }` — verified 2026-09-03 |
+| Already-deleted UUID, stale token        | `200`  | `{ code: "1207", message: "User Id not correct!" }` — verified 2026-09-03 |
 
 **Doc discrepancy:** the Swagger doc's response table for this endpoint is essentially scrambled — it labels `200` as "Success" (schema `MessageModal`) and `204` as "Unauthorized" (schema `BooksResult`), which is backwards from confirmed live behavior (`204` empty body = success, `401` = unauthorized). Do not trust the doc's response descriptions for this endpoint.
+
+**Unknown-user handling (verified 2026-09-03, undocumented in Swagger):** one shared `1207` code path covers both "this UUID was never issued" and "this UUID was deleted already" — the two are indistinguishable from the response alone. Confirmed deterministic across three independent runs with three separate users.
+
+Two things about this response are worth not glossing over:
+
+`200` carries an error body. Unlike the `401` auth failures above, an unknown UUID returns HTTP `200` with a `MessageModal`-shaped error payload, so status code alone cannot be used to detect this case — the same trap as `POST /Account/v1/GenerateToken`, which also always returns `200` and differentiates by body. A client that branches on `res.ok` treats a failed delete as a success.
+
+The `1207` message text is endpoint-specific. `GET /Account/v1/User/{UUID}` returns `1207` with `"User not found!"` under HTTP `401`; DELETE returns `1207` with `"User Id not correct!"` under HTTP `200`. Same code, different message, different status. So `1207` identifies "no such user" as a concept, but neither its wrapper status nor its message text is shared across endpoints — do not assert one endpoint's pairing against another.
+
+Repeat deletion is therefore **not** idempotent in the REST sense: the second call returns `200`/`1207` rather than `204`.
 
 ## Auth mechanism (from spec `securityDefinitions`)
 

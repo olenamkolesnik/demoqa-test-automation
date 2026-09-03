@@ -17,6 +17,17 @@ interface SeededAuthorizedUser extends SeededUser {
   token: string;
 }
 
+// For tests whose own DELETE call under test is expected to actually delete
+// the user (the success case, or a repeat-delete case proving
+// non-idempotency). The test must set `deleted = true` after its own
+// successful delete so teardown does not attempt a second one — the
+// already-deleted-user response is confirmed 200/1207, not 204
+// (docs/api-spec/account-endpoints.md), so an unconditional teardown delete
+// would misread that as a failed cleanup and log a false orphan.
+interface SelfDeletingAuthorizedUser extends SeededAuthorizedUser {
+  deleted: boolean;
+}
+
 // For tests where the registration call is itself under test, so seedUser
 // cannot make it. The test registers using `payload`, then assigns the id it
 // gets back to `createdUserId`; teardown deletes it afterwards.
@@ -35,6 +46,7 @@ interface AccountFixtures {
   accountApiClient: AccountApiClient;
   seedUser: SeededUser;
   seedAuthorizedUser: SeededAuthorizedUser;
+  seedAuthorizedUserForSelfDelete: SelfDeletingAuthorizedUser;
   userUnderTest: UserUnderTest;
 }
 
@@ -112,6 +124,39 @@ export const test = base.extend<AccountFixtures>({
     });
 
     await deleteUserAndLogOrphanOnFailure(accountApiClient, payload, created.userID, token);
+  },
+
+  seedAuthorizedUserForSelfDelete: async ({ accountApiClient }, use) => {
+    const payload = buildNewUserPayload();
+    const createResponse = await accountApiClient.createUser(payload);
+    const created = await parseJsonBody(createResponse, CreateUserResponseSchema);
+    const tokenResponse = await accountApiClient.generateToken(payload);
+    const { token } = await parseJsonBody(tokenResponse, GenerateTokenResponseSchema);
+
+    if (!token) {
+      logger.error(
+        `seedAuthorizedUserForSelfDelete could not acquire a token for userId=${created.userID} userName=${payload.userName}`
+      );
+      throw new Error('seedAuthorizedUserForSelfDelete: token acquisition failed');
+    }
+
+    const state: SelfDeletingAuthorizedUser = {
+      userName: payload.userName,
+      password: payload.password,
+      userId: created.userID,
+      token,
+      deleted: false,
+    };
+
+    await use(state);
+
+    // The test sets state.deleted = true after its own successful delete.
+    // Skip teardown's delete in that case — the user is already gone, and a
+    // second delete attempt would return 200/1207 rather than 204, which
+    // deleteUserAndLogOrphanOnFailure would misread as a failed cleanup.
+    if (!state.deleted) {
+      await deleteUserAndLogOrphanOnFailure(accountApiClient, payload, created.userID, token);
+    }
   },
 
   userUnderTest: async ({ accountApiClient }, use) => {
