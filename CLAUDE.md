@@ -10,4 +10,4 @@ DemoQA's own Swagger docs are unreliable — verified during spec extraction tha
 
 ## Coding standards
 
-See `docs/coding-standards.md` for layer responsibilities, response validation, fixture/factory conventions, naming conventions, functional-vs-contract test file structure, and traceability tagging — read it before writing or generating any `src/` or `tests/` code.
+See `docs/coding-standards.md` for layer responsibilities, response validation, fixture/factory conventions, naming conventions, functional-vs-contract test file structure, and traceability tagging — read it before writing or generating any `src/` or `tests/` code. Generated test code is checked against that same file by the `review-generated-tests` agent.

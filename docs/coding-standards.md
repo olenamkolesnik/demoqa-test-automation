@@ -232,6 +232,25 @@ Functions should be small, and then smaller than that. A method should be readab
 
 **A descriptive name beats a comment.** `buildValidPasswordWithAllComplexityRules()` needs no comment explaining what it returns; a short name plus a paragraph of clarifying comment usually means the name should have been longer and the comment shorter or absent.
 
+### KISS and YAGNI
+
+Two rules about restraint, sitting either side of the code that gets written: KISS governs how a needed thing is expressed, YAGNI governs whether it gets written at all.
+
+**KISS — prefer the most direct expression that satisfies the test case.** Indirection has to earn its place; the reader pays for it every time, whether or not it ever pays off. In this codebase that means:
+
+- No helper that wraps a single client call. `registerUser(payload)` calling only `client.createUser(payload)` adds a name to learn and a file to open without hiding any complexity — the point of a Facade (see Design patterns above) is to hide several steps, not to rename one.
+- No loop over a one-element collection, and no parameterised `test.describe` table when two plain `test()` blocks read more clearly. A data-driven loop pays off across five near-identical cases; across two it costs more to read than it saves to write.
+- No abstraction introduced to satisfy a rule rather than a reader — the "one level of abstraction per function" rule above says don't _mix_ levels, not that more levels are better.
+
+**YAGNI — generate only what a current test case needs.** Speculative code is untested by definition (nothing calls it), yet it still has to be read, maintained, and kept honest as the API drifts:
+
+- No client method for an endpoint no test calls yet.
+- No factory override parameter no caller passes.
+- No schema field the live API was never observed to return — this is the same reasoning behind `generate-api-infrastructure`'s "loosen to a bare `z.string()` when the format was never observed live" rule: don't encode a guess as if it were a verified fact.
+- No fixture created "for the next test". Write it when that test exists.
+
+YAGNI and the Boy Scout Rule below don't conflict, because they govern different code: YAGNI is about _new_ code you're deciding whether to add, Boy Scout is about _existing_ lines you're already editing for another reason.
+
 ### Exception handling has one shape
 
 A caught error is either **handled** (logged with enough context to act on, then execution continues deliberately) or **rethrown** — never silently swallowed with no trace. This codebase already does this consistently (a fixture teardown failure is logged with the orphaned entity's ID before returning; a `ZodError` is logged with the redacted raw body before being rethrown) — the rule generalizes those specific cases: a bare `catch {}` or a `catch` that logs nothing is not acceptable anywhere in `src/` or `tests/`. Don't use exceptions for expected control flow (e.g. a negative-path 400 response is a normal return value from an API client, per "API clients never assert" above — not something to throw over). Every exception should carry enough context in its message to know where and why it happened without attaching a debugger — this is already how `parseJsonBody`'s validation failure and the teardown orphan log both work; match that standard for any new error path.
@@ -336,6 +355,19 @@ expect(body.userID).toBeTruthy();
 ```
 
 Exception: a check that later assertions depend on for correctness — e.g. if `response.json()` would itself throw on a non-JSON body — should stay a hard `expect()` (or an early return/guard) so the test doesn't cascade into confusing, unrelated failures. This is rare in practice here, since `parseJsonBody` already throws its own clear error on a shape mismatch before any assertion runs.
+
+---
+
+## Test design quality (ISTQB)
+
+Everything above governs how test _code_ is structured. This section governs whether the test is a good _test_ — the ISTQB-level question of whether it can actually detect the defect it claims to cover. A spec can satisfy every layering, naming, and assertion rule in this document and still be worthless as a test.
+
+- **One condition per test, and it is the condition its manual test case names.** A test tagged `@AUTH-001` asserts what `docs/test-cases/api/auth/*.md` says AUTH-001 expects — no more facts, no fewer. Extra assertions borrowed from a neighbouring case make a failure ambiguous about which condition broke; missing ones mean the test case is marked automated while part of it isn't.
+- **The oracle is explicit.** Every assertion compares against a value derived from the spec (`docs/api-spec/*.md`) or from the test's own seeded input — never a value read out of the same response being validated. `expect.soft(body.username).toBe(body.username)` is the degenerate case, but the subtler form is asserting a field equals something computed from that same body. Where the spec states an exact value, assert the exact value; `toBeTruthy()` on a field the spec says is `"User Register Successful"` is a weaker test than the spec supports.
+- **The technique matches the category tag.** `@boundary` means the test exercises an actual boundary value from the condition's `Values / boundaries` — the exact minimum, the exact maximum, the value one past it — not merely some invalid input, which is `@negative`. A `@negative` test asserts the specific error status _and_ the specific message; "not 200" passes against a 500 that represents an entirely different defect.
+- **No conditional logic in a test.** An `if` or a `try` wrapped around an assertion makes the pass condition depend on runtime state, so an assertion that never ran reads identically to one that passed. Branching belongs in a fixture (which establishes the precondition deterministically) or in two separate tests, one per branch.
+- **The failure is diagnosable.** A failing assertion should say what broke without a debugger — which is what the `expect.soft()` rule above buys (all facts about the outcome report together, not just the first) and what "exceptions carry enough context" buys on the error paths. A test that fails with only `expected true, got false` has recorded that something is wrong without recording what.
+- **Coverage honesty.** A test whose assertions cannot fail for the reason its title claims is worse than no test, because it reports coverage that doesn't exist. Asserting only the status code on a case whose expected result is a body field is the common form: it passes, the traceability chain shows the condition covered, and the actual regression ships.
 
 ---
 
