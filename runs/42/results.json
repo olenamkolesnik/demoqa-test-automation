@@ -1,0 +1,1740 @@
+{
+  "config": {
+    "argv": [
+      "/opt/hostedtoolcache/node/24.20.0/x64/bin/node",
+      "/home/runner/work/demoqa-test-automation/demoqa-test-automation/node_modules/.bin/playwright",
+      "test"
+    ],
+    "configFile": "/home/runner/work/demoqa-test-automation/demoqa-test-automation/playwright.config.ts",
+    "rootDir": "/home/runner/work/demoqa-test-automation/demoqa-test-automation/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/olenamkolesnik/demoqa-test-automation/commit/e02170b0c48c927f557982cb869a7e4a2b1d677a",
+        "commitHash": "e02170b0c48c927f557982cb869a7e4a2b1d677a",
+        "prHref": "https://github.com/olenamkolesnik/demoqa-test-automation/pull/20",
+        "prTitle": "Chore/stop tracking claude",
+        "prBaseHash": "00f1ccc578d87ba94f4acc6ea722542d4fe02f04",
+        "buildHref": "https://github.com/olenamkolesnik/demoqa-test-automation/actions/runs/33890855281"
+      },
+      "gitCommit": {
+        "shortHash": "e02170b",
+        "hash": "e02170b0c48c927f557982cb869a7e4a2b1d677a",
+        "subject": "Merge 59010d23bdce0d07ff11684d3c467bd60bd0dc73 into 00f1ccc578d87ba94f4acc6ea722542d4fe02f04",
+        "body": "Merge 59010d23bdce0d07ff11684d3c467bd60bd0dc73 into 00f1ccc578d87ba94f4acc6ea722542d4fe02f04\n",
+        "author": {
+          "name": "olenamkolesnik",
+          "email": "33692828+olenamkolesnik@users.noreply.github.com",
+          "time": 1788536442000
+        },
+        "committer": {
+          "name": "GitHub",
+          "email": "noreply@github.com",
+          "time": 1788536442000
+        },
+        "branch": "HEAD"
+      },
+      "gitDiff": "diff --git a/.claude/commands/api-pipeline.md b/.claude/commands/api-pipeline.md\ndeleted file mode 100644\nindex 689ade7..0000000\n--- a/.claude/commands/api-pipeline.md\n+++ /dev/null\n@@ -1,81 +0,0 @@\n----\n-description: Run the full API test-authoring pipeline for one endpoint — test conditions, test cases, infrastructure, and specs — stopping after each stage's review agent for your sign-off.\n----\n-\n-Run the API test-authoring pipeline for: **$ARGUMENTS**\n-\n-You are orchestrating four existing skills and four existing review agents. You do not write test conditions, test cases, or code yourself — each stage is delegated to its skill, and each artifact is checked by its review agent. Your job is sequencing, carrying file paths between stages, and stopping for the user at every gate.\n-\n-## Input\n-\n-`$ARGUMENTS` should be an endpoint, e.g. `GET /BookStore/v1/Books`. If no endpoint was given, ask for one and stop — do not guess or pick one from the spec docs.\n-\n-Source the endpoint's requirements the same way every skill in this pipeline already does:\n-\n-1. A live-verified `.md` doc under `docs/api-spec/` covering this resource — trusted over Swagger wherever they disagree\n-2. `docs/api-spec/*.swagger.json` where no corrected doc covers it\n-3. Ask the user **only** for what neither source has (an undocumented business rule)\n-\n-Do not ask the user to restate requirements the spec docs already hold, and do not ask them to paste spec content — read it.\n-\n-## Before starting: resume check\n-\n-Derive the path stems from the endpoint (mechanical — the skills define these transforms; don't ask the user to confirm them):\n-\n-- `<feature>` — functional area: `auth`, `bookstore`, `collection`, `profile`\n-- `<verb>-<resource>` — method lowercased plus the entity segment, e.g. `GET /BookStore/v1/Books` → `get-books`\n-- `<resource>` — the resource path segment kebab-cased, e.g. `BookStore` → `book-store`\n-\n-Check what already exists:\n-\n-| Stage | Artifact                                                                                                                                      |\n-| ----- | --------------------------------------------------------------------------------------------------------------------------------------------- |\n-| 1     | `docs/test-conditions/api/<feature>/<verb>-<resource>.md`                                                                                     |\n-| 2     | `docs/test-cases/api/<feature>/<verb>-<resource>.md`                                                                                          |\n-| 3     | `src/types/<resource>.schema.ts`, `src/api/<resource>-api.client.ts`, `src/data/<resource>.factory.ts`, `src/fixtures/<resource>.fixtures.ts` |\n-| 4     | `tests/api/<verb>-<resource>.api.spec.ts`, `tests/api/<verb>-<resource>.contract.spec.ts`                                                     |\n-\n-Report what you found, then start at the earliest stage whose artifact is missing.\n-\n-Two rules about what you found:\n-\n-- **An existing file is not a completed stage.** Nothing in this repo records that an artifact passed review. So for every pre-existing artifact, run that stage's review agent against it and present the verdict as that stage's gate before moving on. Do not skip a stage just because its file is on disk. Regenerate an existing artifact only if the user asks.\n-- **Stage 3 is per-resource, not per-endpoint.** One set of four infrastructure files serves every endpoint on that resource, so they can already exist on this endpoint's very first pipeline run because a sibling endpoint built them earlier. That is normal. Re-review them (they may need a new client method for this endpoint), but don't treat their existence as evidence this endpoint was already processed.\n-\n-## The four stages\n-\n-Each stage has the same shape: generate → review → **stop** → interpret the user's reply.\n-\n-| #   | Generate with skill           | Review with agent                 | Gate verdict                   |\n-| --- | ----------------------------- | --------------------------------- | ------------------------------ |\n-| 1   | `write-test-conditions`       | `review-test-conditions`          | Ready for test case generation |\n-| 2   | `write-manual-test-case`      | `review-test-cases`               | Ready for automation           |\n-| 3   | `generate-api-infrastructure` | `review-generated-infrastructure` | Ready for test generation      |\n-| 4   | `generate-api-tests`          | `review-generated-tests`          | Ready to merge                 |\n-\n-Pass each review agent the file path the skill just produced — every one of them requires a named target and will stop if it doesn't get one.\n-\n-Stage 3 takes the endpoint spec, not the reviewed test cases, so it does not depend on stages 1–2. Stage 4 needs both the reviewed test-cases file from stage 2 and the reviewed infrastructure from stage 3.\n-\n-## At every gate\n-\n-Print the review agent's **full findings table and verdict, verbatim** — not a summary, not just the verdict line. Then end your turn and wait.\n-\n-When the user replies:\n-\n-- **Approval** (\"looks good\", \"proceed\", \"ok\") — move to the next stage.\n-- **A fix instruction** (\"fix #2\", \"the boundary condition is wrong\") — apply it, then re-invoke **the same review agent** on the revised artifact and stop again. Never advance to the next stage on the strength of your own fix; the agent re-checks it.\n-- **Anything ambiguous** — ask, don't assume. A wrong guess here silently propagates into every later stage.\n-\n-## Rules\n-\n-- Never skip a stage's review agent, even when the artifact looks obviously fine. The gates are the point of the pipeline.\n-- Never proceed past a gate without a reply from the user in that turn. Ending your turn at each gate is the design, not overhead to optimize away.\n-- If a review agent reports its own source-of-truth file missing, stop the entire pipeline and say so. Do not improvise criteria on its behalf.\n-- If a skill reports something it cannot generate — `generate-api-tests` explicitly refuses multi-actor test cases, for instance — stop and surface that rather than pushing through with a best-effort attempt.\n-- Never run the test suite or a live smoke check as part of this pipeline. Both create real data on the shared public DemoQA backend (Risk-1 in `docs/test-plan.md`). Lint, format, and `--list` are the only verification commands the review agents are permitted, and they run those themselves.\n-- **One narrow exception:** stage 1's `write-test-conditions` may make targeted live requests to resolve a case it would otherwise mark infeasible, under the rules in that skill's **Resolving undocumented behavior** section — a handful of `qa_`-prefixed requests, repeated to confirm, with the finding pushed into `docs/api-spec/`. This is not a smoke check: it establishes unknown behavior once, so every later stage and endpoint reads it from the spec doc instead. No other stage and no review agent may call the live API.\n-\n-## When stage 4 is approved\n-\n-Print a closing summary: the file path produced at each stage, and which test cases were automated versus skipped by the priority filter. Note that `generate-api-tests` has already back-written the `Automation` field in the test-cases file — no manual update is needed.\ndiff --git a/.husky/pre-commit b/.husky/pre-commit\nindex 2312dc5..8b0ccf1 100644\n--- a/.husky/pre-commit\n+++ b/.husky/pre-commit\n@@ -1 +1,7 @@\n+branch=\"$(git symbolic-ref --short HEAD)\"\n+if [ \"$branch\" = \"main\" ]; then\n+  echo \"Direct commits to main are not allowed. Create a feature branch first.\"\n+  exit 1\n+fi\n+\n npx lint-staged",
+      "actualWorkers": 4
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/demoqa-test-automation/demoqa-test-automation/test-results",
+        "repeatEach": 1,
+        "retries": 2,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/olenamkolesnik/demoqa-test-automation/commit/e02170b0c48c927f557982cb869a7e4a2b1d677a",
+            "commitHash": "e02170b0c48c927f557982cb869a7e4a2b1d677a",
+            "prHref": "https://github.com/olenamkolesnik/demoqa-test-automation/pull/20",
+            "prTitle": "Chore/stop tracking claude",
+            "prBaseHash": "00f1ccc578d87ba94f4acc6ea722542d4fe02f04",
+            "buildHref": "https://github.com/olenamkolesnik/demoqa-test-automation/actions/runs/33890855281"
+          },
+          "gitCommit": {
+            "shortHash": "e02170b",
+            "hash": "e02170b0c48c927f557982cb869a7e4a2b1d677a",
+            "subject": "Merge 59010d23bdce0d07ff11684d3c467bd60bd0dc73 into 00f1ccc578d87ba94f4acc6ea722542d4fe02f04",
+            "body": "Merge 59010d23bdce0d07ff11684d3c467bd60bd0dc73 into 00f1ccc578d87ba94f4acc6ea722542d4fe02f04\n",
+            "author": {
+              "name": "olenamkolesnik",
+              "email": "33692828+olenamkolesnik@users.noreply.github.com",
+              "time": 1788536442000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1788536442000
+            },
+            "branch": "HEAD"
+          },
+          "gitDiff": "diff --git a/.claude/commands/api-pipeline.md b/.claude/commands/api-pipeline.md\ndeleted file mode 100644\nindex 689ade7..0000000\n--- a/.claude/commands/api-pipeline.md\n+++ /dev/null\n@@ -1,81 +0,0 @@\n----\n-description: Run the full API test-authoring pipeline for one endpoint — test conditions, test cases, infrastructure, and specs — stopping after each stage's review agent for your sign-off.\n----\n-\n-Run the API test-authoring pipeline for: **$ARGUMENTS**\n-\n-You are orchestrating four existing skills and four existing review agents. You do not write test conditions, test cases, or code yourself — each stage is delegated to its skill, and each artifact is checked by its review agent. Your job is sequencing, carrying file paths between stages, and stopping for the user at every gate.\n-\n-## Input\n-\n-`$ARGUMENTS` should be an endpoint, e.g. `GET /BookStore/v1/Books`. If no endpoint was given, ask for one and stop — do not guess or pick one from the spec docs.\n-\n-Source the endpoint's requirements the same way every skill in this pipeline already does:\n-\n-1. A live-verified `.md` doc under `docs/api-spec/` covering this resource — trusted over Swagger wherever they disagree\n-2. `docs/api-spec/*.swagger.json` where no corrected doc covers it\n-3. Ask the user **only** for what neither source has (an undocumented business rule)\n-\n-Do not ask the user to restate requirements the spec docs already hold, and do not ask them to paste spec content — read it.\n-\n-## Before starting: resume check\n-\n-Derive the path stems from the endpoint (mechanical — the skills define these transforms; don't ask the user to confirm them):\n-\n-- `<feature>` — functional area: `auth`, `bookstore`, `collection`, `profile`\n-- `<verb>-<resource>` — method lowercased plus the entity segment, e.g. `GET /BookStore/v1/Books` → `get-books`\n-- `<resource>` — the resource path segment kebab-cased, e.g. `BookStore` → `book-store`\n-\n-Check what already exists:\n-\n-| Stage | Artifact                                                                                                                                      |\n-| ----- | --------------------------------------------------------------------------------------------------------------------------------------------- |\n-| 1     | `docs/test-conditions/api/<feature>/<verb>-<resource>.md`                                                                                     |\n-| 2     | `docs/test-cases/api/<feature>/<verb>-<resource>.md`                                                                                          |\n-| 3     | `src/types/<resource>.schema.ts`, `src/api/<resource>-api.client.ts`, `src/data/<resource>.factory.ts`, `src/fixtures/<resource>.fixtures.ts` |\n-| 4     | `tests/api/<verb>-<resource>.api.spec.ts`, `tests/api/<verb>-<resource>.contract.spec.ts`                                                     |\n-\n-Report what you found, then start at the earliest stage whose artifact is missing.\n-\n-Two rules about what you found:\n-\n-- **An existing file is not a completed stage.** Nothing in this repo records that an artifact passed review. So for every pre-existing artifact, run that stage's review agent against it and present the verdict as that stage's gate before moving on. Do not skip a stage just because its file is on disk. Regenerate an existing artifact only if the user asks.\n-- **Stage 3 is per-resource, not per-endpoint.** One set of four infrastructure files serves every endpoint on that resource, so they can already exist on this endpoint's very first pipeline run because a sibling endpoint built them earlier. That is normal. Re-review them (they may need a new client method for this endpoint), but don't treat their existence as evidence this endpoint was already processed.\n-\n-## The four stages\n-\n-Each stage has the same shape: generate → review → **stop** → interpret the user's reply.\n-\n-| #   | Generate with skill           | Review with agent                 | Gate verdict                   |\n-| --- | ----------------------------- | --------------------------------- | ------------------------------ |\n-| 1   | `write-test-conditions`       | `review-test-conditions`          | Ready for test case generation |\n-| 2   | `write-manual-test-case`      | `review-test-cases`               | Ready for automation           |\n-| 3   | `generate-api-infrastructure` | `review-generated-infrastructure` | Ready for test generation      |\n-| 4   | `generate-api-tests`          | `review-generated-tests`          | Ready to merge                 |\n-\n-Pass each review agent the file path the skill just produced — every one of them requires a named target and will stop if it doesn't get one.\n-\n-Stage 3 takes the endpoint spec, not the reviewed test cases, so it does not depend on stages 1–2. Stage 4 needs both the reviewed test-cases file from stage 2 and the reviewed infrastructure from stage 3.\n-\n-## At every gate\n-\n-Print the review agent's **full findings table and verdict, verbatim** — not a summary, not just the verdict line. Then end your turn and wait.\n-\n-When the user replies:\n-\n-- **Approval** (\"looks good\", \"proceed\", \"ok\") — move to the next stage.\n-- **A fix instruction** (\"fix #2\", \"the boundary condition is wrong\") — apply it, then re-invoke **the same review agent** on the revised artifact and stop again. Never advance to the next stage on the strength of your own fix; the agent re-checks it.\n-- **Anything ambiguous** — ask, don't assume. A wrong guess here silently propagates into every later stage.\n-\n-## Rules\n-\n-- Never skip a stage's review agent, even when the artifact looks obviously fine. The gates are the point of the pipeline.\n-- Never proceed past a gate without a reply from the user in that turn. Ending your turn at each gate is the design, not overhead to optimize away.\n-- If a review agent reports its own source-of-truth file missing, stop the entire pipeline and say so. Do not improvise criteria on its behalf.\n-- If a skill reports something it cannot generate — `generate-api-tests` explicitly refuses multi-actor test cases, for instance — stop and surface that rather than pushing through with a best-effort attempt.\n-- Never run the test suite or a live smoke check as part of this pipeline. Both create real data on the shared public DemoQA backend (Risk-1 in `docs/test-plan.md`). Lint, format, and `--list` are the only verification commands the review agents are permitted, and they run those themselves.\n-- **One narrow exception:** stage 1's `write-test-conditions` may make targeted live requests to resolve a case it would otherwise mark infeasible, under the rules in that skill's **Resolving undocumented behavior** section — a handful of `qa_`-prefixed requests, repeated to confirm, with the finding pushed into `docs/api-spec/`. This is not a smoke check: it establishes unknown behavior once, so every later stage and endpoint reads it from the spec doc instead. No other stage and no review agent may call the live API.\n-\n-## When stage 4 is approved\n-\n-Print a closing summary: the file path produced at each stage, and which test cases were automated versus skipped by the priority filter. Note that `generate-api-tests` has already back-written the `Automation` field in the test-cases file — no manual update is needed.\ndiff --git a/.husky/pre-commit b/.husky/pre-commit\nindex 2312dc5..8b0ccf1 100644\n--- a/.husky/pre-commit\n+++ b/.husky/pre-commit\n@@ -1 +1,7 @@\n+branch=\"$(git symbolic-ref --short HEAD)\"\n+if [ \"$branch\" = \"main\" ]; then\n+  echo \"Direct commits to main are not allowed. Create a feature branch first.\"\n+  exit 1\n+fi\n+\n npx lint-staged",
+          "actualWorkers": 4
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/runner/work/demoqa-test-automation/demoqa-test-automation/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "html",
+        {
+          "open": "never"
+        }
+      ],
+      [
+        "github",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "playwright-report/results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 4,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "api/delete-user.api.spec.ts",
+      "file": "api/delete-user.api.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Delete own user account with a valid token",
+          "ok": true,
+          "tags": [
+            "AUTH-017",
+            "positive"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10076,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T15:41:23.082Z [w0] [Delete own user account with a valid token] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:41:27.726Z [w0] [Delete own user account with a valid token] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:41:30.933Z [w0] [Delete own user account with a valid token] [INFO] DELETE /Account/v1/User/4ecbf361-13ab-4db4-92cc-1fef26436e9e -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:41:20.837Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a3471163437ebe190827-429eab5e5e1da595ee5e",
+          "file": "api/delete-user.api.spec.ts",
+          "line": 5,
+          "column": 5
+        },
+        {
+          "title": "Delete user account with no Authorization header",
+          "ok": true,
+          "tags": [
+            "AUTH-018",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 10852,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T15:41:23.071Z [w1] [Delete user account with no Authorization header] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:41:30.211Z [w1] [Delete user account with no Authorization header] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:41:31.642Z [w1] [Delete user account with no Authorization header] [INFO] DELETE /Account/v1/User/5614461b-b0b2-4eb5-955a-01955bf77940 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:41:20.742Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a3471163437ebe190827-163646e00eaf65478818",
+          "file": "api/delete-user.api.spec.ts",
+          "line": 24,
+          "column": 5
+        },
+        {
+          "title": "Delete user account with an invalid or malformed token",
+          "ok": true,
+          "tags": [
+            "AUTH-019",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 16391,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T15:41:23.078Z [w2] [Delete user account with an invalid or malformed token] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:41:25.500Z [w2] [Delete user account with an invalid or malformed token] [INFO] DELETE /Account/v1/User/706873f5-c729-43e8-8ac8-e877f659f7a8 -> 401\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:41:32.864Z [w2] [Delete user account with an invalid or malformed token] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:41:37.115Z [w2] [Delete user account with an invalid or malformed token] [INFO] DELETE /Account/v1/User/706873f5-c729-43e8-8ac8-e877f659f7a8 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:41:20.679Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a3471163437ebe190827-c831a3e83369a89b5722",
+          "file": "api/delete-user.api.spec.ts",
+          "line": 40,
+          "column": 5
+        },
+        {
+          "title": "Delete a non-existent user UUID with a valid unrelated token",
+          "ok": true,
+          "tags": [
+            "AUTH-020",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "passed",
+                  "duration": 5707,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T15:41:23.075Z [w3] [Delete a non-existent user UUID with a valid unrelated token] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:41:25.657Z [w3] [Delete a non-existent user UUID with a valid unrelated token] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:41:25.766Z [w3] [Delete a non-existent user UUID with a valid unrelated token] [INFO] DELETE /Account/v1/User/00000000-0000-0000-0000-000000000000 -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:41:26.591Z [w3] [Delete a non-existent user UUID with a valid unrelated token] [INFO] DELETE /Account/v1/User/99e7fdea-1b8d-41d2-b0da-496ccd773701 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:41:20.860Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a3471163437ebe190827-d6d79755d598b53d2eeb",
+          "file": "api/delete-user.api.spec.ts",
+          "line": 56,
+          "column": 5
+        },
+        {
+          "title": "Delete an already-deleted user account",
+          "ok": true,
+          "tags": [
+            "AUTH-021",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "passed",
+                  "duration": 11380,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T15:41:28.068Z [w3] [Delete an already-deleted user account] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:41:36.075Z [w3] [Delete an already-deleted user account] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:41:37.885Z [w3] [Delete an already-deleted user account] [INFO] DELETE /Account/v1/User/fd8fab85-e096-405c-8d82-22350afe9831 -> 204\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:41:37.980Z [w3] [Delete an already-deleted user account] [INFO] DELETE /Account/v1/User/fd8fab85-e096-405c-8d82-22350afe9831 -> 200\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:41:26.600Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a3471163437ebe190827-7c7edb403c6da0d94596",
+          "file": "api/delete-user.api.spec.ts",
+          "line": 72,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "api/delete-user.contract.spec.ts",
+      "file": "api/delete-user.contract.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "DELETE /Account/v1/User/{UUID} success response has no body",
+          "ok": true,
+          "tags": [
+            "contract",
+            "AUTH"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 11670,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T15:41:32.861Z [w0] [DELETE /Account/v1/User/{UUID} success response has no body] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:41:39.097Z [w0] [DELETE /Account/v1/User/{UUID} success response has no body] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:41:42.621Z [w0] [DELETE /Account/v1/User/{UUID} success response has no body] [INFO] DELETE /Account/v1/User/24abfdd0-94ab-43bd-913d-61ff7dfa5ee8 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:41:30.949Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "5bbc055b6a9b2397881c-fb5a79ab6480cbf0abcf",
+          "file": "api/delete-user.contract.spec.ts",
+          "line": 4,
+          "column": 5
+        },
+        {
+          "title": "DELETE /Account/v1/User/{UUID} error response matches schema",
+          "ok": true,
+          "tags": [
+            "contract",
+            "AUTH"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 11804,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T15:41:33.523Z [w1] [DELETE /Account/v1/User/{UUID} error response matches schema] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:41:36.951Z [w1] [DELETE /Account/v1/User/{UUID} error response matches schema] [INFO] DELETE /Account/v1/User/812f8683-3fdf-4c74-ab99-65a45cc88451 -> 401\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:41:41.894Z [w1] [DELETE /Account/v1/User/{UUID} error response matches schema] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:41:43.458Z [w1] [DELETE /Account/v1/User/{UUID} error response matches schema] [INFO] DELETE /Account/v1/User/812f8683-3fdf-4c74-ab99-65a45cc88451 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:41:31.651Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "5bbc055b6a9b2397881c-90ee53d4d73a404b00ee",
+          "file": "api/delete-user.contract.spec.ts",
+          "line": 21,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "api/get-user.api.spec.ts",
+      "file": "api/get-user.api.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Get own user profile with a valid token",
+          "ok": true,
+          "tags": [
+            "AUTH-012",
+            "positive"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 11747,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T15:41:39.095Z [w2] [Get own user profile with a valid token] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:41:44.731Z [w2] [Get own user profile with a valid token] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:41:47.750Z [w2] [Get own user profile with a valid token] [INFO] GET /Account/v1/User/aeccbd04-0846-48c6-b8c5-249a7b8d7b9a -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:41:48.875Z [w2] [Get own user profile with a valid token] [INFO] DELETE /Account/v1/User/aeccbd04-0846-48c6-b8c5-249a7b8d7b9a -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:41:37.124Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b2bd4494f98d86f87e56-32ad40df7066e9bdb050",
+          "file": "api/get-user.api.spec.ts",
+          "line": 6,
+          "column": 5
+        },
+        {
+          "title": "Get user profile with no Authorization header",
+          "ok": true,
+          "tags": [
+            "AUTH-013",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "passed",
+                  "duration": 11632,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T15:41:41.891Z [w3] [Get user profile with no Authorization header] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:41:47.899Z [w3] [Get user profile with no Authorization header] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:41:49.629Z [w3] [Get user profile with no Authorization header] [INFO] DELETE /Account/v1/User/1f534c78-b29a-43aa-8ce8-3d8818bba9e1 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:41:37.993Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b2bd4494f98d86f87e56-3fb93e5e045cf0980325",
+          "file": "api/get-user.api.spec.ts",
+          "line": 23,
+          "column": 5
+        },
+        {
+          "title": "Get user profile with an invalid or malformed token",
+          "ok": true,
+          "tags": [
+            "AUTH-014",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 16221,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T15:41:44.728Z [w0] [Get user profile with an invalid or malformed token] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:41:47.732Z [w0] [Get user profile with an invalid or malformed token] [INFO] GET /Account/v1/User/5bfeca71-e648-415c-9f7b-2aff68a85efb -> 401\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:41:55.307Z [w0] [Get user profile with an invalid or malformed token] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:41:58.853Z [w0] [Get user profile with an invalid or malformed token] [INFO] DELETE /Account/v1/User/5bfeca71-e648-415c-9f7b-2aff68a85efb -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:41:42.629Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b2bd4494f98d86f87e56-e533c1170ef109b3681a",
+          "file": "api/get-user.api.spec.ts",
+          "line": 39,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "api/get-user.contract.spec.ts",
+      "file": "api/get-user.contract.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "GET /Account/v1/User/{UUID} success response matches schema",
+          "ok": true,
+          "tags": [
+            "contract",
+            "AUTH"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 12762,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T15:41:45.693Z [w1] [GET /Account/v1/User/{UUID} success response matches schema] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:41:52.945Z [w1] [GET /Account/v1/User/{UUID} success response matches schema] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:41:53.307Z [w1] [GET /Account/v1/User/{UUID} success response matches schema] [INFO] GET /Account/v1/User/fa70b50e-c6fa-4d97-9c7f-d66011e952f5 -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:41:56.234Z [w1] [GET /Account/v1/User/{UUID} success response matches schema] [INFO] DELETE /Account/v1/User/fa70b50e-c6fa-4d97-9c7f-d66011e952f5 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:41:43.467Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a8aca4f3c5f83291ff47-47c4a5c015f20272a343",
+          "file": "api/get-user.contract.spec.ts",
+          "line": 5,
+          "column": 5
+        },
+        {
+          "title": "GET /Account/v1/User/{UUID} error response matches schema",
+          "ok": true,
+          "tags": [
+            "contract",
+            "AUTH"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 13514,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T15:41:50.876Z [w2] [GET /Account/v1/User/{UUID} error response matches schema] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:41:52.880Z [w2] [GET /Account/v1/User/{UUID} error response matches schema] [INFO] GET /Account/v1/User/9114d7a4-8f89-4858-93bf-6bf40ea5baf5 -> 401\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:41:59.657Z [w2] [GET /Account/v1/User/{UUID} error response matches schema] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:42:02.399Z [w2] [GET /Account/v1/User/{UUID} error response matches schema] [INFO] DELETE /Account/v1/User/9114d7a4-8f89-4858-93bf-6bf40ea5baf5 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:41:48.881Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a8aca4f3c5f83291ff47-a5594ebaa638cac36726",
+          "file": "api/get-user.contract.spec.ts",
+          "line": 20,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "api/post-generate-token.api.spec.ts",
+      "file": "api/post-generate-token.api.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Generate token with valid credentials",
+          "ok": true,
+          "tags": [
+            "AUTH-022",
+            "positive"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "passed",
+                  "duration": 18515,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T15:41:50.877Z [w3] [Generate token with valid credentials] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:41:58.335Z [w3] [Generate token with valid credentials] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:42:05.180Z [w3] [Generate token with valid credentials] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:42:08.157Z [w3] [Generate token with valid credentials] [INFO] DELETE /Account/v1/User/68482810-0ff6-470c-a3c2-ff9b1c8ebfac -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:41:49.637Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8a1caafea00aa0f89459-8afa8b81abab7aaeb626",
+          "file": "api/post-generate-token.api.spec.ts",
+          "line": 9,
+          "column": 5
+        },
+        {
+          "title": "Generate token with incorrect password",
+          "ok": true,
+          "tags": [
+            "AUTH-023",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 16407,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T15:41:58.330Z [w1] [Generate token with incorrect password] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:42:04.097Z [w1] [Generate token with incorrect password] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:42:09.938Z [w1] [Generate token with incorrect password] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:42:12.651Z [w1] [Generate token with incorrect password] [INFO] DELETE /Account/v1/User/cbe713f3-321c-4082-be6e-32d081581a6d -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:41:56.241Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8a1caafea00aa0f89459-1c10ead583d0250dfa44",
+          "file": "api/post-generate-token.api.spec.ts",
+          "line": 27,
+          "column": 5
+        },
+        {
+          "title": "Generate token with a username that was never registered",
+          "ok": true,
+          "tags": [
+            "AUTH-024",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 8564,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T15:42:07.428Z [w0] [Generate token with a username that was never registered] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:41:58.860Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8a1caafea00aa0f89459-438558bb155282a034b2",
+          "file": "api/post-generate-token.api.spec.ts",
+          "line": 47,
+          "column": 5
+        },
+        {
+          "title": "Generate token with an empty password",
+          "ok": true,
+          "tags": [
+            "AUTH-025",
+            "boundary"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 10887,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T15:42:04.107Z [w2] [Generate token with an empty password] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:42:04.200Z [w2] [Generate token with an empty password] [INFO] POST /Account/v1/GenerateToken -> 400\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:42:12.060Z [w2] [Generate token with an empty password] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:42:13.306Z [w2] [Generate token with an empty password] [INFO] DELETE /Account/v1/User/bf5766ad-f800-4993-b74d-0e7a5879df6a -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:42:02.415Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8a1caafea00aa0f89459-e80565e844859fb9fff0",
+          "file": "api/post-generate-token.api.spec.ts",
+          "line": 67,
+          "column": 5
+        },
+        {
+          "title": "Generate token with an empty username",
+          "ok": true,
+          "tags": [
+            "AUTH-026",
+            "boundary"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 89,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T15:42:07.531Z [w0] [Generate token with an empty username] [INFO] POST /Account/v1/GenerateToken -> 400\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:42:07.440Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8a1caafea00aa0f89459-cf0fbe5122e0b2fc6053",
+          "file": "api/post-generate-token.api.spec.ts",
+          "line": 85,
+          "column": 5
+        },
+        {
+          "title": "Generate token with the username key absent from the body",
+          "ok": true,
+          "tags": [
+            "AUTH-027",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 103,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:42:07.548Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8a1caafea00aa0f89459-d5ebd766b4f28792a44e",
+          "file": "api/post-generate-token.api.spec.ts",
+          "line": 101,
+          "column": 5
+        },
+        {
+          "title": "Generate token with the password key absent from the body",
+          "ok": true,
+          "tags": [
+            "AUTH-028",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 11562,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T15:42:09.934Z [w0] [Generate token with the password key absent from the body] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:42:15.524Z [w0] [Generate token with the password key absent from the body] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:42:19.230Z [w0] [Generate token with the password key absent from the body] [INFO] DELETE /Account/v1/User/59680508-fa9b-4d0c-a0a6-650010a02326 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:42:07.665Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8a1caafea00aa0f89459-a79686f3ca36d916f96d",
+          "file": "api/post-generate-token.api.spec.ts",
+          "line": 118,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "api/post-generate-token.contract.spec.ts",
+      "file": "api/post-generate-token.contract.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "POST /Account/v1/GenerateToken success/failure response matches schema",
+          "ok": true,
+          "tags": [
+            "contract",
+            "AUTH"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "passed",
+                  "duration": 16549,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T15:42:09.934Z [w3] [POST /Account/v1/GenerateToken success/failure response matches schema] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:42:14.306Z [w3] [POST /Account/v1/GenerateToken success/failure response matches schema] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:42:22.937Z [w3] [POST /Account/v1/GenerateToken success/failure response matches schema] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:42:24.715Z [w3] [POST /Account/v1/GenerateToken success/failure response matches schema] [INFO] DELETE /Account/v1/User/0c20a512-7f08-4a44-8982-e918c342d241 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:42:08.163Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "86b7869ce57bf642ecfe-78dd58d7617869961f3f",
+          "file": "api/post-generate-token.contract.spec.ts",
+          "line": 6,
+          "column": 5
+        },
+        {
+          "title": "POST /Account/v1/GenerateToken error response matches schema",
+          "ok": true,
+          "tags": [
+            "contract",
+            "AUTH"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 90,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T15:42:12.748Z [w1] [POST /Account/v1/GenerateToken error response matches schema] [INFO] POST /Account/v1/GenerateToken -> 400\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:42:12.657Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "86b7869ce57bf642ecfe-4c38b3cdb129beff7b2b",
+          "file": "api/post-generate-token.contract.spec.ts",
+          "line": 23,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "api/post-user.api.spec.ts",
+      "file": "api/post-user.api.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Register user with valid credentials",
+          "ok": true,
+          "tags": [
+            "AUTH-001",
+            "positive"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 10449,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T15:42:14.316Z [w1] [Register user with valid credentials] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:42:20.500Z [w1] [Register user with valid credentials] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:42:23.210Z [w1] [Register user with valid credentials] [INFO] DELETE /Account/v1/User/df2dee7b-9827-44cb-b61e-f01db4a68fcf -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:42:12.757Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd58d1e8feec03df9eb4-3bb152e3b223428f8d3f",
+          "file": "api/post-user.api.spec.ts",
+          "line": 19,
+          "column": 5
+        },
+        {
+          "title": "Register user with password missing an uppercase letter",
+          "ok": true,
+          "tags": [
+            "AUTH-002",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 92,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T15:42:13.409Z [w2] [Register user with password missing an uppercase letter] [INFO] POST /Account/v1/User -> 400\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:42:13.316Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd58d1e8feec03df9eb4-07562c4bf414746ac5c3",
+          "file": "api/post-user.api.spec.ts",
+          "line": 41,
+          "column": 5
+        },
+        {
+          "title": "Register user with password missing a lowercase letter",
+          "ok": true,
+          "tags": [
+            "AUTH-003",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 89,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T15:42:13.509Z [w2] [Register user with password missing a lowercase letter] [INFO] POST /Account/v1/User -> 400\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:42:13.419Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd58d1e8feec03df9eb4-bdb96a4cb94450d9c0de",
+          "file": "api/post-user.api.spec.ts",
+          "line": 57,
+          "column": 5
+        },
+        {
+          "title": "Register user with password missing a digit",
+          "ok": true,
+          "tags": [
+            "AUTH-004",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 88,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T15:42:13.608Z [w2] [Register user with password missing a digit] [INFO] POST /Account/v1/User -> 400\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:42:13.518Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd58d1e8feec03df9eb4-289a4f58f47ec1974cb6",
+          "file": "api/post-user.api.spec.ts",
+          "line": 73,
+          "column": 5
+        },
+        {
+          "title": "Register user with password missing a special character",
+          "ok": true,
+          "tags": [
+            "AUTH-005",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 104,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T15:42:13.710Z [w2] [Register user with password missing a special character] [INFO] POST /Account/v1/User -> 400\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:42:13.617Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd58d1e8feec03df9eb4-1d7b3085543890abb82a",
+          "file": "api/post-user.api.spec.ts",
+          "line": 89,
+          "column": 5
+        },
+        {
+          "title": "Register user with an empty password",
+          "ok": true,
+          "tags": [
+            "AUTH-006",
+            "boundary"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 90,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T15:42:13.833Z [w2] [Register user with an empty password] [INFO] POST /Account/v1/User -> 400\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:42:13.734Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd58d1e8feec03df9eb4-ba687391f7b94f76d5c7",
+          "file": "api/post-user.api.spec.ts",
+          "line": 105,
+          "column": 5
+        },
+        {
+          "title": "Register user with a password one character below the minimum length",
+          "ok": true,
+          "tags": [
+            "AUTH-007",
+            "boundary"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 88,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T15:42:13.931Z [w2] [Register user with a password one character below the minimum length] [INFO] POST /Account/v1/User -> 400\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:42:13.842Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd58d1e8feec03df9eb4-df5c27e8ef9db3ffe907",
+          "file": "api/post-user.api.spec.ts",
+          "line": 124,
+          "column": 5
+        },
+        {
+          "title": "Register user with the userName field entirely absent from the request",
+          "ok": true,
+          "tags": [
+            "AUTH-008",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 87,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:42:13.938Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd58d1e8feec03df9eb4-3db4ac1b4f4b8c02e55f",
+          "file": "api/post-user.api.spec.ts",
+          "line": 140,
+          "column": 5
+        },
+        {
+          "title": "Register user with the password field entirely absent from the request",
+          "ok": true,
+          "tags": [
+            "AUTH-009",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 87,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:42:14.032Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd58d1e8feec03df9eb4-1cddf256dc50f2fcfe86",
+          "file": "api/post-user.api.spec.ts",
+          "line": 157,
+          "column": 5
+        },
+        {
+          "title": "Register user with an empty userName",
+          "ok": true,
+          "tags": [
+            "AUTH-010",
+            "boundary"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 87,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T15:42:14.215Z [w2] [Register user with an empty userName] [INFO] POST /Account/v1/User -> 400\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:42:14.126Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd58d1e8feec03df9eb4-09bfd6acbb5f88fb7bde",
+          "file": "api/post-user.api.spec.ts",
+          "line": 174,
+          "column": 5
+        },
+        {
+          "title": "Register a username, then register again with the same username",
+          "ok": true,
+          "tags": [
+            "AUTH-011",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 11961,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T15:42:15.450Z [w2] [Register a username, then register again with the same username] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:42:17.668Z [w2] [Register a username, then register again with the same username] [INFO] POST /Account/v1/User -> 406\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:42:24.071Z [w2] [Register a username, then register again with the same username] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:42:26.185Z [w2] [Register a username, then register again with the same username] [INFO] DELETE /Account/v1/User/f78c8868-8e03-410d-9845-18aba1219341 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:42:14.221Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd58d1e8feec03df9eb4-484fad944f2c5b90cc0e",
+          "file": "api/post-user.api.spec.ts",
+          "line": 190,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "api/post-user.contract.spec.ts",
+      "file": "api/post-user.contract.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "POST /Account/v1/User success response matches schema",
+          "ok": true,
+          "tags": [
+            "contract",
+            "AUTH"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7174,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T15:42:20.500Z [w0] [POST /Account/v1/User success response matches schema] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:42:25.775Z [w0] [POST /Account/v1/User success response matches schema] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T15:42:26.413Z [w0] [POST /Account/v1/User success response matches schema] [INFO] DELETE /Account/v1/User/87d6e662-3b22-43dc-9faa-5080d6f3eb97 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:42:19.237Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "46188633b2ed85ce494d-c84ef7e2370dd37c772a",
+          "file": "api/post-user.contract.spec.ts",
+          "line": 7,
+          "column": 5
+        },
+        {
+          "title": "POST /Account/v1/User error response matches schema",
+          "ok": true,
+          "tags": [
+            "contract",
+            "AUTH"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 93,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T15:42:23.313Z [w1] [POST /Account/v1/User error response matches schema] [INFO] POST /Account/v1/User -> 400\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T15:42:23.218Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "46188633b2ed85ce494d-8239bb7abf398e44a53e",
+          "file": "api/post-user.contract.spec.ts",
+          "line": 25,
+          "column": 5
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-09-04T15:41:18.999Z",
+    "duration": 67438.188,
+    "expected": 34,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
