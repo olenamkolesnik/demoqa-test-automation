@@ -1,11 +1,6 @@
 
 # Environment
 .env
-
-# Claude Code local config — not published on the remote.
-# Version-controlled separately in its own local-only git repo at .claude/.git
-# (never pushed anywhere). Earlier versions of the previously-tracked subset
-# are recoverable from this repo's history at bc725d1^.
 .claude/
 
 # Playwright
