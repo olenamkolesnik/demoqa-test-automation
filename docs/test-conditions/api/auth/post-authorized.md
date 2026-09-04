@@ -69,7 +69,7 @@ Note the response body's _type_ varies with the outcome: a JSON scalar on `200`,
 | Category   | State                                                                        |
 | Technique  | Decision table                                                               |
 | Source     | Observed behavior: live check 2026-09-04; docs/api-spec/account-endpoints.md |
-| Test cases | —                                                                            |
+| Test cases | AUTH-029                                                                     |
 
 **What to cover**
 The valid class in which the endpoint answers affirmatively: a registered user who has already obtained a token via `POST /Account/v1/GenerateToken` submits their own correct `userName` and `password`, and receives `200` with a response body that is the bare JSON boolean `true`.
@@ -112,7 +112,7 @@ Trigger and effect are merged into one condition, following COND-AUTH-001, COND-
 | Category   | State                                                                        |
 | Technique  | Decision table                                                               |
 | Source     | Observed behavior: live check 2026-09-04; docs/api-spec/account-endpoints.md |
-| Test cases | —                                                                            |
+| Test cases | AUTH-030                                                                     |
 
 **What to cover**
 The second valid-credentials class: a registered user who has never called `POST /Account/v1/GenerateToken` submits their own correct `userName` and `password`, and receives `200` with the bare boolean `false`. Confirms the endpoint reports token/session state rather than credential validity, and that a correct-credentials request can legitimately answer negatively without being an error.
@@ -152,7 +152,7 @@ The `false` here and the `404`/`1207` of COND-AUTH-031 are genuinely different a
 | Category   | Input field                                           |
 | Technique  | EP                                                    |
 | Source     | Observed behavior: docs/api-spec/account-endpoints.md |
-| Test cases | —                                                     |
+| Test cases | AUTH-031                                              |
 
 **What to cover**
 Invalid equivalence class: an existing user's correct `userName` is submitted with a password that is not theirs. Confirms `404` with `{ code: "1207", message: "User not found!" }` — an error response, not a `200`/`false`.
@@ -187,7 +187,7 @@ Priority High for the same reason as COND-AUTH-023 in `post-generate-token.md`: 
 | Category   | Input field                                                                  |
 | Technique  | EP                                                                           |
 | Source     | Observed behavior: live check 2026-09-04; docs/api-spec/account-endpoints.md |
-| Test cases | —                                                                            |
+| Test cases | AUTH-032                                                                     |
 
 **What to cover**
 Invalid equivalence class: a `userName` that was never registered, submitted with any syntactically valid password. Confirms the response is byte-identical to the wrong-password case — the API does not reveal whether the account exists.
@@ -221,7 +221,7 @@ Priority Medium rather than High: the enumeration protection matters, but unlike
 | Category   | Input field                                                                  |
 | Technique  | BVA                                                                          |
 | Source     | Observed behavior: live check 2026-09-04; docs/api-spec/account-endpoints.md |
-| Test cases | —                                                                            |
+| Test cases | AUTH-033                                                                     |
 
 **What to cover**
 The zero-length boundary of the required `password` field: an existing user's correct `userName` is submitted with `password: ""`. Confirms rejection as a missing required field (`400`/`1200`) rather than as a credential mismatch (`404`/`1207`).
@@ -254,7 +254,7 @@ The practical consequence: this endpoint returns errors in two different vocabul
 | Category   | Input field                                                                  |
 | Technique  | BVA                                                                          |
 | Source     | Observed behavior: live check 2026-09-04; docs/api-spec/account-endpoints.md |
-| Test cases | —                                                                            |
+| Test cases | AUTH-034                                                                     |
 
 **What to cover**
 The zero-length boundary of the required `userName` field: `userName: ""` submitted with an otherwise valid password. Confirms rejection as a missing required field rather than treatment as an unknown user.
@@ -283,7 +283,7 @@ The competing outcome here is more tempting than in COND-AUTH-033 — an empty u
 | Category   | Input field                                                                  |
 | Technique  | EP                                                                           |
 | Source     | Observed behavior: live check 2026-09-04; docs/api-spec/account-endpoints.md |
-| Test cases | —                                                                            |
+| Test cases | AUTH-035                                                                     |
 
 **What to cover**
 Invalid equivalence class: the `userName` key is entirely absent from the request body, which carries only `password`. Confirms rejection with the shared required-field error.
@@ -313,7 +313,7 @@ Sending a body with a key genuinely absent requires a raw request rather than a 
 | Category   | Input field                                                                  |
 | Technique  | EP                                                                           |
 | Source     | Observed behavior: live check 2026-09-04; docs/api-spec/account-endpoints.md |
-| Test cases | —                                                                            |
+| Test cases | AUTH-036                                                                     |
 
 **What to cover**
 Invalid equivalence class: the `password` key is entirely absent from the request body, which carries only `userName`. Confirms rejection with the shared required-field error.
