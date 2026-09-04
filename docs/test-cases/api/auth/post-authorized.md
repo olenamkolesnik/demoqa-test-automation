@@ -20,7 +20,7 @@ Endpoint behavior reference: [`docs/api-spec/account-endpoints.md`](../../../api
 | Preconditions  | User account exists **and** a token has been generated for that same user (POST /Account/v1/User, then POST /Account/v1/GenerateToken) for userName "qa_auth029_1725440000" with password "Test@1234" |
 | Test data      | userName: "qa_auth029_1725440000" / password: "Test@1234" (8+ chars, upper, lower, digit, special) — the user's own correct credentials                                                               |
 | Postconditions | User "qa_auth029_1725440000" deleted via DELETE /Account/v1/User/{userID}, using the token acquired in the precondition                                                                               |
-| Automation     | Not automated                                                                                                                                                                                         |
+| Automation     | Automated → `post-authorized.api.spec.ts`                                                                                                                                                             |
 
 **Steps & expected results**
 
@@ -49,7 +49,7 @@ The token is generated moments before the check, so the case never depends on a 
 | Preconditions  | User account exists (created via API: POST /Account/v1/User) for userName "qa_auth030_1725440000" with password "Test@1234"; POST /Account/v1/GenerateToken has **never** been called for this user                                         |
 | Test data      | userName: "qa_auth030_1725440000" / password: "Test@1234" — the user's own correct credentials                                                                                                                                              |
 | Postconditions | User "qa_auth030_1725440000" deleted via DELETE /Account/v1/User/{userID} (requires a token acquired via POST /Account/v1/GenerateToken for this user, since none was generated during setup — generate it only after step 2 has completed) |
-| Automation     | Not automated                                                                                                                                                                                                                               |
+| Automation     | Automated → `post-authorized.api.spec.ts`                                                                                                                                                                                                   |
 
 **Steps & expected results**
 
@@ -77,7 +77,7 @@ The contrast with AUTH-031 is the substance: both submit a real, registered user
 | Preconditions  | User account exists (created via API: POST /Account/v1/User) for userName "qa_auth031_1725440000" with password "Test@1234"                            |
 | Test data      | userName: "qa_auth031_1725440000" / password submitted: "Wrong@9999" (not the registered password, which is "Test@1234")                               |
 | Postconditions | User "qa_auth031_1725440000" deleted via DELETE /Account/v1/User/{userID} (requires a token acquired via POST /Account/v1/GenerateToken for this user) |
-| Automation     | Not automated                                                                                                                                          |
+| Automation     | Automated → `post-authorized.api.spec.ts`                                                                                                              |
 
 **Steps & expected results**
 
@@ -108,7 +108,7 @@ Risk-4 observed behavior: the 404/1207 response was confirmed live on 2026-09-04
 | Preconditions  | No account exists for the submitted username — the value is never registered |
 | Test data      | userName: "qa_never_registered_1725440000" / password: "Test@1234"           |
 | Postconditions | None — no account is created, so nothing to clean up                         |
-| Automation     | Not automated                                                                |
+| Automation     | Automated → `post-authorized.api.spec.ts`                                    |
 
 **Steps & expected results**
 
@@ -135,7 +135,7 @@ Kept separate from AUTH-031 despite the identical response: "user exists, passwo
 | Preconditions  | User account exists (created via API: POST /Account/v1/User) for userName "qa_auth033_1725440000" with password "Test@1234"                            |
 | Test data      | userName: "qa_auth033_1725440000" (registered) / password: "" (empty string, 0 chars)                                                                  |
 | Postconditions | User "qa_auth033_1725440000" deleted via DELETE /Account/v1/User/{userID} (requires a token acquired via POST /Account/v1/GenerateToken for this user) |
-| Automation     | Not automated                                                                                                                                          |
+| Automation     | Automated → `post-authorized.api.spec.ts`                                                                                                              |
 
 **Steps & expected results**
 
@@ -164,7 +164,7 @@ Risk-4 observed behavior: 400/1200 confirmed deterministic across two runs on 20
 | Preconditions  | None — the request is rejected before any account lookup occurs |
 | Test data      | userName: "" (empty string, 0 chars) / password: "Test@1234"    |
 | Postconditions | None — no account is created                                    |
-| Automation     | Not automated                                                   |
+| Automation     | Automated → `post-authorized.api.spec.ts`                       |
 
 **Steps & expected results**
 
@@ -189,7 +189,7 @@ Risk-4 observed behavior: rejection precedes authentication, so this path does n
 | Preconditions  | None — the request is rejected before any account lookup occurs                                      |
 | Test data      | Request body carries only the password key: `{ "password": "Test@1234" }` — no `userName` key at all |
 | Postconditions | None — no account is created                                                                         |
-| Automation     | Not automated                                                                                        |
+| Automation     | Automated → `post-authorized.api.spec.ts`                                                            |
 
 **Steps & expected results**
 
@@ -216,7 +216,7 @@ Risk-4 observed behavior: 400/1200 confirmed deterministic across two runs on 20
 | Preconditions  | User account exists (created via API: POST /Account/v1/User) for userName "qa_auth036_1725440000" with password "Test@1234"                            |
 | Test data      | Request body carries only the username key: `{ "userName": "qa_auth036_1725440000" }` — no `password` key at all                                       |
 | Postconditions | User "qa_auth036_1725440000" deleted via DELETE /Account/v1/User/{userID} (requires a token acquired via POST /Account/v1/GenerateToken for this user) |
-| Automation     | Not automated                                                                                                                                          |
+| Automation     | Automated → `post-authorized.api.spec.ts`                                                                                                              |
 
 **Steps & expected results**
 
@@ -227,7 +227,7 @@ Risk-4 observed behavior: 400/1200 confirmed deterministic across two runs on 20
 **Notes**
 Separate from AUTH-033 (empty password) for the same reason AUTH-035 is separate from AUTH-034: absent key and empty value are distinct classes. The username sent is a real registered one, which is what shows the required-field check short-circuits before the credential lookup.
 
-Live check 2026-09-04 additionally confirmed that a wholly empty body `{}` — both keys absent — returns the same 400/1200. No separate test case: it is the intersection of AUTH-035 and AUTH-036 rather than a further class, and it produces no distinct outcome. Worth adding as an extra assertion inside the automated version of this case rather than as its own case.
+Live check 2026-09-04 additionally confirmed that a wholly empty body `{}` — both keys absent — returns the same 400/1200. No separate test case: it is the intersection of AUTH-035 and AUTH-036 rather than a further class, and it produces no distinct outcome. Automated as its own `test()` block sharing this ID (no separate manual test case exists for it), rather than as an extra assertion inside AUTH-036's own test — keeping "password key absent" and "both keys absent" independently diagnosable on failure.
 
 Needs a raw request, same as AUTH-035.
 
