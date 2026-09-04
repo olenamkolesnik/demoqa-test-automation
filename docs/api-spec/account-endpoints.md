@@ -42,6 +42,8 @@ The empty-password case is the one worth knowing: `{ userName: "<real user>", pa
 
 **Token shape (observed 2026-09-04, incidental):** the issued `token` is an unsigned-decodable JWT whose payload contains the submitted `userName` and **the plaintext password**, plus an `iat` claim. `expires` was observed ~7 days ahead of issuance; no lifetime is documented, and token expiry is not testable within a suite run.
 
+**`expires` format (raw examples, 2026-09-04):** UTC, `Z`-suffixed, millisecond precision — e.g. `"2026-09-11T10:30:04.885Z"`, `"2026-09-11T10:30:06.941Z"`. Confirmed across two independent calls in the same pass.
+
 ## POST /Account/v1/Authorized
 
 Request: `{ userName: string, password: string }`
