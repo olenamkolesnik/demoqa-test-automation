@@ -57,7 +57,7 @@
 | Category   | Input field                                           |
 | Technique  | EP                                                    |
 | Source     | Observed behavior: docs/api-spec/account-endpoints.md |
-| Test cases | —                                                     |
+| Test cases | AUTH-022                                              |
 
 **What to cover**
 The valid equivalence class: a previously-registered user submits their own correct `userName` and `password`, and receives `200` with a non-null `token`, a non-null ISO-8601 `expires`, `status: "Success"` and `result: "User authorized successfully."`.
@@ -92,7 +92,7 @@ Asserting `token` is non-null is the substantive part, not incidental: the failu
 | Category   | Input field                                           |
 | Technique  | EP                                                    |
 | Source     | Observed behavior: docs/api-spec/account-endpoints.md |
-| Test cases | —                                                     |
+| Test cases | AUTH-023                                              |
 
 **What to cover**
 Invalid equivalence class: an existing user's correct `userName` is submitted with a password that is not theirs. Confirms the API reports the failure in the body — `token: null`, `status: "Failed"` — while still returning HTTP `200`.
@@ -127,7 +127,7 @@ Priority High rather than Medium despite being a negative path: an authenticatio
 | Category   | Input field                                           |
 | Technique  | EP                                                    |
 | Source     | Observed behavior: docs/api-spec/account-endpoints.md |
-| Test cases | —                                                     |
+| Test cases | AUTH-024                                              |
 
 **What to cover**
 Invalid equivalence class: a `userName` that was never registered, submitted with any syntactically valid password. Confirms the response is indistinguishable from the wrong-password case — the API does not reveal whether the account exists.
@@ -160,7 +160,7 @@ The indistinguishability is itself the property under test — it prevents usern
 | Category   | Input field                                                                  |
 | Technique  | BVA                                                                          |
 | Source     | Observed behavior: live check 2026-09-04; docs/api-spec/account-endpoints.md |
-| Test cases | —                                                                            |
+| Test cases | AUTH-025                                                                     |
 
 **What to cover**
 The zero-length boundary of the required `password` field: an existing user's correct `userName` is submitted with `password: ""`. Confirms the request is rejected as a missing required field (`400`/`1200`) rather than taking the authentication path and returning `200`/`"Failed"`.
@@ -190,7 +190,7 @@ Verified on this endpoint directly, not inherited from `POST /Account/v1/User`; 
 | Category   | Input field                                                                  |
 | Technique  | BVA                                                                          |
 | Source     | Observed behavior: live check 2026-09-04; docs/api-spec/account-endpoints.md |
-| Test cases | —                                                                            |
+| Test cases | AUTH-026                                                                     |
 
 **What to cover**
 The zero-length boundary of the required `userName` field: `userName: ""` submitted with an otherwise valid password. Confirms rejection as a missing required field rather than treatment as an unknown user.
@@ -218,7 +218,7 @@ As with COND-AUTH-025, the competing outcome is the `200`/`"Failed"` unknown-use
 | Category   | Input field                                                                  |
 | Technique  | EP                                                                           |
 | Source     | Observed behavior: live check 2026-09-04; docs/api-spec/account-endpoints.md |
-| Test cases | —                                                                            |
+| Test cases | AUTH-027                                                                     |
 
 **What to cover**
 Invalid equivalence class: the `userName` key is entirely absent from the request body, which carries only `password`. Confirms rejection with the shared required-field error.
@@ -248,7 +248,7 @@ Sending a body with a key genuinely absent requires a raw request rather than a 
 | Category   | Input field                                                                  |
 | Technique  | EP                                                                           |
 | Source     | Observed behavior: live check 2026-09-04; docs/api-spec/account-endpoints.md |
-| Test cases | —                                                                            |
+| Test cases | AUTH-028                                                                     |
 
 **What to cover**
 Invalid equivalence class: the `password` key is entirely absent from the request body, which carries only `userName`. Confirms rejection with the shared required-field error.
