@@ -1,0 +1,1740 @@
+{
+  "config": {
+    "argv": [
+      "/opt/hostedtoolcache/node/24.20.0/x64/bin/node",
+      "/home/runner/work/demoqa-test-automation/demoqa-test-automation/node_modules/.bin/playwright",
+      "test"
+    ],
+    "configFile": "/home/runner/work/demoqa-test-automation/demoqa-test-automation/playwright.config.ts",
+    "rootDir": "/home/runner/work/demoqa-test-automation/demoqa-test-automation/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/olenamkolesnik/demoqa-test-automation/commit/88a92268b9dea7a369dd52f1f8568515388856dd",
+        "commitHash": "88a92268b9dea7a369dd52f1f8568515388856dd",
+        "prHref": "https://github.com/olenamkolesnik/demoqa-test-automation/pull/19",
+        "prTitle": "Feat/post generate token",
+        "prBaseHash": "0676aca186c7f7556dff69f129ab060e75943216",
+        "buildHref": "https://github.com/olenamkolesnik/demoqa-test-automation/actions/runs/33867897041"
+      },
+      "gitCommit": {
+        "shortHash": "88a9226",
+        "hash": "88a92268b9dea7a369dd52f1f8568515388856dd",
+        "subject": "Merge d70429556e6a369666de92bf5864c95401684b52 into 0676aca186c7f7556dff69f129ab060e75943216",
+        "body": "Merge d70429556e6a369666de92bf5864c95401684b52 into 0676aca186c7f7556dff69f129ab060e75943216\n",
+        "author": {
+          "name": "olenamkolesnik",
+          "email": "33692828+olenamkolesnik@users.noreply.github.com",
+          "time": 1788521141000
+        },
+        "committer": {
+          "name": "GitHub",
+          "email": "noreply@github.com",
+          "time": 1788521141000
+        },
+        "branch": "HEAD"
+      },
+      "gitDiff": "diff --git a/.gitignore b/.gitignore\nindex 2207e16..2b9cb71 100644\n--- a/.gitignore\n+++ b/.gitignore\n@@ -1,17 +1,7 @@\n \n # Environment\n .env\n-\n-# Claude Code local settings (per-machine tool permissions, not shared config)\n-.claude/settings.local.json\n-\n-# Claude Code skills and agents — local-only, not published on the remote.\n-# The agents delegate their review criteria to the skills, so the two are\n-# ignored together: publishing agents without their skills would ship a\n-# definition that fails on a missing rules file.\n-# Earlier versions are recoverable from git history at bc725d1^.\n-.claude/skills/\n-.claude/agents/\n+.claude/\n \n # Playwright\n node_modules/\n@@ -20,3 +10,4 @@ node_modules/\n /blob-report/\n /playwright/.cache/\n /playwright/.auth/\n+.vscode/settings.json\ndiff --git a/docs/api-spec/account-endpoints.md b/docs/api-spec/account-endpoints.md\nindex 22cdf2f..67345f2 100644\n--- a/docs/api-spec/account-endpoints.md\n+++ b/docs/api-spec/account-endpoints.md\n@@ -1,6 +1,6 @@\n # DemoQA Book Store — Account API (Confirmed)\n \n-Source: raw Swagger spec extracted from `https://demoqa.com/swagger/swagger-ui-init.js` (saved as [`book-store-api.swagger.json`](./book-store-api.swagger.json)), cross-checked against live API calls on 2026-08-25, re-verified with no drift on 2026-09-01. Extended 2026-09-02 with the required-field behavior of `POST /Account/v1/User`, which no earlier pass had covered; the previously documented cases were re-confirmed unchanged in that pass. Extended 2026-09-03 with the unknown-UUID behavior of `DELETE /Account/v1/User/{UUID}` (non-existent and already-deleted), also uncovered by earlier passes; the DELETE success and auth-failure rows were re-confirmed unchanged. Where the Swagger doc and live behavior disagreed, **live behavior wins** — the doc has several inaccuracies, noted below. See [`book-store-endpoints.md`](./book-store-endpoints.md) for the `/BookStore` endpoints verified the same way.\n+Source: raw Swagger spec extracted from `https://demoqa.com/swagger/swagger-ui-init.js` (saved as [`book-store-api.swagger.json`](./book-store-api.swagger.json)), cross-checked against live API calls on 2026-08-25, re-verified with no drift on 2026-09-01. Extended 2026-09-02 with the required-field behavior of `POST /Account/v1/User`, which no earlier pass had covered; the previously documented cases were re-confirmed unchanged in that pass. Extended 2026-09-03 with the unknown-UUID behavior of `DELETE /Account/v1/User/{UUID}` (non-existent and already-deleted), also uncovered by earlier passes; the DELETE success and auth-failure rows were re-confirmed unchanged. Extended 2026-09-04 with the required-field behavior of `POST /Account/v1/GenerateToken`, which no earlier pass had covered — previously assumed to match `POST /Account/v1/User` and now confirmed to; the GenerateToken success and failure rows were re-confirmed unchanged in that pass. Where the Swagger doc and live behavior disagreed, **live behavior wins** — the doc has several inaccuracies, noted below. See [`book-store-endpoints.md`](./book-store-endpoints.md) for the `/BookStore` endpoints verified the same way.\n \n ## POST /Account/v1/User (Create User)\n \n@@ -27,13 +27,22 @@ Swagger's operation definition marks the request body parameter `\"required\": fal\n \n Request: `{ userName: string, password: string }`\n \n-| Case                  | Status | Body                                                                                                        |\n-| --------------------- | ------ | ----------------------------------------------------------------------------------------------------------- |\n-| Success               | `200`  | `{ token: string, expires: string (ISO date), status: \"Success\", result: \"User authorized successfully.\" }` |\n-| Wrong password        | `200`  | `{ token: null, expires: null, status: \"Failed\", result: \"User authorization failed.\" }`                    |\n-| Non-existent username | `200`  | Same as wrong password — indistinguishable from the response alone                                          |\n+| Case                            | Status | Body                                                                                                        |\n+| ------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------- |\n+| Success                         | `200`  | `{ token: string, expires: string (ISO date), status: \"Success\", result: \"User authorized successfully.\" }` |\n+| Wrong password                  | `200`  | `{ token: null, expires: null, status: \"Failed\", result: \"User authorization failed.\" }`                    |\n+| Non-existent username           | `200`  | Same as wrong password — indistinguishable from the response alone                                          |\n+| Missing or empty required field | `400`  | `{ code: \"1200\", message: \"UserName and Password required.\" }` — verified 2026-09-04                        |\n \n-**Confirmed quirk:** never returns a 4xx/5xx for bad credentials — always `200`, differentiate by `status` field only.\n+**Confirmed quirk:** never returns a 4xx/5xx for **bad credentials** — always `200`, differentiate by `status` field only. This does not extend to malformed requests: a missing or empty required field is rejected with a real `400` before authentication is attempted (see below).\n+\n+**Required-field handling (verified 2026-09-04, undocumented in Swagger):** identical to `POST /Account/v1/User` — one shared `1200` code path covers every required-field violation on `userName` or `password`, whether the key is absent from the body or present with an empty string. All four combinations return the identical `400` status and body, deterministic across two runs each, with a valid-credentials control returning `200`/Success in the same pass.\n+\n+The empty-password case is the one worth knowing: `{ userName: \"<real user>\", password: \"\" }` returns `400`/`1200`, **not** the `200`/`\"Failed\"` authentication response. The required-field check short-circuits before any credential comparison, so an empty password never reaches the authentication path. Likewise `{ userName: \"\", password: \"<valid>\" }` returns `400`/`1200` rather than being treated as an unknown user. Do not assume an empty credential takes the `status: \"Failed\"` path.\n+\n+**Token shape (observed 2026-09-04, incidental):** the issued `token` is an unsigned-decodable JWT whose payload contains the submitted `userName` and **the plaintext password**, plus an `iat` claim. `expires` was observed ~7 days ahead of issuance; no lifetime is documented, and token expiry is not testable within a suite run.\n+\n+**`expires` format (raw examples, 2026-09-04):** UTC, `Z`-suffixed, millisecond precision — e.g. `\"2026-09-11T10:30:04.885Z\"`, `\"2026-09-11T10:30:06.941Z\"`. Confirmed across two independent calls in the same pass.\n \n ## POST /Account/v1/Authorized\n \ndiff --git a/docs/test-cases/api/auth/post-generate-token.md b/docs/test-cases/api/auth/post-generate-token.md\nnew file mode 100644\nindex 0000000..c6105e9\n--- /dev/null\n+++ b/docs/test-cases/api/auth/post-generate-token.md\n@@ -0,0 +1,204 @@\n+# Test Cases — POST /Account/v1/GenerateToken\n+\n+Derived from [`docs/test-conditions/api/auth/post-generate-token.md`](../../../test-conditions/api/auth/post-generate-token.md).\n+\n+Endpoint behavior reference: [`docs/api-spec/account-endpoints.md`](../../../api-spec/account-endpoints.md).\n+\n+---\n+\n+### TC: Generate token with valid credentials\n+\n+| Field          | Value                                                                                              |\n+| -------------- | -------------------------------------------------------------------------------------------------- |\n+| ID             | AUTH-022                                                                                           |\n+| Condition      | COND-AUTH-022                                                                                      |\n+| Risk           | Risk-1                                                                                             |\n+| Preconditions  | User account exists (created via API: POST /Account/v1/User)                                       |\n+| Test data      | userName: \"qa_auth022_1725440000\" / password: \"Test@1234\" (8+ chars, upper, lower, digit, special) |\n+| Postconditions | User \"qa_auth022_1725440000\" deleted via DELETE /Account/v1/User/{userID}                          |\n+| Automation     | Automated → `post-generate-token.api.spec.ts`                                                      |\n+\n+**Steps & expected results**\n+\n+| #   | Action                                                                                                           | Expected result                                                                                                                                                                            |\n+| --- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |\n+| 1   | Send POST /Account/v1/GenerateToken with body `{ \"userName\": \"qa_auth022_1725440000\", \"password\": \"Test@1234\" }` | Status 200; body has `token` as a non-empty string, `expires` as a non-null parseable ISO-8601 date string, `status` equal to \"Success\", `result` equal to \"User authorized successfully.\" |\n+\n+**Notes**\n+Asserting `token` is non-null is the substantive check — the failure response (AUTH-023) also returns 200 and differs only in the body, so a status-only assertion would pass against a rejected login.\n+\n+`expires` is verified as a parseable ISO-8601 string only. Its lifetime is undocumented and cannot be waited out — see COND-AUTH-INF-009.\n+\n+---\n+\n+### TC: Generate token with incorrect password\n+\n+| Field          | Value                                                                                                                    |\n+| -------------- | ------------------------------------------------------------------------------------------------------------------------ |\n+| ID             | AUTH-023                                                                                                                 |\n+| Condition      | COND-AUTH-023                                                                                                            |\n+| Risk           | Risk-1, Risk-4                                                                                                           |\n+| Preconditions  | User account exists (created via API: POST /Account/v1/User)                                                             |\n+| Test data      | userName: \"qa_auth023_1725440000\" / password submitted: \"Wrong@9999\" (not the registered password, which is \"Test@1234\") |\n+| Postconditions | User \"qa_auth023_1725440000\" deleted via DELETE /Account/v1/User/{userID}                                                |\n+| Automation     | Automated → `post-generate-token.api.spec.ts`                                                                            |\n+\n+**Steps & expected results**\n+\n+| #   | Action                                                                                                            | Expected result                                                                                                                                     |\n+| --- | ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |\n+| 1   | Send POST /Account/v1/GenerateToken with body `{ \"userName\": \"qa_auth023_1725440000\", \"password\": \"Wrong@9999\" }` | Status 200; body has `token` equal to `null`, `expires` equal to `null`, `status` equal to \"Failed\", `result` equal to \"User authorization failed.\" |\n+\n+**Notes**\n+The status 200 is the point of the test, not an incidental detail: a client branching on `res.ok` would treat this rejected login as a success and carry a `null` token forward.\n+\n+`token` and `expires` must be asserted as explicitly `null`, not merely absent — the live-confirmed body carries both keys with null values.\n+\n+---\n+\n+### TC: Generate token with a username that was never registered\n+\n+| Field          | Value                                                                        |\n+| -------------- | ---------------------------------------------------------------------------- |\n+| ID             | AUTH-024                                                                     |\n+| Condition      | COND-AUTH-024                                                                |\n+| Risk           | Risk-1, Risk-4                                                               |\n+| Preconditions  | No account exists for the submitted username — the value is never registered |\n+| Test data      | userName: \"qa_never_registered_1725440000\" / password: \"Test@1234\"           |\n+| Postconditions | None — no account is created, so nothing to clean up                         |\n+| Automation     | Automated → `post-generate-token.api.spec.ts`                                |\n+\n+**Steps & expected results**\n+\n+| #   | Action                                                                                                                    | Expected result                                                                                                                                     |\n+| --- | ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |\n+| 1   | Send POST /Account/v1/GenerateToken with body `{ \"userName\": \"qa_never_registered_1725440000\", \"password\": \"Test@1234\" }` | Status 200; body has `token` equal to `null`, `expires` equal to `null`, `status` equal to \"Failed\", `result` equal to \"User authorization failed.\" |\n+\n+**Notes**\n+The response is byte-identical to AUTH-023 (wrong password). That indistinguishability is itself the property under test — it prevents username enumeration. Should a future change make the two responses differ, this test is what catches it.\n+\n+The username must be one that genuinely does not exist; the timestamp suffix keeps it unique against the shared backend.\n+\n+Risk-4 observed behavior: the 200/\"Failed\" response was confirmed live on 2026-09-04, deterministic across repeated runs. No rate limiting or inconsistency was seen at this call volume. A deviation from the documented body is a sandbox quirk to record here, not a framework bug.\n+\n+---\n+\n+### TC: Generate token with an empty password\n+\n+| Field          | Value                                                                     |\n+| -------------- | ------------------------------------------------------------------------- |\n+| ID             | AUTH-025                                                                  |\n+| Condition      | COND-AUTH-025                                                             |\n+| Risk           | Risk-1, Risk-4                                                            |\n+| Preconditions  | User account exists (created via API: POST /Account/v1/User)              |\n+| Test data      | userName: \"qa_auth025_1725440000\" / password: \"\" (empty string, 0 chars)  |\n+| Postconditions | User \"qa_auth025_1725440000\" deleted via DELETE /Account/v1/User/{userID} |\n+| Automation     | Automated → `post-generate-token.api.spec.ts`                             |\n+\n+**Steps & expected results**\n+\n+| #   | Action                                                                                                  | Expected result                                                                              |\n+| --- | ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |\n+| 1   | Send POST /Account/v1/GenerateToken with body `{ \"userName\": \"qa_auth025_1725440000\", \"password\": \"\" }` | Status 400; body equal to `{ \"code\": \"1200\", \"message\": \"UserName and Password required.\" }` |\n+\n+**Notes**\n+The distinction under test is which of two paths an empty password takes. The required-field check short-circuits before any credential comparison, so this returns 400/1200 — **not** the 200/\"Failed\" authentication response of AUTH-023. Verified live on this endpoint 2026-09-04.\n+\n+`code` is a string (\"1200\"), not a number, despite Swagger typing it as numeric.\n+\n+Risk-4 observed behavior: the 400/1200 response was confirmed live on 2026-09-04, deterministic across two runs, with a valid-credentials control returning 200/Success in the same pass. Rejection happens before authentication, so this path does not depend on the sandbox's credential handling.\n+\n+---\n+\n+### TC: Generate token with an empty username\n+\n+| Field          | Value                                                           |\n+| -------------- | --------------------------------------------------------------- |\n+| ID             | AUTH-026                                                        |\n+| Condition      | COND-AUTH-026                                                   |\n+| Risk           | Risk-4                                                          |\n+| Preconditions  | None — the request is rejected before any account lookup occurs |\n+| Test data      | userName: \"\" (empty string, 0 chars) / password: \"Test@1234\"    |\n+| Postconditions | None — no account is created                                    |\n+| Automation     | Automated → `post-generate-token.api.spec.ts`                   |\n+\n+**Steps & expected results**\n+\n+| #   | Action                                                                                      | Expected result                                                                              |\n+| --- | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |\n+| 1   | Send POST /Account/v1/GenerateToken with body `{ \"userName\": \"\", \"password\": \"Test@1234\" }` | Status 400; body equal to `{ \"code\": \"1200\", \"message\": \"UserName and Password required.\" }` |\n+\n+**Notes**\n+The competing outcome is the 200/\"Failed\" unknown-user response of AUTH-024 — an empty username is, after all, a username nobody has. The required-field check runs first, confirmed live 2026-09-04.\n+\n+Risk-4 observed behavior: 400/1200 confirmed deterministic across two runs on 2026-09-04. Rejection precedes authentication, so this path does not exercise the sandbox's credential handling.\n+\n+---\n+\n+### TC: Generate token with the username key absent from the body\n+\n+| Field          | Value                                                                                                |\n+| -------------- | ---------------------------------------------------------------------------------------------------- |\n+| ID             | AUTH-027                                                                                             |\n+| Condition      | COND-AUTH-027                                                                                        |\n+| Risk           | Risk-4                                                                                               |\n+| Preconditions  | None — the request is rejected before any account lookup occurs                                      |\n+| Test data      | Request body carries only the password key: `{ \"password\": \"Test@1234\" }` — no `userName` key at all |\n+| Postconditions | None — no account is created                                                                         |\n+| Automation     | Automated → `post-generate-token.api.spec.ts`                                                        |\n+\n+**Steps & expected results**\n+\n+| #   | Action                                                                      | Expected result                                                                              |\n+| --- | --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |\n+| 1   | Send POST /Account/v1/GenerateToken with body `{ \"password\": \"Test@1234\" }` | Status 400; body equal to `{ \"code\": \"1200\", \"message\": \"UserName and Password required.\" }` |\n+\n+**Notes**\n+Distinct from AUTH-026 (empty string) at the HTTP level even though both land on the same 1200 code path — absent key and present-but-empty are separate invalid input classes.\n+\n+Automating this needs a raw request rather than a typed client call: the client signature models the real API contract, so it cannot express a genuinely absent key.\n+\n+Risk-4 observed behavior: 400/1200 confirmed deterministic across two runs on 2026-09-04. Rejection precedes authentication, so this path does not exercise the sandbox's credential handling.\n+\n+---\n+\n+### TC: Generate token with the password key absent from the body\n+\n+| Field          | Value                                                                                                            |\n+| -------------- | ---------------------------------------------------------------------------------------------------------------- |\n+| ID             | AUTH-028                                                                                                         |\n+| Condition      | COND-AUTH-028                                                                                                    |\n+| Risk           | Risk-1, Risk-4                                                                                                   |\n+| Preconditions  | User account exists (created via API: POST /Account/v1/User)                                                     |\n+| Test data      | Request body carries only the username key: `{ \"userName\": \"qa_auth028_1725440000\" }` — no `password` key at all |\n+| Postconditions | User \"qa_auth028_1725440000\" deleted via DELETE /Account/v1/User/{userID}                                        |\n+| Automation     | Automated → `post-generate-token.api.spec.ts`                                                                    |\n+\n+**Steps & expected results**\n+\n+| #   | Action                                                                                  | Expected result                                                                              |\n+| --- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |\n+| 1   | Send POST /Account/v1/GenerateToken with body `{ \"userName\": \"qa_auth028_1725440000\" }` | Status 400; body equal to `{ \"code\": \"1200\", \"message\": \"UserName and Password required.\" }` |\n+\n+**Notes**\n+Separate from AUTH-025 (empty password) for the same reason AUTH-027 is separate from AUTH-026: absent key and empty value are distinct classes.\n+\n+Needs a raw request, same as AUTH-027.\n+\n+Risk-4 observed behavior: 400/1200 confirmed deterministic across two runs on 2026-09-04. Rejection precedes authentication, so this path does not exercise the sandbox's credential handling.\n+\n+---\n+\n+## Traceability\n+\n+| Condition         | Test case | Covered                                      |\n+| ----------------- | --------- | -------------------------------------------- |\n+| COND-AUTH-022     | AUTH-022  | Valid credentials → token, Success           |\n+| COND-AUTH-023     | AUTH-023  | Wrong password → 200/Failed                  |\n+| COND-AUTH-024     | AUTH-024  | Non-existent username → 200/Failed           |\n+| COND-AUTH-025     | AUTH-025  | Empty password → 400/1200                    |\n+| COND-AUTH-026     | AUTH-026  | Empty username → 400/1200                    |\n+| COND-AUTH-027     | AUTH-027  | Absent userName key → 400/1200               |\n+| COND-AUTH-028     | AUTH-028  | Absent password key → 400/1200               |\n+| COND-AUTH-INF-009 | —         | Infeasible: token expiry needs clock control |\n+| COND-AUTH-INF-010 | —         | Infeasible: repeat generation, out of scope  |\ndiff --git a/docs/test-conditions/api/auth/post-generate-token.md b/docs/test-conditions/api/auth/post-generate-token.md\nnew file mode 100644\nindex 0000000..0d82131\n--- /dev/null\n+++ b/docs/test-conditions/api/auth/post-generate-token.md\n@@ -0,0 +1,354 @@\n+# Test Conditions — POST /Account/v1/GenerateToken\n+\n+## Endpoint analysis\n+\n+**Endpoint:** POST /Account/v1/GenerateToken\n+**Source:** OpenAPI spec (`docs/api-spec/book-store-api.swagger.json`) cross-checked against observed live behavior (`docs/api-spec/account-endpoints.md`). Live behavior wins wherever the two disagree.\n+\n+**Happy path**\n+\n+- Valid `userName` and `password` for an existing user → `200` with a non-null `token`, a non-null ISO-8601 `expires`, `status: \"Success\"` and `result: \"User authorized successfully.\"`.\n+\n+**Negative cases**\n+\n+- Correct `userName`, wrong `password`.\n+- `userName` that was never registered, with any password.\n+- `userName` key absent from the request body.\n+- `password` key absent from the request body.\n+- `userName` present but empty string.\n+- `password` present but empty string.\n+\n+**Boundary cases**\n+\n+- `password`: empty string (0 chars) is the one derivable boundary — it is the zero-length edge of a required string field. No minimum/maximum length rule applies to this endpoint: complexity rules belong to `POST /Account/v1/User` at registration time, and this endpoint only compares a submitted password against a stored one. A 7-character password is not a boundary here, merely a wrong password.\n+- `userName`: empty string (0 chars), same reasoning. No documented length or format constraint exists to bound the upper end — see COND-AUTH-INF-002 in `post-user.md` for the same field, not duplicated here.\n+\n+**Authorization states**\n+\n+- Not applicable — this endpoint issues credentials rather than consuming them. It takes no `Authorization` header, and sending one has no documented effect.\n+\n+**Status codes and response shape**\n+\n+| Scenario                                      | Status | Response                                                                                                                                                                    |\n+| --------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |\n+| Valid credentials                             | 200    | `{ token: string, expires: string (ISO date), status: \"Success\", result: \"User authorized successfully.\" }` — live-confirmed                                                |\n+| Wrong password for an existing user           | 200    | `{ token: null, expires: null, status: \"Failed\", result: \"User authorization failed.\" }` — live-confirmed. Note the `200`: an authentication failure under a success status |\n+| Non-existent username                         | 200    | Byte-identical to the wrong-password row — live-confirmed as indistinguishable from the response alone                                                                      |\n+| Missing or empty `userName` and/or `password` | 400    | `{ code: \"1200\", message: \"UserName and Password required.\" }` — **live-verified 2026-09-04** on this endpoint; the required-field check runs before authentication         |\n+\n+**Spec ambiguities / unknowns**\n+\n+- ~~The corrected spec doc's table for this endpoint covers only the three `200` rows; it does not state what a missing or empty `userName`/`password` returns.~~ Resolved by live check 2026-09-04 — all four variants (absent/empty × `userName`/`password`) return `400`/`1200`, deterministic across two runs each with a valid-credentials control in the same pass. `docs/api-spec/account-endpoints.md` was updated in the same pass. See COND-AUTH-025 through COND-AUTH-028.\n+- ~~Whether an absent key and a present-but-empty string differ.~~ Resolved by the same check — they do not, matching `POST /Account/v1/User`.\n+- The issued `token` was observed to be an unsigned-decodable JWT carrying the plaintext password in its payload. Recorded in the spec doc as an observation; not raised to a condition, since this project asserts the documented contract rather than auditing token design.\n+- The `expires` field is documented as an ISO date string but no lifetime is stated, so no assertion about the token's validity window is derivable. Token expiry itself is infeasible to test — see COND-AUTH-INF-009.\n+- Swagger documents the `MessageModal` `code` field as `number`; every endpoint sharing that schema is live-confirmed to return a **string**. Applied here without re-verification.\n+\n+---\n+\n+## Input fields\n+\n+### COND-AUTH-022: Valid credentials return a token with the live-confirmed success shape\n+\n+| Field      | Value                                                 |\n+| ---------- | ----------------------------------------------------- |\n+| ID         | COND-AUTH-022                                         |\n+| Priority   | High                                                  |\n+| Category   | Input field                                           |\n+| Technique  | EP                                                    |\n+| Source     | Observed behavior: docs/api-spec/account-endpoints.md |\n+| Test cases | AUTH-022                                              |\n+\n+**What to cover**\n+The valid equivalence class: a previously-registered user submits their own correct `userName` and `password`, and receives `200` with a non-null `token`, a non-null ISO-8601 `expires`, `status: \"Success\"` and `result: \"User authorized successfully.\"`.\n+\n+**Values / boundaries**\n+\n+```\n+# EP\n+Valid class: a freshly-registered user's own credentials, e.g. userName \"qa_<timestamp>\", password \"Test@1234\"\n+Expected status: 200\n+Expected body: token — non-null, non-empty string\n+               expires — non-null ISO-8601 date string\n+               status — \"Success\"\n+               result — \"User authorized successfully.\"\n+```\n+\n+**Notes**\n+This is the sole happy path, and every other endpoint in the project that requires a bearer token depends on it working — a failure here blocks `GET` and `DELETE /Account/v1/User/{UUID}` entirely. Priority High on that basis.\n+\n+Trigger and effect are merged into one condition, following the precedent of COND-AUTH-001, COND-AUTH-012 and COND-AUTH-017: \"valid credentials are accepted\" and \"the success response has shape X\" are not independently testable.\n+\n+Asserting `token` is non-null is the substantive part, not incidental: the failure response (COND-AUTH-023) also returns `200`, and differs only in the body. A test asserting status alone would pass against a failed authentication.\n+\n+---\n+\n+### COND-AUTH-023: Wrong password returns a failure body under HTTP 200\n+\n+| Field      | Value                                                 |\n+| ---------- | ----------------------------------------------------- |\n+| ID         | COND-AUTH-023                                         |\n+| Priority   | High                                                  |\n+| Category   | Input field                                           |\n+| Technique  | EP                                                    |\n+| Source     | Observed behavior: docs/api-spec/account-endpoints.md |\n+| Test cases | AUTH-023                                              |\n+\n+**What to cover**\n+Invalid equivalence class: an existing user's correct `userName` is submitted with a password that is not theirs. Confirms the API reports the failure in the body — `token: null`, `status: \"Failed\"` — while still returning HTTP `200`.\n+\n+**Values / boundaries**\n+\n+```\n+# EP\n+Invalid class — wrong password: a registered user's userName with password \"Wrong@9999\"\n+Expected status: 200\n+Expected body: token — null\n+               expires — null\n+               status — \"Failed\"\n+               result — \"User authorization failed.\"\n+```\n+\n+**Notes**\n+The `200` is the point of the condition. A client branching on `res.ok` would treat a rejected login as a successful one and carry a `null` token forward — the same trap documented for `DELETE /Account/v1/User/{UUID}` (COND-AUTH-021). Asserting the status explicitly, alongside the body, is what makes this test worth having.\n+\n+Priority High rather than Medium despite being a negative path: an authentication endpoint that fails to reject wrong credentials is a security defect, not an edge case.\n+\n+`token` and `expires` must be asserted as explicitly `null`, not merely absent — the live-confirmed body carries both keys with null values.\n+\n+---\n+\n+### COND-AUTH-024: Non-existent username returns the same failure body as a wrong password\n+\n+| Field      | Value                                                 |\n+| ---------- | ----------------------------------------------------- |\n+| ID         | COND-AUTH-024                                         |\n+| Priority   | Medium                                                |\n+| Category   | Input field                                           |\n+| Technique  | EP                                                    |\n+| Source     | Observed behavior: docs/api-spec/account-endpoints.md |\n+| Test cases | AUTH-024                                              |\n+\n+**What to cover**\n+Invalid equivalence class: a `userName` that was never registered, submitted with any syntactically valid password. Confirms the response is indistinguishable from the wrong-password case — the API does not reveal whether the account exists.\n+\n+**Values / boundaries**\n+\n+```\n+# EP\n+Invalid class — unknown user: userName \"qa_never_registered_<timestamp>\", password \"Test@1234\"\n+Expected status: 200\n+Expected body: token — null\n+               expires — null\n+               status — \"Failed\"\n+               result — \"User authorization failed.\"\n+```\n+\n+**Notes**\n+Kept separate from COND-AUTH-023 despite the byte-identical response: \"user exists, password wrong\" and \"user does not exist\" are genuinely distinct invalid input classes, and the EP coverage rule requires a condition per class even when the documented outcome is identical. Same reasoning that keeps COND-AUTH-018 and COND-AUTH-019 separate in `delete-user.md`.\n+\n+The indistinguishability is itself the property under test — it prevents username enumeration. Should a future change make the two responses differ, this condition is what catches it.\n+\n+---\n+\n+### COND-AUTH-025: Empty password is rejected as a required-field violation\n+\n+| Field      | Value                                                                        |\n+| ---------- | ---------------------------------------------------------------------------- |\n+| ID         | COND-AUTH-025                                                                |\n+| Priority   | Medium                                                                       |\n+| Category   | Input field                                                                  |\n+| Technique  | BVA                                                                          |\n+| Source     | Observed behavior: live check 2026-09-04; docs/api-spec/account-endpoints.md |\n+| Test cases | AUTH-025                                                                     |\n+\n+**What to cover**\n+The zero-length boundary of the required `password` field: an existing user's correct `userName` is submitted with `password: \"\"`. Confirms the request is rejected as a missing required field (`400`/`1200`) rather than taking the authentication path and returning `200`/`\"Failed\"`.\n+\n+**Values / boundaries**\n+\n+```\n+# BVA\n+Empty (0 chars): { userName: \"<registered user>\", password: \"\" }\n+Expected status: 400\n+Expected body: { code: \"1200\", message: \"UserName and Password required.\" }\n+```\n+\n+**Notes**\n+The distinction this condition protects is which of two paths an empty password takes. Live check 2026-09-04 settles it: `400`/`1200`, **not** the `200`/`\"Failed\"` authentication response — the required-field check short-circuits before any credential comparison. Both outcomes were plausible from the outside, which is exactly why the case is worth a test.\n+\n+Verified on this endpoint directly, not inherited from `POST /Account/v1/User`; the two do agree, and `docs/api-spec/account-endpoints.md` now carries a row for each.\n+\n+---\n+\n+### COND-AUTH-026: Empty userName is rejected as a required-field violation\n+\n+| Field      | Value                                                                        |\n+| ---------- | ---------------------------------------------------------------------------- |\n+| ID         | COND-AUTH-026                                                                |\n+| Priority   | Medium                                                                       |\n+| Category   | Input field                                                                  |\n+| Technique  | BVA                                                                          |\n+| Source     | Observed behavior: live check 2026-09-04; docs/api-spec/account-endpoints.md |\n+| Test cases | AUTH-026                                                                     |\n+\n+**What to cover**\n+The zero-length boundary of the required `userName` field: `userName: \"\"` submitted with an otherwise valid password. Confirms rejection as a missing required field rather than treatment as an unknown user.\n+\n+**Values / boundaries**\n+\n+```\n+# BVA\n+Empty (0 chars): { userName: \"\", password: \"Test@1234\" }\n+Expected status: 400\n+Expected body: { code: \"1200\", message: \"UserName and Password required.\" }\n+```\n+\n+**Notes**\n+As with COND-AUTH-025, the competing outcome is the `200`/`\"Failed\"` unknown-user response (COND-AUTH-024) — an empty username is, after all, a username nobody has. Live check 2026-09-04 confirms the required-field check runs first: `400`/`1200`.\n+\n+---\n+\n+### COND-AUTH-027: Absent userName key is rejected as a required-field violation\n+\n+| Field      | Value                                                                        |\n+| ---------- | ---------------------------------------------------------------------------- |\n+| ID         | COND-AUTH-027                                                                |\n+| Priority   | Medium                                                                       |\n+| Category   | Input field                                                                  |\n+| Technique  | EP                                                                           |\n+| Source     | Observed behavior: live check 2026-09-04; docs/api-spec/account-endpoints.md |\n+| Test cases | AUTH-027                                                                     |\n+\n+**What to cover**\n+Invalid equivalence class: the `userName` key is entirely absent from the request body, which carries only `password`. Confirms rejection with the shared required-field error.\n+\n+**Values / boundaries**\n+\n+```\n+# EP\n+Invalid class — key absent: { password: \"Test@1234\" }\n+Expected status: 400\n+Expected body: { code: \"1200\", message: \"UserName and Password required.\" }\n+```\n+\n+**Notes**\n+Kept separate from COND-AUTH-026 (empty string) because absent-key and present-but-empty are distinct invalid input classes at the HTTP level, even though the live check 2026-09-04 confirms this endpoint collapses them onto one code path. The EP rule requires a condition per class regardless of shared outcome — the same treatment given COND-AUTH-008/COND-AUTH-010 in `post-user.md`.\n+\n+Sending a body with a key genuinely absent requires a raw request rather than a typed client call, since the client signature models the real API contract.\n+\n+---\n+\n+### COND-AUTH-028: Absent password key is rejected as a required-field violation\n+\n+| Field      | Value                                                                        |\n+| ---------- | ---------------------------------------------------------------------------- |\n+| ID         | COND-AUTH-028                                                                |\n+| Priority   | Medium                                                                       |\n+| Category   | Input field                                                                  |\n+| Technique  | EP                                                                           |\n+| Source     | Observed behavior: live check 2026-09-04; docs/api-spec/account-endpoints.md |\n+| Test cases | AUTH-028                                                                     |\n+\n+**What to cover**\n+Invalid equivalence class: the `password` key is entirely absent from the request body, which carries only `userName`. Confirms rejection with the shared required-field error.\n+\n+**Values / boundaries**\n+\n+```\n+# EP\n+Invalid class — key absent: { userName: \"<registered user>\" }\n+Expected status: 400\n+Expected body: { code: \"1200\", message: \"UserName and Password required.\" }\n+```\n+\n+**Notes**\n+Separate from COND-AUTH-025 for the same reason COND-AUTH-027 is separate from COND-AUTH-026: absent key and empty value are distinct classes.\n+\n+---\n+\n+## Infeasible conditions\n+\n+### COND-AUTH-INF-009: Token expiry behavior (infeasible)\n+\n+| Field      | Value                                                     |\n+| ---------- | --------------------------------------------------------- |\n+| ID         | COND-AUTH-INF-009                                         |\n+| Priority   | Medium                                                    |\n+| Category   | State                                                     |\n+| Technique  | BVA                                                       |\n+| Source     | Spec: `expires` field, docs/api-spec/account-endpoints.md |\n+| Test cases | —                                                         |\n+\n+**What to cover**\n+That a token stops being accepted once the moment named in its `expires` field has passed — and, at the boundary, is still accepted immediately before it.\n+\n+**Why infeasible**\n+The response documents `expires` as an ISO date but states no lifetime, and observed values put it far enough ahead that a test would have to idle for the full window. There is no way to force expiry from outside: DemoQA exposes no clock control, no token-revocation endpoint, and no shorter-lived token variant. A test would be a real-time wait of unknown length against a shared public backend.\n+\n+**Mitigation**\n+Contract assumption: `expires` is asserted as a non-null, parseable ISO-8601 date string in COND-AUTH-022, which is as far as the field can be verified without waiting out its window. The rejection side is partially covered by COND-AUTH-019 in `delete-user.md` and COND-AUTH-014 in `get-user.md`, which confirm an invalid token is refused — an expired token is expected to join that class, though that expectation is untested.\n+\n+---\n+\n+### COND-AUTH-INF-010: Repeated token generation — whether a prior token is invalidated (infeasible)\n+\n+| Field      | Value                                          |\n+| ---------- | ---------------------------------------------- |\n+| ID         | COND-AUTH-INF-010                              |\n+| Priority   | Low                                            |\n+| Category   | State                                          |\n+| Technique  | Exploratory heuristic                          |\n+| Source     | Heuristic — undocumented in either spec source |\n+| Test cases | —                                              |\n+\n+**What to cover**\n+Whether calling this endpoint twice for the same user issues an independent second token that leaves the first still usable, or supersedes it.\n+\n+**Why infeasible**\n+Resolving this requires generating a second token and then confirming the _first_ still authenticates — which means exercising a protected endpoint (`GET /Account/v1/User/{UUID}`) as the assertion. That makes it a test of the protected endpoint's token handling, not of `GenerateToken`'s own response, and it cannot be settled from this endpoint's response alone. Deliberately scoped out rather than technically unreachable: a live probe would resolve it, but it belongs to a session-management test area this project does not cover.\n+\n+**Mitigation**\n+Deferred. Every test in the suite that needs a token generates its own and uses it immediately, so no test depends on a previously-issued token surviving a later generation. If a multi-session area is ever added, this becomes feasible and should be promoted.\n+\n+---\n+\n+## Coverage completeness check\n+\n+| Question                                                                               | Answer                                                                                                                                                                                                                                                  |\n+| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |\n+| Does every required input field have a valid EP condition?                             | Yes — COND-AUTH-022 covers the valid class for both `userName` and `password` together, which is the only way they can be valid                                                                                                                         |\n+| Does every required input field have at least one invalid EP condition?                | Yes — `password`: COND-AUTH-023 (wrong), COND-AUTH-025 (empty), COND-AUTH-028 (absent). `userName`: COND-AUTH-024 (unknown), COND-AUTH-026 (empty), COND-AUTH-027 (absent)                                                                              |\n+| Are all BVA boundaries covered (min, min-1, empty)?                                    | Yes for the empty boundary — COND-AUTH-025 (`password`), COND-AUTH-026 (`userName`). No min/max length rule exists on this endpoint to bound: complexity belongs to registration, and the `userName` upper bound is COND-AUTH-INF-002 in `post-user.md` |\n+| Does every authorization state produce a distinct condition?                           | Not applicable — this endpoint issues credentials rather than consuming them; it takes no `Authorization` header                                                                                                                                        |\n+| Are all infeasible conditions documented?                                              | Yes — COND-AUTH-INF-009 (token expiry), COND-AUTH-INF-010 (repeat generation)                                                                                                                                                                           |\n+| Does every analysis bullet map to at least one condition?                              | Yes — see mapping below                                                                                                                                                                                                                                 |\n+| Are all conditions independently testable?                                             | Yes — each seeds its own user where one is needed; none depends on another having run first. No condition consumes or invalidates state another condition relies on                                                                                     |\n+| Does any condition pair only ever get exercised together (trigger vs. its own effect)? | No — COND-AUTH-022 already merges its trigger with its response shape. COND-AUTH-023 and COND-AUTH-024 return identical bodies but are reached through different inputs, so neither is the other's effect                                               |\n+\n+**Analysis-to-condition mapping**\n+\n+- Happy path (valid credentials → token, Success) → COND-AUTH-022\n+- Negative: correct userName, wrong password → COND-AUTH-023\n+- Negative: non-existent userName → COND-AUTH-024\n+- Negative: userName key absent → COND-AUTH-027\n+- Negative: password key absent → COND-AUTH-028\n+- Negative: userName empty string → COND-AUTH-026\n+- Negative: password empty string → COND-AUTH-025\n+- Boundary: password empty (0 chars) → COND-AUTH-025\n+- Boundary: userName empty (0 chars) → COND-AUTH-026\n+- Boundary: userName upper length/format → COND-AUTH-INF-002 in `post-user.md` (same field, not duplicated)\n+- Authorization states: not applicable → no condition, justified in the analysis block\n+- Status codes/response shape: 200 success, 200 failure, 400/1200 required-field → COND-AUTH-022, COND-AUTH-023, COND-AUTH-024, COND-AUTH-025, COND-AUTH-026, COND-AUTH-027, COND-AUTH-028\n+- Spec ambiguity: required-field behavior resolved by live check 2026-09-04 → COND-AUTH-025 through COND-AUTH-028\n+- Spec ambiguity: `expires` lifetime unstated → COND-AUTH-INF-009\n+\n+**Coverage gaps identified**\n+\n+- None. The one previously-open gap — the `400`/`1200` required-field behavior asserted by COND-AUTH-025 through COND-AUTH-028, originally inherited from `POST /Account/v1/User` rather than verified here — was live-checked 2026-09-04 and confirmed on this endpoint directly. `docs/api-spec/account-endpoints.md` was updated in the same pass, so the project's source of truth now carries a GenerateToken row for it.\n+- Whether an `Authorization` header sent to this endpoint is ignored is undocumented and untested. Not raised to a condition: no client would send one, and the endpoint declares no security scheme.\n+\n+**Deferred conditions**\n+\n+- COND-AUTH-INF-009 (token expiry) — deferred indefinitely; needs clock control the SUT does not offer.\n+- COND-AUTH-INF-010 (repeat token generation) — deferred as out of scope; would become feasible if a session-management area is added.\ndiff --git a/tests/api/post-generate-token.api.spec.ts b/tests/api/post-generate-token.api.spec.ts\nnew file mode 100644\nindex 0000000..bd886bb\n--- /dev/null\n+++ b/tests/api/post-generate-token.api.spec.ts\n@@ -0,0 +1,133 @@\n+import { test, expect } from '../../src/fixtures/account.fixtures';\n+import { buildUniqueUsername, buildValidPassword } from '../../src/data/user.factory';\n+import { parseJsonBody } from '../../src/utils/api-response.util';\n+import { GenerateTokenResponseSchema } from '../../src/types/account.schema';\n+import { ApiErrorResponseSchema } from '../../src/types/api-error.schema';\n+\n+const REQUIRED_FIELD_MESSAGE = 'UserName and Password required.';\n+\n+test(\n+  'Generate token with valid credentials',\n+  { tag: ['@AUTH-022', '@positive'] },\n+  async ({ accountApiClient, seedUser }) => {\n+    const response = await accountApiClient.generateToken({\n+      userName: seedUser.userName,\n+      password: seedUser.password,\n+    });\n+    const body = await parseJsonBody(response, GenerateTokenResponseSchema);\n+\n+    expect.soft(response.status()).toBe(200);\n+    expect.soft(body.token).toBeTruthy();\n+    expect.soft(body.expires).toBeTruthy();\n+    expect.soft(body.status).toBe('Success');\n+    expect.soft(body.result).toBe('User authorized successfully.');\n+  }\n+);\n+\n+test(\n+  'Generate token with incorrect password',\n+  { tag: ['@AUTH-023', '@negative'] },\n+  async ({ accountApiClient, seedUser }) => {\n+    const response = await accountApiClient.generateToken({\n+      userName: seedUser.userName,\n+      password: 'Wrong@9999',\n+    });\n+    const body = await parseJsonBody(response, GenerateTokenResponseSchema);\n+\n+    // 200, not 4xx: this endpoint never rejects bad credentials with an error\n+    // status — differentiate by `status` in the body only.\n+    expect.soft(response.status()).toBe(200);\n+    expect.soft(body.token).toBeNull();\n+    expect.soft(body.expires).toBeNull();\n+    expect.soft(body.status).toBe('Failed');\n+    expect.soft(body.result).toBe('User authorization failed.');\n+  }\n+);\n+\n+test(\n+  'Generate token with a username that was never registered',\n+  { tag: ['@AUTH-024', '@negative'] },\n+  async ({ accountApiClient }) => {\n+    const response = await accountApiClient.generateToken({\n+      userName: buildUniqueUsername(),\n+      password: buildValidPassword(),\n+    });\n+    const body = await parseJsonBody(response, GenerateTokenResponseSchema);\n+\n+    // Byte-identical to AUTH-023 — the API never reveals whether the account\n+    // exists, which is the property this test protects.\n+    expect.soft(response.status()).toBe(200);\n+    expect.soft(body.token).toBeNull();\n+    expect.soft(body.expires).toBeNull();\n+    expect.soft(body.status).toBe('Failed');\n+    expect.soft(body.result).toBe('User authorization failed.');\n+  }\n+);\n+\n+test(\n+  'Generate token with an empty password',\n+  { tag: ['@AUTH-025', '@boundary'] },\n+  async ({ accountApiClient, seedUser }) => {\n+    const response = await accountApiClient.generateToken({\n+      userName: seedUser.userName,\n+      password: '',\n+    });\n+    const error = await parseJsonBody(response, ApiErrorResponseSchema);\n+\n+    // 400/1200, not 200/\"Failed\": the required-field check short-circuits\n+    // before any credential comparison. Contrast AUTH-023.\n+    expect.soft(response.status()).toBe(400);\n+    expect.soft(error.code).toBe('1200');\n+    expect.soft(error.message).toBe(REQUIRED_FIELD_MESSAGE);\n+  }\n+);\n+\n+test(\n+  'Generate token with an empty username',\n+  { tag: ['@AUTH-026', '@boundary'] },\n+  async ({ accountApiClient }) => {\n+    const response = await accountApiClient.generateToken({\n+      userName: '',\n+      password: buildValidPassword(),\n+    });\n+    const error = await parseJsonBody(response, ApiErrorResponseSchema);\n+\n+    expect.soft(response.status()).toBe(400);\n+    expect.soft(error.code).toBe('1200');\n+    expect.soft(error.message).toBe(REQUIRED_FIELD_MESSAGE);\n+  }\n+);\n+\n+test(\n+  'Generate token with the username key absent from the body',\n+  { tag: ['@AUTH-027', '@negative'] },\n+  async ({ request }) => {\n+    // Raw request, not accountApiClient.generateToken: LoginPayload requires\n+    // both fields, and this case needs the userName key entirely absent.\n+    const response = await request.post('/Account/v1/GenerateToken', {\n+      data: { password: buildValidPassword() },\n+    });\n+    const error = await parseJsonBody(response, ApiErrorResponseSchema);\n+\n+    expect.soft(response.status()).toBe(400);\n+    expect.soft(error.code).toBe('1200');\n+    expect.soft(error.message).toBe(REQUIRED_FIELD_MESSAGE);\n+  }\n+);\n+\n+test(\n+  'Generate token with the password key absent from the body',\n+  { tag: ['@AUTH-028', '@negative'] },\n+  async ({ request, seedUser }) => {\n+    // Raw request, not accountApiClient.generateToken: LoginPayload requires\n+    // both fields, and this case needs the password key entirely absent.\n+    const response = await request.post('/Account/v1/GenerateToken', {\n+      data: { userName: seedUser.userName },\n+    });\n+    const error = await parseJsonBody(response, ApiErrorResponseSchema);\n+\n+    expect.soft(response.status()).toBe(400);\n+    expect.soft(error.code).toBe('1200');\n+    expect.soft(error.message).toBe(REQUIRED_FIELD_MESSAGE);\n+  }\n+);\ndiff --git a/tests/api/post-generate-token.contract.spec.ts b/tests/api/post-generate-token.contract.spec.ts\nnew file mode 100644\nindex 0000000..4f7f955\n--- /dev/null\n+++ b/tests/api/post-generate-token.contract.spec.ts\n@@ -0,0 +1,36 @@\n+import { test, expect } from '../../src/fixtures/account.fixtures';\n+import { buildUniqueUsername } from '../../src/data/user.factory';\n+import { GenerateTokenResponseSchema } from '../../src/types/account.schema';\n+import { ApiErrorResponseSchema } from '../../src/types/api-error.schema';\n+\n+test(\n+  'POST /Account/v1/GenerateToken success/failure response matches schema',\n+  { tag: ['@contract', '@AUTH'] },\n+  async ({ accountApiClient, seedUser }) => {\n+    // Both the 200/Success and 200/Failed bodies share this schema's shape\n+    // (nullable token/expires), so one representative call covers it.\n+    const response = await accountApiClient.generateToken({\n+      userName: seedUser.userName,\n+      password: seedUser.password,\n+    });\n+    const body: unknown = await response.json();\n+\n+    expect(response.status()).toBe(200);\n+    expect(body).toMatchSchema(GenerateTokenResponseSchema);\n+  }\n+);\n+\n+test(\n+  'POST /Account/v1/GenerateToken error response matches schema',\n+  { tag: ['@contract', '@AUTH'] },\n+  async ({ accountApiClient }) => {\n+    const response = await accountApiClient.generateToken({\n+      userName: buildUniqueUsername(),\n+      password: '',\n+    });\n+    const body: unknown = await response.json();\n+\n+    expect(response.status()).toBe(400);\n+    expect(body).toMatchSchema(ApiErrorResponseSchema);\n+  }\n+);",
+      "actualWorkers": 4
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/demoqa-test-automation/demoqa-test-automation/test-results",
+        "repeatEach": 1,
+        "retries": 2,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/olenamkolesnik/demoqa-test-automation/commit/88a92268b9dea7a369dd52f1f8568515388856dd",
+            "commitHash": "88a92268b9dea7a369dd52f1f8568515388856dd",
+            "prHref": "https://github.com/olenamkolesnik/demoqa-test-automation/pull/19",
+            "prTitle": "Feat/post generate token",
+            "prBaseHash": "0676aca186c7f7556dff69f129ab060e75943216",
+            "buildHref": "https://github.com/olenamkolesnik/demoqa-test-automation/actions/runs/33867897041"
+          },
+          "gitCommit": {
+            "shortHash": "88a9226",
+            "hash": "88a92268b9dea7a369dd52f1f8568515388856dd",
+            "subject": "Merge d70429556e6a369666de92bf5864c95401684b52 into 0676aca186c7f7556dff69f129ab060e75943216",
+            "body": "Merge d70429556e6a369666de92bf5864c95401684b52 into 0676aca186c7f7556dff69f129ab060e75943216\n",
+            "author": {
+              "name": "olenamkolesnik",
+              "email": "33692828+olenamkolesnik@users.noreply.github.com",
+              "time": 1788521141000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1788521141000
+            },
+            "branch": "HEAD"
+          },
+          "gitDiff": "diff --git a/.gitignore b/.gitignore\nindex 2207e16..2b9cb71 100644\n--- a/.gitignore\n+++ b/.gitignore\n@@ -1,17 +1,7 @@\n \n # Environment\n .env\n-\n-# Claude Code local settings (per-machine tool permissions, not shared config)\n-.claude/settings.local.json\n-\n-# Claude Code skills and agents — local-only, not published on the remote.\n-# The agents delegate their review criteria to the skills, so the two are\n-# ignored together: publishing agents without their skills would ship a\n-# definition that fails on a missing rules file.\n-# Earlier versions are recoverable from git history at bc725d1^.\n-.claude/skills/\n-.claude/agents/\n+.claude/\n \n # Playwright\n node_modules/\n@@ -20,3 +10,4 @@ node_modules/\n /blob-report/\n /playwright/.cache/\n /playwright/.auth/\n+.vscode/settings.json\ndiff --git a/docs/api-spec/account-endpoints.md b/docs/api-spec/account-endpoints.md\nindex 22cdf2f..67345f2 100644\n--- a/docs/api-spec/account-endpoints.md\n+++ b/docs/api-spec/account-endpoints.md\n@@ -1,6 +1,6 @@\n # DemoQA Book Store — Account API (Confirmed)\n \n-Source: raw Swagger spec extracted from `https://demoqa.com/swagger/swagger-ui-init.js` (saved as [`book-store-api.swagger.json`](./book-store-api.swagger.json)), cross-checked against live API calls on 2026-08-25, re-verified with no drift on 2026-09-01. Extended 2026-09-02 with the required-field behavior of `POST /Account/v1/User`, which no earlier pass had covered; the previously documented cases were re-confirmed unchanged in that pass. Extended 2026-09-03 with the unknown-UUID behavior of `DELETE /Account/v1/User/{UUID}` (non-existent and already-deleted), also uncovered by earlier passes; the DELETE success and auth-failure rows were re-confirmed unchanged. Where the Swagger doc and live behavior disagreed, **live behavior wins** — the doc has several inaccuracies, noted below. See [`book-store-endpoints.md`](./book-store-endpoints.md) for the `/BookStore` endpoints verified the same way.\n+Source: raw Swagger spec extracted from `https://demoqa.com/swagger/swagger-ui-init.js` (saved as [`book-store-api.swagger.json`](./book-store-api.swagger.json)), cross-checked against live API calls on 2026-08-25, re-verified with no drift on 2026-09-01. Extended 2026-09-02 with the required-field behavior of `POST /Account/v1/User`, which no earlier pass had covered; the previously documented cases were re-confirmed unchanged in that pass. Extended 2026-09-03 with the unknown-UUID behavior of `DELETE /Account/v1/User/{UUID}` (non-existent and already-deleted), also uncovered by earlier passes; the DELETE success and auth-failure rows were re-confirmed unchanged. Extended 2026-09-04 with the required-field behavior of `POST /Account/v1/GenerateToken`, which no earlier pass had covered — previously assumed to match `POST /Account/v1/User` and now confirmed to; the GenerateToken success and failure rows were re-confirmed unchanged in that pass. Where the Swagger doc and live behavior disagreed, **live behavior wins** — the doc has several inaccuracies, noted below. See [`book-store-endpoints.md`](./book-store-endpoints.md) for the `/BookStore` endpoints verified the same way.\n \n ## POST /Account/v1/User (Create User)\n \n@@ -27,13 +27,22 @@ Swagger's operation definition marks the request body parameter `\"required\": fal\n \n Request: `{ userName: string, password: string }`\n \n-| Case                  | Status | Body                                                                                                        |\n-| --------------------- | ------ | ----------------------------------------------------------------------------------------------------------- |\n-| Success               | `200`  | `{ token: string, expires: string (ISO date), status: \"Success\", result: \"User authorized successfully.\" }` |\n-| Wrong password        | `200`  | `{ token: null, expires: null, status: \"Failed\", result: \"User authorization failed.\" }`                    |\n-| Non-existent username | `200`  | Same as wrong password — indistinguishable from the response alone                                          |\n+| Case                            | Status | Body                                                                                                        |\n+| ------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------- |\n+| Success                         | `200`  | `{ token: string, expires: string (ISO date), status: \"Success\", result: \"User authorized successfully.\" }` |\n+| Wrong password                  | `200`  | `{ token: null, expires: null, status: \"Failed\", result: \"User authorization failed.\" }`                    |\n+| Non-existent username           | `200`  | Same as wrong password — indistinguishable from the response alone                                          |\n+| Missing or empty required field | `400`  | `{ code: \"1200\", message: \"UserName and Password required.\" }` — verified 2026-09-04                        |\n \n-**Confirmed quirk:** never returns a 4xx/5xx for bad credentials — always `200`, differentiate by `status` field only.\n+**Confirmed quirk:** never returns a 4xx/5xx for **bad credentials** — always `200`, differentiate by `status` field only. This does not extend to malformed requests: a missing or empty required field is rejected with a real `400` before authentication is attempted (see below).\n+\n+**Required-field handling (verified 2026-09-04, undocumented in Swagger):** identical to `POST /Account/v1/User` — one shared `1200` code path covers every required-field violation on `userName` or `password`, whether the key is absent from the body or present with an empty string. All four combinations return the identical `400` status and body, deterministic across two runs each, with a valid-credentials control returning `200`/Success in the same pass.\n+\n+The empty-password case is the one worth knowing: `{ userName: \"<real user>\", password: \"\" }` returns `400`/`1200`, **not** the `200`/`\"Failed\"` authentication response. The required-field check short-circuits before any credential comparison, so an empty password never reaches the authentication path. Likewise `{ userName: \"\", password: \"<valid>\" }` returns `400`/`1200` rather than being treated as an unknown user. Do not assume an empty credential takes the `status: \"Failed\"` path.\n+\n+**Token shape (observed 2026-09-04, incidental):** the issued `token` is an unsigned-decodable JWT whose payload contains the submitted `userName` and **the plaintext password**, plus an `iat` claim. `expires` was observed ~7 days ahead of issuance; no lifetime is documented, and token expiry is not testable within a suite run.\n+\n+**`expires` format (raw examples, 2026-09-04):** UTC, `Z`-suffixed, millisecond precision — e.g. `\"2026-09-11T10:30:04.885Z\"`, `\"2026-09-11T10:30:06.941Z\"`. Confirmed across two independent calls in the same pass.\n \n ## POST /Account/v1/Authorized\n \ndiff --git a/docs/test-cases/api/auth/post-generate-token.md b/docs/test-cases/api/auth/post-generate-token.md\nnew file mode 100644\nindex 0000000..c6105e9\n--- /dev/null\n+++ b/docs/test-cases/api/auth/post-generate-token.md\n@@ -0,0 +1,204 @@\n+# Test Cases — POST /Account/v1/GenerateToken\n+\n+Derived from [`docs/test-conditions/api/auth/post-generate-token.md`](../../../test-conditions/api/auth/post-generate-token.md).\n+\n+Endpoint behavior reference: [`docs/api-spec/account-endpoints.md`](../../../api-spec/account-endpoints.md).\n+\n+---\n+\n+### TC: Generate token with valid credentials\n+\n+| Field          | Value                                                                                              |\n+| -------------- | -------------------------------------------------------------------------------------------------- |\n+| ID             | AUTH-022                                                                                           |\n+| Condition      | COND-AUTH-022                                                                                      |\n+| Risk           | Risk-1                                                                                             |\n+| Preconditions  | User account exists (created via API: POST /Account/v1/User)                                       |\n+| Test data      | userName: \"qa_auth022_1725440000\" / password: \"Test@1234\" (8+ chars, upper, lower, digit, special) |\n+| Postconditions | User \"qa_auth022_1725440000\" deleted via DELETE /Account/v1/User/{userID}                          |\n+| Automation     | Automated → `post-generate-token.api.spec.ts`                                                      |\n+\n+**Steps & expected results**\n+\n+| #   | Action                                                                                                           | Expected result                                                                                                                                                                            |\n+| --- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |\n+| 1   | Send POST /Account/v1/GenerateToken with body `{ \"userName\": \"qa_auth022_1725440000\", \"password\": \"Test@1234\" }` | Status 200; body has `token` as a non-empty string, `expires` as a non-null parseable ISO-8601 date string, `status` equal to \"Success\", `result` equal to \"User authorized successfully.\" |\n+\n+**Notes**\n+Asserting `token` is non-null is the substantive check — the failure response (AUTH-023) also returns 200 and differs only in the body, so a status-only assertion would pass against a rejected login.\n+\n+`expires` is verified as a parseable ISO-8601 string only. Its lifetime is undocumented and cannot be waited out — see COND-AUTH-INF-009.\n+\n+---\n+\n+### TC: Generate token with incorrect password\n+\n+| Field          | Value                                                                                                                    |\n+| -------------- | ------------------------------------------------------------------------------------------------------------------------ |\n+| ID             | AUTH-023                                                                                                                 |\n+| Condition      | COND-AUTH-023                                                                                                            |\n+| Risk           | Risk-1, Risk-4                                                                                                           |\n+| Preconditions  | User account exists (created via API: POST /Account/v1/User)                                                             |\n+| Test data      | userName: \"qa_auth023_1725440000\" / password submitted: \"Wrong@9999\" (not the registered password, which is \"Test@1234\") |\n+| Postconditions | User \"qa_auth023_1725440000\" deleted via DELETE /Account/v1/User/{userID}                                                |\n+| Automation     | Automated → `post-generate-token.api.spec.ts`                                                                            |\n+\n+**Steps & expected results**\n+\n+| #   | Action                                                                                                            | Expected result                                                                                                                                     |\n+| --- | ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |\n+| 1   | Send POST /Account/v1/GenerateToken with body `{ \"userName\": \"qa_auth023_1725440000\", \"password\": \"Wrong@9999\" }` | Status 200; body has `token` equal to `null`, `expires` equal to `null`, `status` equal to \"Failed\", `result` equal to \"User authorization failed.\" |\n+\n+**Notes**\n+The status 200 is the point of the test, not an incidental detail: a client branching on `res.ok` would treat this rejected login as a success and carry a `null` token forward.\n+\n+`token` and `expires` must be asserted as explicitly `null`, not merely absent — the live-confirmed body carries both keys with null values.\n+\n+---\n+\n+### TC: Generate token with a username that was never registered\n+\n+| Field          | Value                                                                        |\n+| -------------- | ---------------------------------------------------------------------------- |\n+| ID             | AUTH-024                                                                     |\n+| Condition      | COND-AUTH-024                                                                |\n+| Risk           | Risk-1, Risk-4                                                               |\n+| Preconditions  | No account exists for the submitted username — the value is never registered |\n+| Test data      | userName: \"qa_never_registered_1725440000\" / password: \"Test@1234\"           |\n+| Postconditions | None — no account is created, so nothing to clean up                         |\n+| Automation     | Automated → `post-generate-token.api.spec.ts`                                |\n+\n+**Steps & expected results**\n+\n+| #   | Action                                                                                                                    | Expected result                                                                                                                                     |\n+| --- | ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |\n+| 1   | Send POST /Account/v1/GenerateToken with body `{ \"userName\": \"qa_never_registered_1725440000\", \"password\": \"Test@1234\" }` | Status 200; body has `token` equal to `null`, `expires` equal to `null`, `status` equal to \"Failed\", `result` equal to \"User authorization failed.\" |\n+\n+**Notes**\n+The response is byte-identical to AUTH-023 (wrong password). That indistinguishability is itself the property under test — it prevents username enumeration. Should a future change make the two responses differ, this test is what catches it.\n+\n+The username must be one that genuinely does not exist; the timestamp suffix keeps it unique against the shared backend.\n+\n+Risk-4 observed behavior: the 200/\"Failed\" response was confirmed live on 2026-09-04, deterministic across repeated runs. No rate limiting or inconsistency was seen at this call volume. A deviation from the documented body is a sandbox quirk to record here, not a framework bug.\n+\n+---\n+\n+### TC: Generate token with an empty password\n+\n+| Field          | Value                                                                     |\n+| -------------- | ------------------------------------------------------------------------- |\n+| ID             | AUTH-025                                                                  |\n+| Condition      | COND-AUTH-025                                                             |\n+| Risk           | Risk-1, Risk-4                                                            |\n+| Preconditions  | User account exists (created via API: POST /Account/v1/User)              |\n+| Test data      | userName: \"qa_auth025_1725440000\" / password: \"\" (empty string, 0 chars)  |\n+| Postconditions | User \"qa_auth025_1725440000\" deleted via DELETE /Account/v1/User/{userID} |\n+| Automation     | Automated → `post-generate-token.api.spec.ts`                             |\n+\n+**Steps & expected results**\n+\n+| #   | Action                                                                                                  | Expected result                                                                              |\n+| --- | ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |\n+| 1   | Send POST /Account/v1/GenerateToken with body `{ \"userName\": \"qa_auth025_1725440000\", \"password\": \"\" }` | Status 400; body equal to `{ \"code\": \"1200\", \"message\": \"UserName and Password required.\" }` |\n+\n+**Notes**\n+The distinction under test is which of two paths an empty password takes. The required-field check short-circuits before any credential comparison, so this returns 400/1200 — **not** the 200/\"Failed\" authentication response of AUTH-023. Verified live on this endpoint 2026-09-04.\n+\n+`code` is a string (\"1200\"), not a number, despite Swagger typing it as numeric.\n+\n+Risk-4 observed behavior: the 400/1200 response was confirmed live on 2026-09-04, deterministic across two runs, with a valid-credentials control returning 200/Success in the same pass. Rejection happens before authentication, so this path does not depend on the sandbox's credential handling.\n+\n+---\n+\n+### TC: Generate token with an empty username\n+\n+| Field          | Value                                                           |\n+| -------------- | --------------------------------------------------------------- |\n+| ID             | AUTH-026                                                        |\n+| Condition      | COND-AUTH-026                                                   |\n+| Risk           | Risk-4                                                          |\n+| Preconditions  | None — the request is rejected before any account lookup occurs |\n+| Test data      | userName: \"\" (empty string, 0 chars) / password: \"Test@1234\"    |\n+| Postconditions | None — no account is created                                    |\n+| Automation     | Automated → `post-generate-token.api.spec.ts`                   |\n+\n+**Steps & expected results**\n+\n+| #   | Action                                                                                      | Expected result                                                                              |\n+| --- | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |\n+| 1   | Send POST /Account/v1/GenerateToken with body `{ \"userName\": \"\", \"password\": \"Test@1234\" }` | Status 400; body equal to `{ \"code\": \"1200\", \"message\": \"UserName and Password required.\" }` |\n+\n+**Notes**\n+The competing outcome is the 200/\"Failed\" unknown-user response of AUTH-024 — an empty username is, after all, a username nobody has. The required-field check runs first, confirmed live 2026-09-04.\n+\n+Risk-4 observed behavior: 400/1200 confirmed deterministic across two runs on 2026-09-04. Rejection precedes authentication, so this path does not exercise the sandbox's credential handling.\n+\n+---\n+\n+### TC: Generate token with the username key absent from the body\n+\n+| Field          | Value                                                                                                |\n+| -------------- | ---------------------------------------------------------------------------------------------------- |\n+| ID             | AUTH-027                                                                                             |\n+| Condition      | COND-AUTH-027                                                                                        |\n+| Risk           | Risk-4                                                                                               |\n+| Preconditions  | None — the request is rejected before any account lookup occurs                                      |\n+| Test data      | Request body carries only the password key: `{ \"password\": \"Test@1234\" }` — no `userName` key at all |\n+| Postconditions | None — no account is created                                                                         |\n+| Automation     | Automated → `post-generate-token.api.spec.ts`                                                        |\n+\n+**Steps & expected results**\n+\n+| #   | Action                                                                      | Expected result                                                                              |\n+| --- | --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |\n+| 1   | Send POST /Account/v1/GenerateToken with body `{ \"password\": \"Test@1234\" }` | Status 400; body equal to `{ \"code\": \"1200\", \"message\": \"UserName and Password required.\" }` |\n+\n+**Notes**\n+Distinct from AUTH-026 (empty string) at the HTTP level even though both land on the same 1200 code path — absent key and present-but-empty are separate invalid input classes.\n+\n+Automating this needs a raw request rather than a typed client call: the client signature models the real API contract, so it cannot express a genuinely absent key.\n+\n+Risk-4 observed behavior: 400/1200 confirmed deterministic across two runs on 2026-09-04. Rejection precedes authentication, so this path does not exercise the sandbox's credential handling.\n+\n+---\n+\n+### TC: Generate token with the password key absent from the body\n+\n+| Field          | Value                                                                                                            |\n+| -------------- | ---------------------------------------------------------------------------------------------------------------- |\n+| ID             | AUTH-028                                                                                                         |\n+| Condition      | COND-AUTH-028                                                                                                    |\n+| Risk           | Risk-1, Risk-4                                                                                                   |\n+| Preconditions  | User account exists (created via API: POST /Account/v1/User)                                                     |\n+| Test data      | Request body carries only the username key: `{ \"userName\": \"qa_auth028_1725440000\" }` — no `password` key at all |\n+| Postconditions | User \"qa_auth028_1725440000\" deleted via DELETE /Account/v1/User/{userID}                                        |\n+| Automation     | Automated → `post-generate-token.api.spec.ts`                                                                    |\n+\n+**Steps & expected results**\n+\n+| #   | Action                                                                                  | Expected result                                                                              |\n+| --- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |\n+| 1   | Send POST /Account/v1/GenerateToken with body `{ \"userName\": \"qa_auth028_1725440000\" }` | Status 400; body equal to `{ \"code\": \"1200\", \"message\": \"UserName and Password required.\" }` |\n+\n+**Notes**\n+Separate from AUTH-025 (empty password) for the same reason AUTH-027 is separate from AUTH-026: absent key and empty value are distinct classes.\n+\n+Needs a raw request, same as AUTH-027.\n+\n+Risk-4 observed behavior: 400/1200 confirmed deterministic across two runs on 2026-09-04. Rejection precedes authentication, so this path does not exercise the sandbox's credential handling.\n+\n+---\n+\n+## Traceability\n+\n+| Condition         | Test case | Covered                                      |\n+| ----------------- | --------- | -------------------------------------------- |\n+| COND-AUTH-022     | AUTH-022  | Valid credentials → token, Success           |\n+| COND-AUTH-023     | AUTH-023  | Wrong password → 200/Failed                  |\n+| COND-AUTH-024     | AUTH-024  | Non-existent username → 200/Failed           |\n+| COND-AUTH-025     | AUTH-025  | Empty password → 400/1200                    |\n+| COND-AUTH-026     | AUTH-026  | Empty username → 400/1200                    |\n+| COND-AUTH-027     | AUTH-027  | Absent userName key → 400/1200               |\n+| COND-AUTH-028     | AUTH-028  | Absent password key → 400/1200               |\n+| COND-AUTH-INF-009 | —         | Infeasible: token expiry needs clock control |\n+| COND-AUTH-INF-010 | —         | Infeasible: repeat generation, out of scope  |\ndiff --git a/docs/test-conditions/api/auth/post-generate-token.md b/docs/test-conditions/api/auth/post-generate-token.md\nnew file mode 100644\nindex 0000000..0d82131\n--- /dev/null\n+++ b/docs/test-conditions/api/auth/post-generate-token.md\n@@ -0,0 +1,354 @@\n+# Test Conditions — POST /Account/v1/GenerateToken\n+\n+## Endpoint analysis\n+\n+**Endpoint:** POST /Account/v1/GenerateToken\n+**Source:** OpenAPI spec (`docs/api-spec/book-store-api.swagger.json`) cross-checked against observed live behavior (`docs/api-spec/account-endpoints.md`). Live behavior wins wherever the two disagree.\n+\n+**Happy path**\n+\n+- Valid `userName` and `password` for an existing user → `200` with a non-null `token`, a non-null ISO-8601 `expires`, `status: \"Success\"` and `result: \"User authorized successfully.\"`.\n+\n+**Negative cases**\n+\n+- Correct `userName`, wrong `password`.\n+- `userName` that was never registered, with any password.\n+- `userName` key absent from the request body.\n+- `password` key absent from the request body.\n+- `userName` present but empty string.\n+- `password` present but empty string.\n+\n+**Boundary cases**\n+\n+- `password`: empty string (0 chars) is the one derivable boundary — it is the zero-length edge of a required string field. No minimum/maximum length rule applies to this endpoint: complexity rules belong to `POST /Account/v1/User` at registration time, and this endpoint only compares a submitted password against a stored one. A 7-character password is not a boundary here, merely a wrong password.\n+- `userName`: empty string (0 chars), same reasoning. No documented length or format constraint exists to bound the upper end — see COND-AUTH-INF-002 in `post-user.md` for the same field, not duplicated here.\n+\n+**Authorization states**\n+\n+- Not applicable — this endpoint issues credentials rather than consuming them. It takes no `Authorization` header, and sending one has no documented effect.\n+\n+**Status codes and response shape**\n+\n+| Scenario                                      | Status | Response                                                                                                                                                                    |\n+| --------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |\n+| Valid credentials                             | 200    | `{ token: string, expires: string (ISO date), status: \"Success\", result: \"User authorized successfully.\" }` — live-confirmed                                                |\n+| Wrong password for an existing user           | 200    | `{ token: null, expires: null, status: \"Failed\", result: \"User authorization failed.\" }` — live-confirmed. Note the `200`: an authentication failure under a success status |\n+| Non-existent username                         | 200    | Byte-identical to the wrong-password row — live-confirmed as indistinguishable from the response alone                                                                      |\n+| Missing or empty `userName` and/or `password` | 400    | `{ code: \"1200\", message: \"UserName and Password required.\" }` — **live-verified 2026-09-04** on this endpoint; the required-field check runs before authentication         |\n+\n+**Spec ambiguities / unknowns**\n+\n+- ~~The corrected spec doc's table for this endpoint covers only the three `200` rows; it does not state what a missing or empty `userName`/`password` returns.~~ Resolved by live check 2026-09-04 — all four variants (absent/empty × `userName`/`password`) return `400`/`1200`, deterministic across two runs each with a valid-credentials control in the same pass. `docs/api-spec/account-endpoints.md` was updated in the same pass. See COND-AUTH-025 through COND-AUTH-028.\n+- ~~Whether an absent key and a present-but-empty string differ.~~ Resolved by the same check — they do not, matching `POST /Account/v1/User`.\n+- The issued `token` was observed to be an unsigned-decodable JWT carrying the plaintext password in its payload. Recorded in the spec doc as an observation; not raised to a condition, since this project asserts the documented contract rather than auditing token design.\n+- The `expires` field is documented as an ISO date string but no lifetime is stated, so no assertion about the token's validity window is derivable. Token expiry itself is infeasible to test — see COND-AUTH-INF-009.\n+- Swagger documents the `MessageModal` `code` field as `number`; every endpoint sharing that schema is live-confirmed to return a **string**. Applied here without re-verification.\n+\n+---\n+\n+## Input fields\n+\n+### COND-AUTH-022: Valid credentials return a token with the live-confirmed success shape\n+\n+| Field      | Value                                                 |\n+| ---------- | ----------------------------------------------------- |\n+| ID         | COND-AUTH-022                                         |\n+| Priority   | High                                                  |\n+| Category   | Input field                                           |\n+| Technique  | EP                                                    |\n+| Source     | Observed behavior: docs/api-spec/account-endpoints.md |\n+| Test cases | AUTH-022                                              |\n+\n+**What to cover**\n+The valid equivalence class: a previously-registered user submits their own correct `userName` and `password`, and receives `200` with a non-null `token`, a non-null ISO-8601 `expires`, `status: \"Success\"` and `result: \"User authorized successfully.\"`.\n+\n+**Values / boundaries**\n+\n+```\n+# EP\n+Valid class: a freshly-registered user's own credentials, e.g. userName \"qa_<timestamp>\", password \"Test@1234\"\n+Expected status: 200\n+Expected body: token — non-null, non-empty string\n+               expires — non-null ISO-8601 date string\n+               status — \"Success\"\n+               result — \"User authorized successfully.\"\n+```\n+\n+**Notes**\n+This is the sole happy path, and every other endpoint in the project that requires a bearer token depends on it working — a failure here blocks `GET` and `DELETE /Account/v1/User/{UUID}` entirely. Priority High on that basis.\n+\n+Trigger and effect are merged into one condition, following the precedent of COND-AUTH-001, COND-AUTH-012 and COND-AUTH-017: \"valid credentials are accepted\" and \"the success response has shape X\" are not independently testable.\n+\n+Asserting `token` is non-null is the substantive part, not incidental: the failure response (COND-AUTH-023) also returns `200`, and differs only in the body. A test asserting status alone would pass against a failed authentication.\n+\n+---\n+\n+### COND-AUTH-023: Wrong password returns a failure body under HTTP 200\n+\n+| Field      | Value                                                 |\n+| ---------- | ----------------------------------------------------- |\n+| ID         | COND-AUTH-023                                         |\n+| Priority   | High                                                  |\n+| Category   | Input field                                           |\n+| Technique  | EP                                                    |\n+| Source     | Observed behavior: docs/api-spec/account-endpoints.md |\n+| Test cases | AUTH-023                                              |\n+\n+**What to cover**\n+Invalid equivalence class: an existing user's correct `userName` is submitted with a password that is not theirs. Confirms the API reports the failure in the body — `token: null`, `status: \"Failed\"` — while still returning HTTP `200`.\n+\n+**Values / boundaries**\n+\n+```\n+# EP\n+Invalid class — wrong password: a registered user's userName with password \"Wrong@9999\"\n+Expected status: 200\n+Expected body: token — null\n+               expires — null\n+               status — \"Failed\"\n+               result — \"User authorization failed.\"\n+```\n+\n+**Notes**\n+The `200` is the point of the condition. A client branching on `res.ok` would treat a rejected login as a successful one and carry a `null` token forward — the same trap documented for `DELETE /Account/v1/User/{UUID}` (COND-AUTH-021). Asserting the status explicitly, alongside the body, is what makes this test worth having.\n+\n+Priority High rather than Medium despite being a negative path: an authentication endpoint that fails to reject wrong credentials is a security defect, not an edge case.\n+\n+`token` and `expires` must be asserted as explicitly `null`, not merely absent — the live-confirmed body carries both keys with null values.\n+\n+---\n+\n+### COND-AUTH-024: Non-existent username returns the same failure body as a wrong password\n+\n+| Field      | Value                                                 |\n+| ---------- | ----------------------------------------------------- |\n+| ID         | COND-AUTH-024                                         |\n+| Priority   | Medium                                                |\n+| Category   | Input field                                           |\n+| Technique  | EP                                                    |\n+| Source     | Observed behavior: docs/api-spec/account-endpoints.md |\n+| Test cases | AUTH-024                                              |\n+\n+**What to cover**\n+Invalid equivalence class: a `userName` that was never registered, submitted with any syntactically valid password. Confirms the response is indistinguishable from the wrong-password case — the API does not reveal whether the account exists.\n+\n+**Values / boundaries**\n+\n+```\n+# EP\n+Invalid class — unknown user: userName \"qa_never_registered_<timestamp>\", password \"Test@1234\"\n+Expected status: 200\n+Expected body: token — null\n+               expires — null\n+               status — \"Failed\"\n+               result — \"User authorization failed.\"\n+```\n+\n+**Notes**\n+Kept separate from COND-AUTH-023 despite the byte-identical response: \"user exists, password wrong\" and \"user does not exist\" are genuinely distinct invalid input classes, and the EP coverage rule requires a condition per class even when the documented outcome is identical. Same reasoning that keeps COND-AUTH-018 and COND-AUTH-019 separate in `delete-user.md`.\n+\n+The indistinguishability is itself the property under test — it prevents username enumeration. Should a future change make the two responses differ, this condition is what catches it.\n+\n+---\n+\n+### COND-AUTH-025: Empty password is rejected as a required-field violation\n+\n+| Field      | Value                                                                        |\n+| ---------- | ---------------------------------------------------------------------------- |\n+| ID         | COND-AUTH-025                                                                |\n+| Priority   | Medium                                                                       |\n+| Category   | Input field                                                                  |\n+| Technique  | BVA                                                                          |\n+| Source     | Observed behavior: live check 2026-09-04; docs/api-spec/account-endpoints.md |\n+| Test cases | AUTH-025                                                                     |\n+\n+**What to cover**\n+The zero-length boundary of the required `password` field: an existing user's correct `userName` is submitted with `password: \"\"`. Confirms the request is rejected as a missing required field (`400`/`1200`) rather than taking the authentication path and returning `200`/`\"Failed\"`.\n+\n+**Values / boundaries**\n+\n+```\n+# BVA\n+Empty (0 chars): { userName: \"<registered user>\", password: \"\" }\n+Expected status: 400\n+Expected body: { code: \"1200\", message: \"UserName and Password required.\" }\n+```\n+\n+**Notes**\n+The distinction this condition protects is which of two paths an empty password takes. Live check 2026-09-04 settles it: `400`/`1200`, **not** the `200`/`\"Failed\"` authentication response — the required-field check short-circuits before any credential comparison. Both outcomes were plausible from the outside, which is exactly why the case is worth a test.\n+\n+Verified on this endpoint directly, not inherited from `POST /Account/v1/User`; the two do agree, and `docs/api-spec/account-endpoints.md` now carries a row for each.\n+\n+---\n+\n+### COND-AUTH-026: Empty userName is rejected as a required-field violation\n+\n+| Field      | Value                                                                        |\n+| ---------- | ---------------------------------------------------------------------------- |\n+| ID         | COND-AUTH-026                                                                |\n+| Priority   | Medium                                                                       |\n+| Category   | Input field                                                                  |\n+| Technique  | BVA                                                                          |\n+| Source     | Observed behavior: live check 2026-09-04; docs/api-spec/account-endpoints.md |\n+| Test cases | AUTH-026                                                                     |\n+\n+**What to cover**\n+The zero-length boundary of the required `userName` field: `userName: \"\"` submitted with an otherwise valid password. Confirms rejection as a missing required field rather than treatment as an unknown user.\n+\n+**Values / boundaries**\n+\n+```\n+# BVA\n+Empty (0 chars): { userName: \"\", password: \"Test@1234\" }\n+Expected status: 400\n+Expected body: { code: \"1200\", message: \"UserName and Password required.\" }\n+```\n+\n+**Notes**\n+As with COND-AUTH-025, the competing outcome is the `200`/`\"Failed\"` unknown-user response (COND-AUTH-024) — an empty username is, after all, a username nobody has. Live check 2026-09-04 confirms the required-field check runs first: `400`/`1200`.\n+\n+---\n+\n+### COND-AUTH-027: Absent userName key is rejected as a required-field violation\n+\n+| Field      | Value                                                                        |\n+| ---------- | ---------------------------------------------------------------------------- |\n+| ID         | COND-AUTH-027                                                                |\n+| Priority   | Medium                                                                       |\n+| Category   | Input field                                                                  |\n+| Technique  | EP                                                                           |\n+| Source     | Observed behavior: live check 2026-09-04; docs/api-spec/account-endpoints.md |\n+| Test cases | AUTH-027                                                                     |\n+\n+**What to cover**\n+Invalid equivalence class: the `userName` key is entirely absent from the request body, which carries only `password`. Confirms rejection with the shared required-field error.\n+\n+**Values / boundaries**\n+\n+```\n+# EP\n+Invalid class — key absent: { password: \"Test@1234\" }\n+Expected status: 400\n+Expected body: { code: \"1200\", message: \"UserName and Password required.\" }\n+```\n+\n+**Notes**\n+Kept separate from COND-AUTH-026 (empty string) because absent-key and present-but-empty are distinct invalid input classes at the HTTP level, even though the live check 2026-09-04 confirms this endpoint collapses them onto one code path. The EP rule requires a condition per class regardless of shared outcome — the same treatment given COND-AUTH-008/COND-AUTH-010 in `post-user.md`.\n+\n+Sending a body with a key genuinely absent requires a raw request rather than a typed client call, since the client signature models the real API contract.\n+\n+---\n+\n+### COND-AUTH-028: Absent password key is rejected as a required-field violation\n+\n+| Field      | Value                                                                        |\n+| ---------- | ---------------------------------------------------------------------------- |\n+| ID         | COND-AUTH-028                                                                |\n+| Priority   | Medium                                                                       |\n+| Category   | Input field                                                                  |\n+| Technique  | EP                                                                           |\n+| Source     | Observed behavior: live check 2026-09-04; docs/api-spec/account-endpoints.md |\n+| Test cases | AUTH-028                                                                     |\n+\n+**What to cover**\n+Invalid equivalence class: the `password` key is entirely absent from the request body, which carries only `userName`. Confirms rejection with the shared required-field error.\n+\n+**Values / boundaries**\n+\n+```\n+# EP\n+Invalid class — key absent: { userName: \"<registered user>\" }\n+Expected status: 400\n+Expected body: { code: \"1200\", message: \"UserName and Password required.\" }\n+```\n+\n+**Notes**\n+Separate from COND-AUTH-025 for the same reason COND-AUTH-027 is separate from COND-AUTH-026: absent key and empty value are distinct classes.\n+\n+---\n+\n+## Infeasible conditions\n+\n+### COND-AUTH-INF-009: Token expiry behavior (infeasible)\n+\n+| Field      | Value                                                     |\n+| ---------- | --------------------------------------------------------- |\n+| ID         | COND-AUTH-INF-009                                         |\n+| Priority   | Medium                                                    |\n+| Category   | State                                                     |\n+| Technique  | BVA                                                       |\n+| Source     | Spec: `expires` field, docs/api-spec/account-endpoints.md |\n+| Test cases | —                                                         |\n+\n+**What to cover**\n+That a token stops being accepted once the moment named in its `expires` field has passed — and, at the boundary, is still accepted immediately before it.\n+\n+**Why infeasible**\n+The response documents `expires` as an ISO date but states no lifetime, and observed values put it far enough ahead that a test would have to idle for the full window. There is no way to force expiry from outside: DemoQA exposes no clock control, no token-revocation endpoint, and no shorter-lived token variant. A test would be a real-time wait of unknown length against a shared public backend.\n+\n+**Mitigation**\n+Contract assumption: `expires` is asserted as a non-null, parseable ISO-8601 date string in COND-AUTH-022, which is as far as the field can be verified without waiting out its window. The rejection side is partially covered by COND-AUTH-019 in `delete-user.md` and COND-AUTH-014 in `get-user.md`, which confirm an invalid token is refused — an expired token is expected to join that class, though that expectation is untested.\n+\n+---\n+\n+### COND-AUTH-INF-010: Repeated token generation — whether a prior token is invalidated (infeasible)\n+\n+| Field      | Value                                          |\n+| ---------- | ---------------------------------------------- |\n+| ID         | COND-AUTH-INF-010                              |\n+| Priority   | Low                                            |\n+| Category   | State                                          |\n+| Technique  | Exploratory heuristic                          |\n+| Source     | Heuristic — undocumented in either spec source |\n+| Test cases | —                                              |\n+\n+**What to cover**\n+Whether calling this endpoint twice for the same user issues an independent second token that leaves the first still usable, or supersedes it.\n+\n+**Why infeasible**\n+Resolving this requires generating a second token and then confirming the _first_ still authenticates — which means exercising a protected endpoint (`GET /Account/v1/User/{UUID}`) as the assertion. That makes it a test of the protected endpoint's token handling, not of `GenerateToken`'s own response, and it cannot be settled from this endpoint's response alone. Deliberately scoped out rather than technically unreachable: a live probe would resolve it, but it belongs to a session-management test area this project does not cover.\n+\n+**Mitigation**\n+Deferred. Every test in the suite that needs a token generates its own and uses it immediately, so no test depends on a previously-issued token surviving a later generation. If a multi-session area is ever added, this becomes feasible and should be promoted.\n+\n+---\n+\n+## Coverage completeness check\n+\n+| Question                                                                               | Answer                                                                                                                                                                                                                                                  |\n+| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |\n+| Does every required input field have a valid EP condition?                             | Yes — COND-AUTH-022 covers the valid class for both `userName` and `password` together, which is the only way they can be valid                                                                                                                         |\n+| Does every required input field have at least one invalid EP condition?                | Yes — `password`: COND-AUTH-023 (wrong), COND-AUTH-025 (empty), COND-AUTH-028 (absent). `userName`: COND-AUTH-024 (unknown), COND-AUTH-026 (empty), COND-AUTH-027 (absent)                                                                              |\n+| Are all BVA boundaries covered (min, min-1, empty)?                                    | Yes for the empty boundary — COND-AUTH-025 (`password`), COND-AUTH-026 (`userName`). No min/max length rule exists on this endpoint to bound: complexity belongs to registration, and the `userName` upper bound is COND-AUTH-INF-002 in `post-user.md` |\n+| Does every authorization state produce a distinct condition?                           | Not applicable — this endpoint issues credentials rather than consuming them; it takes no `Authorization` header                                                                                                                                        |\n+| Are all infeasible conditions documented?                                              | Yes — COND-AUTH-INF-009 (token expiry), COND-AUTH-INF-010 (repeat generation)                                                                                                                                                                           |\n+| Does every analysis bullet map to at least one condition?                              | Yes — see mapping below                                                                                                                                                                                                                                 |\n+| Are all conditions independently testable?                                             | Yes — each seeds its own user where one is needed; none depends on another having run first. No condition consumes or invalidates state another condition relies on                                                                                     |\n+| Does any condition pair only ever get exercised together (trigger vs. its own effect)? | No — COND-AUTH-022 already merges its trigger with its response shape. COND-AUTH-023 and COND-AUTH-024 return identical bodies but are reached through different inputs, so neither is the other's effect                                               |\n+\n+**Analysis-to-condition mapping**\n+\n+- Happy path (valid credentials → token, Success) → COND-AUTH-022\n+- Negative: correct userName, wrong password → COND-AUTH-023\n+- Negative: non-existent userName → COND-AUTH-024\n+- Negative: userName key absent → COND-AUTH-027\n+- Negative: password key absent → COND-AUTH-028\n+- Negative: userName empty string → COND-AUTH-026\n+- Negative: password empty string → COND-AUTH-025\n+- Boundary: password empty (0 chars) → COND-AUTH-025\n+- Boundary: userName empty (0 chars) → COND-AUTH-026\n+- Boundary: userName upper length/format → COND-AUTH-INF-002 in `post-user.md` (same field, not duplicated)\n+- Authorization states: not applicable → no condition, justified in the analysis block\n+- Status codes/response shape: 200 success, 200 failure, 400/1200 required-field → COND-AUTH-022, COND-AUTH-023, COND-AUTH-024, COND-AUTH-025, COND-AUTH-026, COND-AUTH-027, COND-AUTH-028\n+- Spec ambiguity: required-field behavior resolved by live check 2026-09-04 → COND-AUTH-025 through COND-AUTH-028\n+- Spec ambiguity: `expires` lifetime unstated → COND-AUTH-INF-009\n+\n+**Coverage gaps identified**\n+\n+- None. The one previously-open gap — the `400`/`1200` required-field behavior asserted by COND-AUTH-025 through COND-AUTH-028, originally inherited from `POST /Account/v1/User` rather than verified here — was live-checked 2026-09-04 and confirmed on this endpoint directly. `docs/api-spec/account-endpoints.md` was updated in the same pass, so the project's source of truth now carries a GenerateToken row for it.\n+- Whether an `Authorization` header sent to this endpoint is ignored is undocumented and untested. Not raised to a condition: no client would send one, and the endpoint declares no security scheme.\n+\n+**Deferred conditions**\n+\n+- COND-AUTH-INF-009 (token expiry) — deferred indefinitely; needs clock control the SUT does not offer.\n+- COND-AUTH-INF-010 (repeat token generation) — deferred as out of scope; would become feasible if a session-management area is added.\ndiff --git a/tests/api/post-generate-token.api.spec.ts b/tests/api/post-generate-token.api.spec.ts\nnew file mode 100644\nindex 0000000..bd886bb\n--- /dev/null\n+++ b/tests/api/post-generate-token.api.spec.ts\n@@ -0,0 +1,133 @@\n+import { test, expect } from '../../src/fixtures/account.fixtures';\n+import { buildUniqueUsername, buildValidPassword } from '../../src/data/user.factory';\n+import { parseJsonBody } from '../../src/utils/api-response.util';\n+import { GenerateTokenResponseSchema } from '../../src/types/account.schema';\n+import { ApiErrorResponseSchema } from '../../src/types/api-error.schema';\n+\n+const REQUIRED_FIELD_MESSAGE = 'UserName and Password required.';\n+\n+test(\n+  'Generate token with valid credentials',\n+  { tag: ['@AUTH-022', '@positive'] },\n+  async ({ accountApiClient, seedUser }) => {\n+    const response = await accountApiClient.generateToken({\n+      userName: seedUser.userName,\n+      password: seedUser.password,\n+    });\n+    const body = await parseJsonBody(response, GenerateTokenResponseSchema);\n+\n+    expect.soft(response.status()).toBe(200);\n+    expect.soft(body.token).toBeTruthy();\n+    expect.soft(body.expires).toBeTruthy();\n+    expect.soft(body.status).toBe('Success');\n+    expect.soft(body.result).toBe('User authorized successfully.');\n+  }\n+);\n+\n+test(\n+  'Generate token with incorrect password',\n+  { tag: ['@AUTH-023', '@negative'] },\n+  async ({ accountApiClient, seedUser }) => {\n+    const response = await accountApiClient.generateToken({\n+      userName: seedUser.userName,\n+      password: 'Wrong@9999',\n+    });\n+    const body = await parseJsonBody(response, GenerateTokenResponseSchema);\n+\n+    // 200, not 4xx: this endpoint never rejects bad credentials with an error\n+    // status — differentiate by `status` in the body only.\n+    expect.soft(response.status()).toBe(200);\n+    expect.soft(body.token).toBeNull();\n+    expect.soft(body.expires).toBeNull();\n+    expect.soft(body.status).toBe('Failed');\n+    expect.soft(body.result).toBe('User authorization failed.');\n+  }\n+);\n+\n+test(\n+  'Generate token with a username that was never registered',\n+  { tag: ['@AUTH-024', '@negative'] },\n+  async ({ accountApiClient }) => {\n+    const response = await accountApiClient.generateToken({\n+      userName: buildUniqueUsername(),\n+      password: buildValidPassword(),\n+    });\n+    const body = await parseJsonBody(response, GenerateTokenResponseSchema);\n+\n+    // Byte-identical to AUTH-023 — the API never reveals whether the account\n+    // exists, which is the property this test protects.\n+    expect.soft(response.status()).toBe(200);\n+    expect.soft(body.token).toBeNull();\n+    expect.soft(body.expires).toBeNull();\n+    expect.soft(body.status).toBe('Failed');\n+    expect.soft(body.result).toBe('User authorization failed.');\n+  }\n+);\n+\n+test(\n+  'Generate token with an empty password',\n+  { tag: ['@AUTH-025', '@boundary'] },\n+  async ({ accountApiClient, seedUser }) => {\n+    const response = await accountApiClient.generateToken({\n+      userName: seedUser.userName,\n+      password: '',\n+    });\n+    const error = await parseJsonBody(response, ApiErrorResponseSchema);\n+\n+    // 400/1200, not 200/\"Failed\": the required-field check short-circuits\n+    // before any credential comparison. Contrast AUTH-023.\n+    expect.soft(response.status()).toBe(400);\n+    expect.soft(error.code).toBe('1200');\n+    expect.soft(error.message).toBe(REQUIRED_FIELD_MESSAGE);\n+  }\n+);\n+\n+test(\n+  'Generate token with an empty username',\n+  { tag: ['@AUTH-026', '@boundary'] },\n+  async ({ accountApiClient }) => {\n+    const response = await accountApiClient.generateToken({\n+      userName: '',\n+      password: buildValidPassword(),\n+    });\n+    const error = await parseJsonBody(response, ApiErrorResponseSchema);\n+\n+    expect.soft(response.status()).toBe(400);\n+    expect.soft(error.code).toBe('1200');\n+    expect.soft(error.message).toBe(REQUIRED_FIELD_MESSAGE);\n+  }\n+);\n+\n+test(\n+  'Generate token with the username key absent from the body',\n+  { tag: ['@AUTH-027', '@negative'] },\n+  async ({ request }) => {\n+    // Raw request, not accountApiClient.generateToken: LoginPayload requires\n+    // both fields, and this case needs the userName key entirely absent.\n+    const response = await request.post('/Account/v1/GenerateToken', {\n+      data: { password: buildValidPassword() },\n+    });\n+    const error = await parseJsonBody(response, ApiErrorResponseSchema);\n+\n+    expect.soft(response.status()).toBe(400);\n+    expect.soft(error.code).toBe('1200');\n+    expect.soft(error.message).toBe(REQUIRED_FIELD_MESSAGE);\n+  }\n+);\n+\n+test(\n+  'Generate token with the password key absent from the body',\n+  { tag: ['@AUTH-028', '@negative'] },\n+  async ({ request, seedUser }) => {\n+    // Raw request, not accountApiClient.generateToken: LoginPayload requires\n+    // both fields, and this case needs the password key entirely absent.\n+    const response = await request.post('/Account/v1/GenerateToken', {\n+      data: { userName: seedUser.userName },\n+    });\n+    const error = await parseJsonBody(response, ApiErrorResponseSchema);\n+\n+    expect.soft(response.status()).toBe(400);\n+    expect.soft(error.code).toBe('1200');\n+    expect.soft(error.message).toBe(REQUIRED_FIELD_MESSAGE);\n+  }\n+);\ndiff --git a/tests/api/post-generate-token.contract.spec.ts b/tests/api/post-generate-token.contract.spec.ts\nnew file mode 100644\nindex 0000000..4f7f955\n--- /dev/null\n+++ b/tests/api/post-generate-token.contract.spec.ts\n@@ -0,0 +1,36 @@\n+import { test, expect } from '../../src/fixtures/account.fixtures';\n+import { buildUniqueUsername } from '../../src/data/user.factory';\n+import { GenerateTokenResponseSchema } from '../../src/types/account.schema';\n+import { ApiErrorResponseSchema } from '../../src/types/api-error.schema';\n+\n+test(\n+  'POST /Account/v1/GenerateToken success/failure response matches schema',\n+  { tag: ['@contract', '@AUTH'] },\n+  async ({ accountApiClient, seedUser }) => {\n+    // Both the 200/Success and 200/Failed bodies share this schema's shape\n+    // (nullable token/expires), so one representative call covers it.\n+    const response = await accountApiClient.generateToken({\n+      userName: seedUser.userName,\n+      password: seedUser.password,\n+    });\n+    const body: unknown = await response.json();\n+\n+    expect(response.status()).toBe(200);\n+    expect(body).toMatchSchema(GenerateTokenResponseSchema);\n+  }\n+);\n+\n+test(\n+  'POST /Account/v1/GenerateToken error response matches schema',\n+  { tag: ['@contract', '@AUTH'] },\n+  async ({ accountApiClient }) => {\n+    const response = await accountApiClient.generateToken({\n+      userName: buildUniqueUsername(),\n+      password: '',\n+    });\n+    const body: unknown = await response.json();\n+\n+    expect(response.status()).toBe(400);\n+    expect(body).toMatchSchema(ApiErrorResponseSchema);\n+  }\n+);",
+          "actualWorkers": 4
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/runner/work/demoqa-test-automation/demoqa-test-automation/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "html",
+        {
+          "open": "never"
+        }
+      ],
+      [
+        "github",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "playwright-report/results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 4,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "api/delete-user.api.spec.ts",
+      "file": "api/delete-user.api.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Delete own user account with a valid token",
+          "ok": true,
+          "tags": [
+            "AUTH-017",
+            "positive"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9869,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T11:31:18.719Z [w0] [Delete own user account with a valid token] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:23.815Z [w0] [Delete own user account with a valid token] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:25.813Z [w0] [Delete own user account with a valid token] [INFO] DELETE /Account/v1/User/317cd7b5-86e2-419e-be68-fcfeee94050a -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:31:15.907Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a3471163437ebe190827-429eab5e5e1da595ee5e",
+          "file": "api/delete-user.api.spec.ts",
+          "line": 5,
+          "column": 5
+        },
+        {
+          "title": "Delete user account with no Authorization header",
+          "ok": true,
+          "tags": [
+            "AUTH-018",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 11846,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T11:31:18.722Z [w1] [Delete user account with no Authorization header] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:25.093Z [w1] [Delete user account with no Authorization header] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:27.797Z [w1] [Delete user account with no Authorization header] [INFO] DELETE /Account/v1/User/34035d3a-b3ba-4ffd-ba5c-1a0676570374 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:31:15.911Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a3471163437ebe190827-163646e00eaf65478818",
+          "file": "api/delete-user.api.spec.ts",
+          "line": 24,
+          "column": 5
+        },
+        {
+          "title": "Delete user account with an invalid or malformed token",
+          "ok": true,
+          "tags": [
+            "AUTH-019",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 15780,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T11:31:18.720Z [w2] [Delete user account with an invalid or malformed token] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:21.207Z [w2] [Delete user account with an invalid or malformed token] [INFO] DELETE /Account/v1/User/564c27a0-fd12-4f1d-94f8-06298a907e61 -> 401\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:27.035Z [w2] [Delete user account with an invalid or malformed token] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:31.727Z [w2] [Delete user account with an invalid or malformed token] [INFO] DELETE /Account/v1/User/564c27a0-fd12-4f1d-94f8-06298a907e61 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:31:15.902Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a3471163437ebe190827-c831a3e83369a89b5722",
+          "file": "api/delete-user.api.spec.ts",
+          "line": 40,
+          "column": 5
+        },
+        {
+          "title": "Delete a non-existent user UUID with a valid unrelated token",
+          "ok": true,
+          "tags": [
+            "AUTH-020",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "passed",
+                  "duration": 6378,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T11:31:18.712Z [w3] [Delete a non-existent user UUID with a valid unrelated token] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:21.192Z [w3] [Delete a non-existent user UUID with a valid unrelated token] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:21.310Z [w3] [Delete a non-existent user UUID with a valid unrelated token] [INFO] DELETE /Account/v1/User/00000000-0000-0000-0000-000000000000 -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:22.331Z [w3] [Delete a non-existent user UUID with a valid unrelated token] [INFO] DELETE /Account/v1/User/7839c462-20b4-4964-b6e5-0ae402410797 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:31:15.913Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a3471163437ebe190827-d6d79755d598b53d2eeb",
+          "file": "api/delete-user.api.spec.ts",
+          "line": 56,
+          "column": 5
+        },
+        {
+          "title": "Delete an already-deleted user account",
+          "ok": true,
+          "tags": [
+            "AUTH-021",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "passed",
+                  "duration": 12246,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T11:31:23.818Z [w3] [Delete an already-deleted user account] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:30.021Z [w3] [Delete an already-deleted user account] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:34.487Z [w3] [Delete an already-deleted user account] [INFO] DELETE /Account/v1/User/d18f0763-0a64-4d47-86f3-6ef6311c953c -> 204\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:34.587Z [w3] [Delete an already-deleted user account] [INFO] DELETE /Account/v1/User/d18f0763-0a64-4d47-86f3-6ef6311c953c -> 200\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:31:22.341Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a3471163437ebe190827-7c7edb403c6da0d94596",
+          "file": "api/delete-user.api.spec.ts",
+          "line": 72,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "api/delete-user.contract.spec.ts",
+      "file": "api/delete-user.contract.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "DELETE /Account/v1/User/{UUID} success response has no body",
+          "ok": true,
+          "tags": [
+            "contract",
+            "AUTH"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 12608,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T11:31:27.032Z [w0] [DELETE /Account/v1/User/{UUID} success response has no body] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:34.666Z [w0] [DELETE /Account/v1/User/{UUID} success response has no body] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:38.437Z [w0] [DELETE /Account/v1/User/{UUID} success response has no body] [INFO] DELETE /Account/v1/User/4d1d1267-363f-46f0-961f-1a490d63c5fd -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:31:25.828Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "5bbc055b6a9b2397881c-fb5a79ab6480cbf0abcf",
+          "file": "api/delete-user.contract.spec.ts",
+          "line": 4,
+          "column": 5
+        },
+        {
+          "title": "DELETE /Account/v1/User/{UUID} error response matches schema",
+          "ok": true,
+          "tags": [
+            "contract",
+            "AUTH"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 13514,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T11:31:30.022Z [w1] [DELETE /Account/v1/User/{UUID} error response matches schema] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:33.639Z [w1] [DELETE /Account/v1/User/{UUID} error response matches schema] [INFO] DELETE /Account/v1/User/88b6f6e4-c136-463b-abd0-21ca6792105a -> 401\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:37.292Z [w1] [DELETE /Account/v1/User/{UUID} error response matches schema] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:41.323Z [w1] [DELETE /Account/v1/User/{UUID} error response matches schema] [INFO] DELETE /Account/v1/User/88b6f6e4-c136-463b-abd0-21ca6792105a -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:31:27.805Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "5bbc055b6a9b2397881c-90ee53d4d73a404b00ee",
+          "file": "api/delete-user.contract.spec.ts",
+          "line": 21,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "api/get-user.api.spec.ts",
+      "file": "api/get-user.api.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Get own user profile with a valid token",
+          "ok": true,
+          "tags": [
+            "AUTH-012",
+            "positive"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 10612,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T11:31:34.665Z [w2] [Get own user profile with a valid token] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:40.495Z [w2] [Get own user profile with a valid token] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:41.048Z [w2] [Get own user profile with a valid token] [INFO] GET /Account/v1/User/eaee13bf-a4a2-4ad2-95e8-3e46e01f40e8 -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:42.352Z [w2] [Get own user profile with a valid token] [INFO] DELETE /Account/v1/User/eaee13bf-a4a2-4ad2-95e8-3e46e01f40e8 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:31:31.737Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b2bd4494f98d86f87e56-32ad40df7066e9bdb050",
+          "file": "api/get-user.api.spec.ts",
+          "line": 6,
+          "column": 5
+        },
+        {
+          "title": "Get user profile with no Authorization header",
+          "ok": true,
+          "tags": [
+            "AUTH-013",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "passed",
+                  "duration": 10289,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T11:31:37.296Z [w3] [Get user profile with no Authorization header] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:43.841Z [w3] [Get user profile with no Authorization header] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:44.894Z [w3] [Get user profile with no Authorization header] [INFO] DELETE /Account/v1/User/c4923cde-51ea-4114-913f-f3ac71845415 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:31:34.600Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b2bd4494f98d86f87e56-3fb93e5e045cf0980325",
+          "file": "api/get-user.api.spec.ts",
+          "line": 23,
+          "column": 5
+        },
+        {
+          "title": "Get user profile with an invalid or malformed token",
+          "ok": true,
+          "tags": [
+            "AUTH-014",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10416,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T11:31:40.491Z [w0] [Get user profile with an invalid or malformed token] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:43.708Z [w0] [Get user profile with an invalid or malformed token] [INFO] GET /Account/v1/User/492b240d-a6e7-4727-a4fd-506a191a92c1 -> 401\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:46.558Z [w0] [Get user profile with an invalid or malformed token] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:48.865Z [w0] [Get user profile with an invalid or malformed token] [INFO] DELETE /Account/v1/User/492b240d-a6e7-4727-a4fd-506a191a92c1 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:31:38.446Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b2bd4494f98d86f87e56-e533c1170ef109b3681a",
+          "file": "api/get-user.api.spec.ts",
+          "line": 39,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "api/get-user.contract.spec.ts",
+      "file": "api/get-user.contract.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "GET /Account/v1/User/{UUID} success response matches schema",
+          "ok": true,
+          "tags": [
+            "contract",
+            "AUTH"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 10193,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T11:31:43.840Z [w1] [GET /Account/v1/User/{UUID} success response matches schema] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:48.065Z [w1] [GET /Account/v1/User/{UUID} success response matches schema] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:50.563Z [w1] [GET /Account/v1/User/{UUID} success response matches schema] [INFO] GET /Account/v1/User/14462609-9db1-4941-9b1c-3c1a48fb3aa6 -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:51.529Z [w1] [GET /Account/v1/User/{UUID} success response matches schema] [INFO] DELETE /Account/v1/User/14462609-9db1-4941-9b1c-3c1a48fb3aa6 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:31:41.332Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a8aca4f3c5f83291ff47-47c4a5c015f20272a343",
+          "file": "api/get-user.contract.spec.ts",
+          "line": 5,
+          "column": 5
+        },
+        {
+          "title": "GET /Account/v1/User/{UUID} error response matches schema",
+          "ok": true,
+          "tags": [
+            "contract",
+            "AUTH"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 12574,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T11:31:44.422Z [w2] [GET /Account/v1/User/{UUID} error response matches schema] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:46.842Z [w2] [GET /Account/v1/User/{UUID} error response matches schema] [INFO] GET /Account/v1/User/f7a3c486-05d7-4b22-b9d0-e21d332ee705 -> 401\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:52.589Z [w2] [GET /Account/v1/User/{UUID} error response matches schema] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:54.937Z [w2] [GET /Account/v1/User/{UUID} error response matches schema] [INFO] DELETE /Account/v1/User/f7a3c486-05d7-4b22-b9d0-e21d332ee705 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:31:42.359Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a8aca4f3c5f83291ff47-a5594ebaa638cac36726",
+          "file": "api/get-user.contract.spec.ts",
+          "line": 20,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "api/post-generate-token.api.spec.ts",
+      "file": "api/post-generate-token.api.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Generate token with valid credentials",
+          "ok": true,
+          "tags": [
+            "AUTH-022",
+            "positive"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "passed",
+                  "duration": 11087,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T11:31:46.563Z [w3] [Generate token with valid credentials] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:50.952Z [w3] [Generate token with valid credentials] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:54.709Z [w3] [Generate token with valid credentials] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:56.002Z [w3] [Generate token with valid credentials] [INFO] DELETE /Account/v1/User/83d74ae1-5097-47fc-b63f-ad891206d36b -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:31:44.902Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8a1caafea00aa0f89459-8afa8b81abab7aaeb626",
+          "file": "api/post-generate-token.api.spec.ts",
+          "line": 9,
+          "column": 5
+        },
+        {
+          "title": "Generate token with incorrect password",
+          "ok": true,
+          "tags": [
+            "AUTH-023",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 14332,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T11:31:50.967Z [w0] [Generate token with incorrect password] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:57.288Z [w0] [Generate token with incorrect password] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:32:00.015Z [w0] [Generate token with incorrect password] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:32:03.218Z [w0] [Generate token with incorrect password] [INFO] DELETE /Account/v1/User/b56e0fa8-293d-439d-883a-4c4319ecde74 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:31:48.873Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8a1caafea00aa0f89459-1c10ead583d0250dfa44",
+          "file": "api/post-generate-token.api.spec.ts",
+          "line": 27,
+          "column": 5
+        },
+        {
+          "title": "Generate token with a username that was never registered",
+          "ok": true,
+          "tags": [
+            "AUTH-024",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 7017,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T11:31:58.554Z [w1] [Generate token with a username that was never registered] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:31:51.537Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8a1caafea00aa0f89459-438558bb155282a034b2",
+          "file": "api/post-generate-token.api.spec.ts",
+          "line": 47,
+          "column": 5
+        },
+        {
+          "title": "Generate token with an empty password",
+          "ok": true,
+          "tags": [
+            "AUTH-025",
+            "boundary"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 10923,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T11:31:57.293Z [w2] [Generate token with an empty password] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:31:57.391Z [w2] [Generate token with an empty password] [INFO] POST /Account/v1/GenerateToken -> 400\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:32:02.336Z [w2] [Generate token with an empty password] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:32:05.875Z [w2] [Generate token with an empty password] [INFO] DELETE /Account/v1/User/d8789531-262e-43e8-ac34-dd6a858806de -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:31:54.948Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8a1caafea00aa0f89459-e80565e844859fb9fff0",
+          "file": "api/post-generate-token.api.spec.ts",
+          "line": 67,
+          "column": 5
+        },
+        {
+          "title": "Generate token with an empty username",
+          "ok": true,
+          "tags": [
+            "AUTH-026",
+            "boundary"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "passed",
+                  "duration": 91,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T11:31:56.104Z [w3] [Generate token with an empty username] [INFO] POST /Account/v1/GenerateToken -> 400\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:31:56.011Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8a1caafea00aa0f89459-cf0fbe5122e0b2fc6053",
+          "file": "api/post-generate-token.api.spec.ts",
+          "line": 85,
+          "column": 5
+        },
+        {
+          "title": "Generate token with the username key absent from the body",
+          "ok": true,
+          "tags": [
+            "AUTH-027",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "passed",
+                  "duration": 90,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:31:56.114Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8a1caafea00aa0f89459-d5ebd766b4f28792a44e",
+          "file": "api/post-generate-token.api.spec.ts",
+          "line": 101,
+          "column": 5
+        },
+        {
+          "title": "Generate token with the password key absent from the body",
+          "ok": true,
+          "tags": [
+            "AUTH-028",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "passed",
+                  "duration": 10218,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T11:31:58.126Z [w3] [Generate token with the password key absent from the body] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:32:05.232Z [w3] [Generate token with the password key absent from the body] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:32:06.436Z [w3] [Generate token with the password key absent from the body] [INFO] DELETE /Account/v1/User/dc2d425a-87cf-4609-a82c-e8a1f79c2bdb -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:31:56.214Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8a1caafea00aa0f89459-a79686f3ca36d916f96d",
+          "file": "api/post-generate-token.api.spec.ts",
+          "line": 118,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "api/post-generate-token.contract.spec.ts",
+      "file": "api/post-generate-token.contract.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "POST /Account/v1/GenerateToken success/failure response matches schema",
+          "ok": true,
+          "tags": [
+            "contract",
+            "AUTH"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 13091,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T11:32:00.012Z [w1] [POST /Account/v1/GenerateToken success/failure response matches schema] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:32:07.698Z [w1] [POST /Account/v1/GenerateToken success/failure response matches schema] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:32:10.603Z [w1] [POST /Account/v1/GenerateToken success/failure response matches schema] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:32:11.657Z [w1] [POST /Account/v1/GenerateToken success/failure response matches schema] [INFO] DELETE /Account/v1/User/9a3b2689-54da-406d-a354-bb0415515051 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:31:58.562Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "86b7869ce57bf642ecfe-78dd58d7617869961f3f",
+          "file": "api/post-generate-token.contract.spec.ts",
+          "line": 6,
+          "column": 5
+        },
+        {
+          "title": "POST /Account/v1/GenerateToken error response matches schema",
+          "ok": true,
+          "tags": [
+            "contract",
+            "AUTH"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 93,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T11:32:03.322Z [w0] [POST /Account/v1/GenerateToken error response matches schema] [INFO] POST /Account/v1/GenerateToken -> 400\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:32:03.227Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "86b7869ce57bf642ecfe-4c38b3cdb129beff7b2b",
+          "file": "api/post-generate-token.contract.spec.ts",
+          "line": 23,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "api/post-user.api.spec.ts",
+      "file": "api/post-user.api.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Register user with valid credentials",
+          "ok": true,
+          "tags": [
+            "AUTH-001",
+            "positive"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7861,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T11:32:05.232Z [w0] [Register user with valid credentials] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:32:08.726Z [w0] [Register user with valid credentials] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:32:11.199Z [w0] [Register user with valid credentials] [INFO] DELETE /Account/v1/User/77192572-5d70-40c5-9138-fe3b7835e903 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:32:03.334Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd58d1e8feec03df9eb4-3bb152e3b223428f8d3f",
+          "file": "api/post-user.api.spec.ts",
+          "line": 19,
+          "column": 5
+        },
+        {
+          "title": "Register user with password missing an uppercase letter",
+          "ok": true,
+          "tags": [
+            "AUTH-002",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 108,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T11:32:05.986Z [w2] [Register user with password missing an uppercase letter] [INFO] POST /Account/v1/User -> 400\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:32:05.886Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd58d1e8feec03df9eb4-07562c4bf414746ac5c3",
+          "file": "api/post-user.api.spec.ts",
+          "line": 41,
+          "column": 5
+        },
+        {
+          "title": "Register user with password missing a lowercase letter",
+          "ok": true,
+          "tags": [
+            "AUTH-003",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 93,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T11:32:06.106Z [w2] [Register user with password missing a lowercase letter] [INFO] POST /Account/v1/User -> 400\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:32:06.007Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd58d1e8feec03df9eb4-bdb96a4cb94450d9c0de",
+          "file": "api/post-user.api.spec.ts",
+          "line": 57,
+          "column": 5
+        },
+        {
+          "title": "Register user with password missing a digit",
+          "ok": true,
+          "tags": [
+            "AUTH-004",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 91,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T11:32:06.205Z [w2] [Register user with password missing a digit] [INFO] POST /Account/v1/User -> 400\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:32:06.114Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd58d1e8feec03df9eb4-289a4f58f47ec1974cb6",
+          "file": "api/post-user.api.spec.ts",
+          "line": 73,
+          "column": 5
+        },
+        {
+          "title": "Register user with password missing a special character",
+          "ok": true,
+          "tags": [
+            "AUTH-005",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 93,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T11:32:06.306Z [w2] [Register user with password missing a special character] [INFO] POST /Account/v1/User -> 400\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:32:06.212Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd58d1e8feec03df9eb4-1d7b3085543890abb82a",
+          "file": "api/post-user.api.spec.ts",
+          "line": 89,
+          "column": 5
+        },
+        {
+          "title": "Register user with an empty password",
+          "ok": true,
+          "tags": [
+            "AUTH-006",
+            "boundary"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 105,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T11:32:06.412Z [w2] [Register user with an empty password] [INFO] POST /Account/v1/User -> 400\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:32:06.313Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd58d1e8feec03df9eb4-ba687391f7b94f76d5c7",
+          "file": "api/post-user.api.spec.ts",
+          "line": 105,
+          "column": 5
+        },
+        {
+          "title": "Register user with a password one character below the minimum length",
+          "ok": true,
+          "tags": [
+            "AUTH-007",
+            "boundary"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 92,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T11:32:06.519Z [w2] [Register user with a password one character below the minimum length] [INFO] POST /Account/v1/User -> 400\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:32:06.426Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd58d1e8feec03df9eb4-df5c27e8ef9db3ffe907",
+          "file": "api/post-user.api.spec.ts",
+          "line": 124,
+          "column": 5
+        },
+        {
+          "title": "Register user with the userName field entirely absent from the request",
+          "ok": true,
+          "tags": [
+            "AUTH-008",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "passed",
+                  "duration": 103,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:32:06.446Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd58d1e8feec03df9eb4-3db4ac1b4f4b8c02e55f",
+          "file": "api/post-user.api.spec.ts",
+          "line": 140,
+          "column": 5
+        },
+        {
+          "title": "Register user with the password field entirely absent from the request",
+          "ok": true,
+          "tags": [
+            "AUTH-009",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 102,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:32:06.527Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd58d1e8feec03df9eb4-1cddf256dc50f2fcfe86",
+          "file": "api/post-user.api.spec.ts",
+          "line": 157,
+          "column": 5
+        },
+        {
+          "title": "Register user with an empty userName",
+          "ok": true,
+          "tags": [
+            "AUTH-010",
+            "boundary"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "passed",
+                  "duration": 90,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T11:32:06.648Z [w3] [Register user with an empty userName] [INFO] POST /Account/v1/User -> 400\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:32:06.558Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd58d1e8feec03df9eb4-09bfd6acbb5f88fb7bde",
+          "file": "api/post-user.api.spec.ts",
+          "line": 174,
+          "column": 5
+        },
+        {
+          "title": "Register a username, then register again with the same username",
+          "ok": true,
+          "tags": [
+            "AUTH-011",
+            "negative"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 7537,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T11:32:08.722Z [w2] [Register a username, then register again with the same username] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:32:08.849Z [w2] [Register a username, then register again with the same username] [INFO] POST /Account/v1/User -> 406\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:32:13.578Z [w2] [Register a username, then register again with the same username] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:32:14.177Z [w2] [Register a username, then register again with the same username] [INFO] DELETE /Account/v1/User/0b461c15-5d5c-47e9-8532-90bd46de4428 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:32:06.637Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fd58d1e8feec03df9eb4-484fad944f2c5b90cc0e",
+          "file": "api/post-user.api.spec.ts",
+          "line": 190,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "api/post-user.contract.spec.ts",
+      "file": "api/post-user.contract.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "POST /Account/v1/User success response matches schema",
+          "ok": true,
+          "tags": [
+            "contract",
+            "AUTH"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "passed",
+                  "duration": 7318,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T11:32:08.004Z [w3] [POST /Account/v1/User success response matches schema] [INFO] POST /Account/v1/User -> 201\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:32:12.023Z [w3] [POST /Account/v1/User success response matches schema] [INFO] POST /Account/v1/GenerateToken -> 200\n"
+                    },
+                    {
+                      "text": "2026-09-04T11:32:13.980Z [w3] [POST /Account/v1/User success response matches schema] [INFO] DELETE /Account/v1/User/a5114d14-365f-494a-b258-3c3f5470a6a6 -> 204\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:32:06.658Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "46188633b2ed85ce494d-c84ef7e2370dd37c772a",
+          "file": "api/post-user.contract.spec.ts",
+          "line": 7,
+          "column": 5
+        },
+        {
+          "title": "POST /Account/v1/User error response matches schema",
+          "ok": true,
+          "tags": [
+            "contract",
+            "AUTH"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 92,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "2026-09-04T11:32:11.301Z [w0] [POST /Account/v1/User error response matches schema] [INFO] POST /Account/v1/User -> 400\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-04T11:32:11.208Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "46188633b2ed85ce494d-8239bb7abf398e44a53e",
+          "file": "api/post-user.contract.spec.ts",
+          "line": 25,
+          "column": 5
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-09-04T11:31:14.187Z",
+    "duration": 60014.715000000004,
+    "expected": 34,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
