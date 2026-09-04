@@ -16,7 +16,7 @@ Endpoint behavior reference: [`docs/api-spec/account-endpoints.md`](../../../api
 | Preconditions  | User account exists (created via API: POST /Account/v1/User)                                       |
 | Test data      | userName: "qa_auth022_1725440000" / password: "Test@1234" (8+ chars, upper, lower, digit, special) |
 | Postconditions | User "qa_auth022_1725440000" deleted via DELETE /Account/v1/User/{userID}                          |
-| Automation     | Not automated                                                                                      |
+| Automation     | Automated → `post-generate-token.api.spec.ts`                                                      |
 
 **Steps & expected results**
 
@@ -41,7 +41,7 @@ Asserting `token` is non-null is the substantive check — the failure response 
 | Preconditions  | User account exists (created via API: POST /Account/v1/User)                                                             |
 | Test data      | userName: "qa_auth023_1725440000" / password submitted: "Wrong@9999" (not the registered password, which is "Test@1234") |
 | Postconditions | User "qa_auth023_1725440000" deleted via DELETE /Account/v1/User/{userID}                                                |
-| Automation     | Not automated                                                                                                            |
+| Automation     | Automated → `post-generate-token.api.spec.ts`                                                                            |
 
 **Steps & expected results**
 
@@ -66,7 +66,7 @@ The status 200 is the point of the test, not an incidental detail: a client bran
 | Preconditions  | No account exists for the submitted username — the value is never registered |
 | Test data      | userName: "qa_never_registered_1725440000" / password: "Test@1234"           |
 | Postconditions | None — no account is created, so nothing to clean up                         |
-| Automation     | Not automated                                                                |
+| Automation     | Automated → `post-generate-token.api.spec.ts`                                |
 
 **Steps & expected results**
 
@@ -93,7 +93,7 @@ Risk-4 observed behavior: the 200/"Failed" response was confirmed live on 2026-0
 | Preconditions  | User account exists (created via API: POST /Account/v1/User)              |
 | Test data      | userName: "qa_auth025_1725440000" / password: "" (empty string, 0 chars)  |
 | Postconditions | User "qa_auth025_1725440000" deleted via DELETE /Account/v1/User/{userID} |
-| Automation     | Not automated                                                             |
+| Automation     | Automated → `post-generate-token.api.spec.ts`                             |
 
 **Steps & expected results**
 
@@ -120,7 +120,7 @@ Risk-4 observed behavior: the 400/1200 response was confirmed live on 2026-09-04
 | Preconditions  | None — the request is rejected before any account lookup occurs |
 | Test data      | userName: "" (empty string, 0 chars) / password: "Test@1234"    |
 | Postconditions | None — no account is created                                    |
-| Automation     | Not automated                                                   |
+| Automation     | Automated → `post-generate-token.api.spec.ts`                   |
 
 **Steps & expected results**
 
@@ -145,7 +145,7 @@ Risk-4 observed behavior: 400/1200 confirmed deterministic across two runs on 20
 | Preconditions  | None — the request is rejected before any account lookup occurs                                      |
 | Test data      | Request body carries only the password key: `{ "password": "Test@1234" }` — no `userName` key at all |
 | Postconditions | None — no account is created                                                                         |
-| Automation     | Not automated                                                                                        |
+| Automation     | Automated → `post-generate-token.api.spec.ts`                                                        |
 
 **Steps & expected results**
 
@@ -172,7 +172,7 @@ Risk-4 observed behavior: 400/1200 confirmed deterministic across two runs on 20
 | Preconditions  | User account exists (created via API: POST /Account/v1/User)                                                     |
 | Test data      | Request body carries only the username key: `{ "userName": "qa_auth028_1725440000" }` — no `password` key at all |
 | Postconditions | User "qa_auth028_1725440000" deleted via DELETE /Account/v1/User/{userID}                                        |
-| Automation     | Not automated                                                                                                    |
+| Automation     | Automated → `post-generate-token.api.spec.ts`                                                                    |
 
 **Steps & expected results**
 
