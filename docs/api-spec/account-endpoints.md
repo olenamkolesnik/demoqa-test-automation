@@ -1,6 +1,6 @@
 # DemoQA Book Store — Account API (Confirmed)
 
-Source: raw Swagger spec extracted from `https://demoqa.com/swagger/swagger-ui-init.js` (saved as [`book-store-api.swagger.json`](./book-store-api.swagger.json)), cross-checked against live API calls on 2026-08-25, re-verified with no drift on 2026-09-01. Extended 2026-09-02 with the required-field behavior of `POST /Account/v1/User`, which no earlier pass had covered; the previously documented cases were re-confirmed unchanged in that pass. Extended 2026-09-03 with the unknown-UUID behavior of `DELETE /Account/v1/User/{UUID}` (non-existent and already-deleted), also uncovered by earlier passes; the DELETE success and auth-failure rows were re-confirmed unchanged. Where the Swagger doc and live behavior disagreed, **live behavior wins** — the doc has several inaccuracies, noted below. See [`book-store-endpoints.md`](./book-store-endpoints.md) for the `/BookStore` endpoints verified the same way.
+Source: raw Swagger spec extracted from `https://demoqa.com/swagger/swagger-ui-init.js` (saved as [`book-store-api.swagger.json`](./book-store-api.swagger.json)), cross-checked against live API calls on 2026-08-25, re-verified with no drift on 2026-09-01. Extended 2026-09-02 with the required-field behavior of `POST /Account/v1/User`, which no earlier pass had covered; the previously documented cases were re-confirmed unchanged in that pass. Extended 2026-09-03 with the unknown-UUID behavior of `DELETE /Account/v1/User/{UUID}` (non-existent and already-deleted), also uncovered by earlier passes; the DELETE success and auth-failure rows were re-confirmed unchanged. Extended 2026-09-04 with the required-field behavior of `POST /Account/v1/GenerateToken`, which no earlier pass had covered — previously assumed to match `POST /Account/v1/User` and now confirmed to; the GenerateToken success and failure rows were re-confirmed unchanged in that pass. Where the Swagger doc and live behavior disagreed, **live behavior wins** — the doc has several inaccuracies, noted below. See [`book-store-endpoints.md`](./book-store-endpoints.md) for the `/BookStore` endpoints verified the same way.
 
 ## POST /Account/v1/User (Create User)
 
@@ -27,13 +27,22 @@ Swagger's operation definition marks the request body parameter `"required": fal
 
 Request: `{ userName: string, password: string }`
 
-| Case                  | Status | Body                                                                                                        |
-| --------------------- | ------ | ----------------------------------------------------------------------------------------------------------- |
-| Success               | `200`  | `{ token: string, expires: string (ISO date), status: "Success", result: "User authorized successfully." }` |
-| Wrong password        | `200`  | `{ token: null, expires: null, status: "Failed", result: "User authorization failed." }`                    |
-| Non-existent username | `200`  | Same as wrong password — indistinguishable from the response alone                                          |
+| Case                            | Status | Body                                                                                                        |
+| ------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------- |
+| Success                         | `200`  | `{ token: string, expires: string (ISO date), status: "Success", result: "User authorized successfully." }` |
+| Wrong password                  | `200`  | `{ token: null, expires: null, status: "Failed", result: "User authorization failed." }`                    |
+| Non-existent username           | `200`  | Same as wrong password — indistinguishable from the response alone                                          |
+| Missing or empty required field | `400`  | `{ code: "1200", message: "UserName and Password required." }` — verified 2026-09-04                        |
 
-**Confirmed quirk:** never returns a 4xx/5xx for bad credentials — always `200`, differentiate by `status` field only.
+**Confirmed quirk:** never returns a 4xx/5xx for **bad credentials** — always `200`, differentiate by `status` field only. This does not extend to malformed requests: a missing or empty required field is rejected with a real `400` before authentication is attempted (see below).
+
+**Required-field handling (verified 2026-09-04, undocumented in Swagger):** identical to `POST /Account/v1/User` — one shared `1200` code path covers every required-field violation on `userName` or `password`, whether the key is absent from the body or present with an empty string. All four combinations return the identical `400` status and body, deterministic across two runs each, with a valid-credentials control returning `200`/Success in the same pass.
+
+The empty-password case is the one worth knowing: `{ userName: "<real user>", password: "" }` returns `400`/`1200`, **not** the `200`/`"Failed"` authentication response. The required-field check short-circuits before any credential comparison, so an empty password never reaches the authentication path. Likewise `{ userName: "", password: "<valid>" }` returns `400`/`1200` rather than being treated as an unknown user. Do not assume an empty credential takes the `status: "Failed"` path.
+
+**Token shape (observed 2026-09-04, incidental):** the issued `token` is an unsigned-decodable JWT whose payload contains the submitted `userName` and **the plaintext password**, plus an `iat` claim. `expires` was observed ~7 days ahead of issuance; no lifetime is documented, and token expiry is not testable within a suite run.
+
+**`expires` format (raw examples, 2026-09-04):** UTC, `Z`-suffixed, millisecond precision — e.g. `"2026-09-11T10:30:04.885Z"`, `"2026-09-11T10:30:06.941Z"`. Confirmed across two independent calls in the same pass.
 
 ## POST /Account/v1/Authorized
 
