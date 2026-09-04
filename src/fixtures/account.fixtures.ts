@@ -92,6 +92,12 @@ export const test = base.extend<AccountFixtures>({
     await use(new AccountApiClient(request));
   },
 
+  // Registers a user and nothing else — deliberately no GenerateToken call
+  // before use(). POST /Account/v1/Authorized reports token state rather than
+  // credential validity, so AUTH-030 depends on this fixture handing over a
+  // user that has never been tokenized in order to observe `false`. Teardown's
+  // token fetch runs after use() and so does not disturb that; do not move it
+  // or add a setup-phase token here without splitting off a separate fixture.
   seedUser: async ({ accountApiClient }, use) => {
     const payload = buildNewUserPayload();
     const createResponse = await accountApiClient.createUser(payload);
