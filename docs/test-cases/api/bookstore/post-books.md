@@ -21,7 +21,7 @@ Two behaviors established by the 2026-09-05 live check apply across several case
 | Preconditions  | User account exists with an empty collection (created via POST /Account/v1/User) and token generated (POST /Account/v1/GenerateToken) |
 | Test data      | userId: the created user's `userId` / isbn: "9781449325862" (present in the catalogue, not yet in the user's collection)              |
 | Postconditions | User deleted via DELETE /Account/v1/User/{userId}, which removes the collection with it                                               |
-| Automation     | Not automated                                                                                                                         |
+| Automation     | Automated → `post-books.api.spec.ts`                                                                                                  |
 
 **Steps & expected results**
 
@@ -45,7 +45,7 @@ Step 2 is not redundant with step 1 — POST-BOOKS-009 shows the `201` body can 
 | Preconditions  | User account exists with an empty collection (created via POST /Account/v1/User) and token generated (POST /Account/v1/GenerateToken)      |
 | Test data      | userId: the created user's `userId` / isbn 1: "9781449331818" / isbn 2: "9781449337711" (both in the catalogue, neither in the collection) |
 | Postconditions | User deleted via DELETE /Account/v1/User/{userId}                                                                                          |
-| Automation     | Not automated                                                                                                                              |
+| Automation     | Automated → `post-books.api.spec.ts`                                                                                                       |
 
 **Steps & expected results**
 
@@ -69,7 +69,7 @@ Covers the "many" class of the `collectionOfIsbns` array. No documented upper bo
 | Preconditions  | User account exists (created via POST /Account/v1/User) and token generated (POST /Account/v1/GenerateToken) |
 | Test data      | userId: the created user's `userId` / collectionOfIsbns: `[]` (present, well-typed, zero items)              |
 | Postconditions | User deleted via DELETE /Account/v1/User/{userId}; no book added                                             |
-| Automation     | Not automated                                                                                                |
+| Automation     | Automated → `post-books.api.spec.ts`                                                                         |
 
 **Steps & expected results**
 
@@ -92,7 +92,7 @@ Assert status, code, and message together — `1207` is also returned by POST-BO
 | Preconditions  | User account exists (created via POST /Account/v1/User) and token generated (POST /Account/v1/GenerateToken) |
 | Test data      | Body: `{ "userId": "<userId>" }` — the `collectionOfIsbns` key is omitted entirely, not sent as `[]`         |
 | Postconditions | User deleted via DELETE /Account/v1/User/{userId}; no book added                                             |
-| Automation     | Not automated                                                                                                |
+| Automation     | Automated → `post-books.api.spec.ts`                                                                         |
 
 **Steps & expected results**
 
@@ -115,7 +115,7 @@ Pins current (defective) behavior so a future fix to a validated 400 surfaces as
 | Preconditions  | User account exists (created via POST /Account/v1/User) and token generated (POST /Account/v1/GenerateToken) |
 | Test data      | Body: `{ "collectionOfIsbns": [{ "isbn": "9781449325862" }] }` — the `userId` key is omitted entirely        |
 | Postconditions | User deleted via DELETE /Account/v1/User/{userId}; no book added                                             |
-| Automation     | Not automated                                                                                                |
+| Automation     | Automated → `post-books.api.spec.ts`                                                                         |
 
 **Steps & expected results**
 
@@ -138,7 +138,7 @@ Same defect-pinning rationale as POST-BOOKS-004, and likewise requires a raw req
 | Preconditions  | User account exists (created via POST /Account/v1/User) and token generated (POST /Account/v1/GenerateToken) |
 | Test data      | userId: "" (empty string, 0 chars) / isbn: "9781449325862"                                                   |
 | Postconditions | User deleted via DELETE /Account/v1/User/{userId}; no book added                                             |
-| Automation     | Not automated                                                                                                |
+| Automation     | Automated → `post-books.api.spec.ts`                                                                         |
 
 **Steps & expected results**
 
@@ -161,7 +161,7 @@ The 401-rather-than-400 status is the point of the case: a client branching on s
 | Preconditions  | User account exists (created via POST /Account/v1/User) and token generated (POST /Account/v1/GenerateToken)   |
 | Test data      | userId: "11111111-2222-3333-4444-555555555555" (valid UUID format, belongs to no user) / isbn: "9781449325862" |
 | Postconditions | User deleted via DELETE /Account/v1/User/{userId}; no book added                                               |
-| Automation     | Not automated                                                                                                  |
+| Automation     | Automated → `post-books.api.spec.ts`                                                                           |
 
 **Steps & expected results**
 
@@ -184,7 +184,7 @@ Response is identical to POST-BOOKS-006, but the input class is genuinely differ
 | Preconditions  | User account exists (created via POST /Account/v1/User) and token generated (POST /Account/v1/GenerateToken) |
 | Test data      | userId: the created user's `userId` / isbn: "0000000000000" (not in the catalogue), sole item in the batch   |
 | Postconditions | User deleted via DELETE /Account/v1/User/{userId}; no book added                                             |
-| Automation     | Not automated                                                                                                |
+| Automation     | Automated → `post-books.api.spec.ts`                                                                         |
 
 **Steps & expected results**
 
@@ -207,7 +207,7 @@ The unknown ISBN being the **only** item in the batch is essential — the same 
 | Preconditions  | User account exists with an empty collection (created via POST /Account/v1/User) and token generated (POST /Account/v1/GenerateToken) |
 | Test data      | userId: the created user's `userId` / valid isbn: "9781449325862" / unknown isbn: "0000000000000", both in one batch                  |
 | Postconditions | User deleted via DELETE /Account/v1/User/{userId}                                                                                     |
-| Automation     | Not automated                                                                                                                         |
+| Automation     | Automated → `post-books.api.spec.ts`                                                                                                  |
 
 **Steps & expected results**
 
@@ -231,7 +231,7 @@ Documents current behavior rather than endorsing it: the batch is not atomic and
 | Preconditions  | User account exists and token generated; the user's collection already contains "9781449325862" (seeded via POST /BookStore/v1/Books) |
 | Test data      | userId: the created user's `userId` / isbn: "9781449325862" — the same ISBN already in the collection                                 |
 | Postconditions | User deleted via DELETE /Account/v1/User/{userId}; collection still contains exactly one copy of "9781449325862" until deletion       |
-| Automation     | Not automated                                                                                                                         |
+| Automation     | Automated → `post-books.api.spec.ts`                                                                                                  |
 
 **Steps & expected results**
 
@@ -254,7 +254,7 @@ The endpoint is not idempotent — a repeat submission is an error, not a no-op.
 | Preconditions  | User account exists with an empty collection (created via POST /Account/v1/User)             |
 | Test data      | userId: the created user's `userId` / isbn: "9781449325862" / no `Authorization` header sent |
 | Postconditions | User deleted via DELETE /Account/v1/User/{userId}; collection remains empty                  |
-| Automation     | Not automated                                                                                |
+| Automation     | Automated → `post-books.api.spec.ts`                                                         |
 
 **Steps & expected results**
 
@@ -278,7 +278,7 @@ None.
 | Preconditions  | User account exists (created via POST /Account/v1/User)                                                        |
 | Test data      | Header: `Authorization: Bearer not-a-real-token` / userId: the created user's `userId` / isbn: "9781449325862" |
 | Postconditions | User deleted via DELETE /Account/v1/User/{userId}; collection remains empty                                    |
-| Automation     | Not automated                                                                                                  |
+| Automation     | Automated → `post-books.api.spec.ts`                                                                           |
 
 **Steps & expected results**
 
@@ -312,6 +312,8 @@ Response is identical to POST-BOOKS-011, but absent credentials and malformed cr
 
 **Notes**
 The highest-value negative case in this file: step 2 is what distinguishes a genuine authorization boundary from a rejection that happened to leave a side effect behind. Live-verified in both directions (A→B and B→A) on 2026-09-05.
+
+Not yet automated: `generate-api-tests` does not support multi-actor test cases (this one needs two independently seeded users) without a prior design decision on how such a fixture should look. Flagged for a follow-up rather than attempted as a best-effort inline seed.
 
 ---
 

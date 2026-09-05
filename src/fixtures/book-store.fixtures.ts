@@ -6,7 +6,11 @@ import { knownIsbns } from '../data/book-store.factory';
 import { parseJsonBody } from '../utils/api-response.util';
 import { logger } from '../utils/logger';
 import { deleteAndLogOrphanOnFailure } from './teardown.util';
-import { CreateUserResponseSchema, GenerateTokenResponseSchema } from '../types/account.schema';
+import {
+  CreateUserResponseSchema,
+  GenerateTokenResponseSchema,
+  GetUserResponseSchema,
+} from '../types/account.schema';
 import { AddBooksResponseSchema } from '../types/book-store.schema';
 import type { LoginPayload } from '../types/account.schema';
 
@@ -19,6 +23,11 @@ interface SeededAuthorizedUser {
 
 interface BookStoreFixtures {
   bookStoreApiClient: BookStoreApiClient;
+  // Tests verifying persistence of a POST /BookStore/v1/Books write need to
+  // read the user's collection back via the Account resource — provided as a
+  // fixture rather than let tests `new` it directly (docs/coding-standards.md:
+  // "a test never `new`s a client... directly — always go through a fixture").
+  accountApiClient: AccountApiClient;
   // POST /BookStore/v1/Books requires an existing, tokenized Account user —
   // seeding that user is this resource's own precondition, so it belongs
   // here rather than duplicating account.fixtures.ts's seedAuthorizedUser
@@ -66,13 +75,29 @@ async function seedAuthorizedUser(accountApiClient: AccountApiClient): Promise<{
   return { payload, userId: created.userID, token };
 }
 
+// Shared by every test that verifies a POST /BookStore/v1/Books write
+// actually persisted, rather than trusting the response echo (which
+// docs/api-spec/book-store-endpoints.md documents as unreliable for a
+// partial batch — see COND-POST-BOOKS-009).
+export async function getUserBookIsbns(
+  accountApiClient: AccountApiClient,
+  { userId, token }: { userId: string; token: string }
+): Promise<string[]> {
+  const response = await accountApiClient.getUser({ userId, token });
+  const userState = await parseJsonBody(response, GetUserResponseSchema);
+  return userState.books.map((book) => book.isbn);
+}
+
 export const test = base.extend<BookStoreFixtures>({
   bookStoreApiClient: async ({ request }, use) => {
     await use(new BookStoreApiClient(request));
   },
 
-  seedUserForBooks: async ({ request }, use) => {
-    const accountApiClient = new AccountApiClient(request);
+  accountApiClient: async ({ request }, use) => {
+    await use(new AccountApiClient(request));
+  },
+
+  seedUserForBooks: async ({ accountApiClient }, use) => {
     const { payload, userId, token } = await seedAuthorizedUser(accountApiClient);
 
     await use({ userName: payload.userName, password: payload.password, userId, token });
@@ -80,9 +105,7 @@ export const test = base.extend<BookStoreFixtures>({
     await deleteUserAndLogOrphanOnFailure(accountApiClient, payload, userId, token);
   },
 
-  seedUserWithBook: async ({ request }, use) => {
-    const accountApiClient = new AccountApiClient(request);
-    const bookStoreApiClient = new BookStoreApiClient(request);
+  seedUserWithBook: async ({ accountApiClient, bookStoreApiClient }, use) => {
     const { payload, userId, token } = await seedAuthorizedUser(accountApiClient);
 
     const addResponse = await bookStoreApiClient.addBooks(
