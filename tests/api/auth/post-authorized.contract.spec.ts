@@ -1,7 +1,7 @@
-import { test, expect } from '../../src/fixtures/account.fixtures';
-import { buildUniqueUsername, buildValidPassword } from '../../src/data/user.factory';
-import { AuthorizedResponseSchema } from '../../src/types/account.schema';
-import { ApiErrorResponseSchema } from '../../src/types/api-error.schema';
+import { test, expect } from '../../../src/fixtures/account.fixtures';
+import { buildUniqueUsername, buildValidPassword } from '../../../src/data/user.factory';
+import { AuthorizedResponseSchema } from '../../../src/types/account.schema';
+import { ApiErrorResponseSchema } from '../../../src/types/api-error.schema';
 
 test(
   'POST /Account/v1/Authorized success response matches schema',

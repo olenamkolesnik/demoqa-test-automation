@@ -1,12 +1,12 @@
-import { test, expect } from '../../src/fixtures/account.fixtures';
+import { test, expect } from '../../../src/fixtures/account.fixtures';
 import {
   buildUniqueUsername,
   buildValidPassword,
   invalidPasswords,
-} from '../../src/data/user.factory';
-import { parseJsonBody } from '../../src/utils/api-response.util';
-import { CreateUserResponseSchema } from '../../src/types/account.schema';
-import { ApiErrorResponseSchema } from '../../src/types/api-error.schema';
+} from '../../../src/data/user.factory';
+import { parseJsonBody } from '../../../src/utils/api-response.util';
+import { CreateUserResponseSchema } from '../../../src/types/account.schema';
+import { ApiErrorResponseSchema } from '../../../src/types/api-error.schema';
 
 // Shared by every complexity-violation case (AUTH-002 to AUTH-005) and by the
 // below-minimum-length case (AUTH-007). The API returns one message for all

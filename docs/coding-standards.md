@@ -94,21 +94,21 @@ Every test creates its own data via a `seed*` fixture. Never reuse another test'
 
 ## Naming conventions
 
-| Suffix               | Location          | Example                      |
-| -------------------- | ----------------- | ---------------------------- |
-| `*.schema.ts`        | `src/types/`      | `account.schema.ts`          |
-| `*-api.client.ts`    | `src/api/`        | `account-api.client.ts`      |
-| `*.factory.ts`       | `src/data/`       | `user.factory.ts`            |
-| `*.fixtures.ts`      | `src/fixtures/`   | `account.fixtures.ts`        |
-| `*.util.ts`          | `src/utils/`      | `redact.util.ts`             |
-| `*.api.spec.ts`      | `tests/api/`      | `post-user.api.spec.ts`      |
-| `*.contract.spec.ts` | `tests/api/`      | `post-user.contract.spec.ts` |
-| `*.page.ts`          | `src/pages/`      | `books.page.ts`              |
-| `*.component.ts`     | `src/components/` | `header.component.ts`        |
-| `*.flow.ts`          | `src/flows/`      | `login.flow.ts`              |
-| `*.ui.spec.ts`       | `tests/ui/`       | `login.ui.spec.ts`           |
+| Suffix               | Location               | Example                      |
+| -------------------- | ---------------------- | ---------------------------- |
+| `*.schema.ts`        | `src/types/`           | `account.schema.ts`          |
+| `*-api.client.ts`    | `src/api/`             | `account-api.client.ts`      |
+| `*.factory.ts`       | `src/data/`            | `user.factory.ts`            |
+| `*.fixtures.ts`      | `src/fixtures/`        | `account.fixtures.ts`        |
+| `*.util.ts`          | `src/utils/`           | `redact.util.ts`             |
+| `*.api.spec.ts`      | `tests/api/<feature>/` | `post-user.api.spec.ts`      |
+| `*.contract.spec.ts` | `tests/api/<feature>/` | `post-user.contract.spec.ts` |
+| `*.page.ts`          | `src/pages/`           | `books.page.ts`              |
+| `*.component.ts`     | `src/components/`      | `header.component.ts`        |
+| `*.flow.ts`          | `src/flows/`           | `login.flow.ts`              |
+| `*.ui.spec.ts`       | `tests/ui/`            | `login.ui.spec.ts`           |
 
-API test files are named `<verb>-<resource>` — same derivation as `docs/test-conditions/` and `docs/test-cases/` (see `write-test-conditions`), so an endpoint's spec, conditions, test cases, and code all share one filename stem.
+API test files are named `<verb>-<resource>` and live under `tests/api/<feature>/` — same `<feature>` and `<verb>-<resource>` derivation as `docs/test-conditions/` and `docs/test-cases/` (see `write-test-conditions`), so an endpoint's spec, conditions, test cases, and code all share one filename stem and mirror the same feature-area folder structure (e.g. `tests/api/auth/post-user.api.spec.ts`, `tests/api/bookstore/get-books.api.spec.ts`).
 
 ---
 

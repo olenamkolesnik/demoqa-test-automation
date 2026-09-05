@@ -1,5 +1,5 @@
-import { test, expect } from '../../src/fixtures/account.fixtures';
-import { ApiErrorResponseSchema } from '../../src/types/api-error.schema';
+import { test, expect } from '../../../src/fixtures/account.fixtures';
+import { ApiErrorResponseSchema } from '../../../src/types/api-error.schema';
 
 test(
   'DELETE /Account/v1/User/{UUID} success response has no body',
