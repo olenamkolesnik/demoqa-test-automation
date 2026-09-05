@@ -79,7 +79,7 @@ Three behaviors established by the 2026-09-05 live check shape the conditions be
 | Category   | Input field                                                          |
 | Technique  | EP                                                                   |
 | Source     | Spec: `docs/api-spec/book-store-endpoints.md`; live check 2026-09-05 |
-| Test cases | —                                                                    |
+| Test cases | POST-BOOKS-001                                                       |
 
 **What to cover**
 The core valid class: an authenticated user submits their own `userId` and a `collectionOfIsbns` holding one ISBN that exists in the catalogue and is not yet in their collection. The response is `201` with `{ books: [{ isbn }] }`, and the book is genuinely present in the collection afterwards.
@@ -108,7 +108,7 @@ Persistence must be asserted by reading the collection back, not inferred from t
 | Category   | Input field                                                          |
 | Technique  | BVA                                                                  |
 | Source     | Spec: `docs/api-spec/book-store-endpoints.md`; live check 2026-09-05 |
-| Test cases | —                                                                    |
+| Test cases | POST-BOOKS-002                                                       |
 
 **What to cover**
 The "many" class of the `collectionOfIsbns` array: two valid unowned ISBNs submitted in one call are both accepted and both persisted, distinguishing batch handling from the single-item path.
@@ -136,7 +136,7 @@ Live-verified 2026-09-05. No upper bound is documented — see COND-POST-BOOKS-I
 | Category   | Input field                              |
 | Technique  | BVA                                      |
 | Source     | Observed behavior: live check 2026-09-05 |
-| Test cases | —                                        |
+| Test cases | POST-BOOKS-003                           |
 
 **What to cover**
 The zero-length boundary of the `collectionOfIsbns` array: the key is present and well-typed but holds no items, and the request is rejected rather than treated as a successful no-op.
@@ -163,7 +163,7 @@ Undocumented before the 2026-09-05 live check; reproduced on two users. Assert s
 | Category   | Input field                              |
 | Technique  | EP                                       |
 | Source     | Observed behavior: live check 2026-09-05 |
-| Test cases | —                                        |
+| Test cases | POST-BOOKS-004                           |
 
 **What to cover**
 The distinct invalid class where the `collectionOfIsbns` key is absent from the body entirely: the server does not validate it and returns an unhandled `500` with an HTML stack-trace page, rather than the `400` an absent required field would normally produce.
@@ -191,7 +191,7 @@ This is a defect being pinned, not endorsed — the test documents current behav
 | Category   | Input field                              |
 | Technique  | EP                                       |
 | Source     | Observed behavior: live check 2026-09-05 |
-| Test cases | —                                        |
+| Test cases | POST-BOOKS-005                           |
 
 **What to cover**
 The mirror invalid class for the other required field: `userId` absent from the body produces an unhandled `500` leaking a Sequelize query-generator stack trace, rather than a validated rejection.
@@ -219,7 +219,7 @@ Same defect-pinning rationale as COND-POST-BOOKS-004, and likewise needs a raw r
 | Category   | Input field                              |
 | Technique  | BVA                                      |
 | Source     | Observed behavior: live check 2026-09-05 |
-| Test cases | —                                        |
+| Test cases | POST-BOOKS-006                           |
 
 **What to cover**
 The zero-length boundary of the required `userId` string: present but empty, rejected with `401`/`1207` "User Id not correct!" — notably a `401` rather than the `400` a body-validation failure would suggest.
@@ -247,7 +247,7 @@ The `401`-not-`400` pairing is the point of the condition: a client branching on
 | Category   | Input field                              |
 | Technique  | EP                                       |
 | Source     | Observed behavior: live check 2026-09-05 |
-| Test cases | —                                        |
+| Test cases | POST-BOOKS-007                           |
 
 **What to cover**
 The invalid class where `userId` is a syntactically valid UUID that belongs to no user: rejected with `401`/`1207`, byte-identical to the empty-string case.
@@ -275,7 +275,7 @@ Kept separate from COND-POST-BOOKS-006 despite the identical response, following
 | Category   | Input field                                   |
 | Technique  | EP                                            |
 | Source     | Spec: `docs/api-spec/book-store-endpoints.md` |
-| Test cases | —                                             |
+| Test cases | POST-BOOKS-008                                |
 
 **What to cover**
 The invalid class for `isbn`: a value not present in the book catalogue, submitted as the only item in the batch, is rejected with `400`/`1205`.
@@ -302,7 +302,7 @@ Expected: 400; { code: "1205", message: "ISBN supplied is not available in Books
 | Category   | Behavior                                 |
 | Technique  | Exploratory heuristic                    |
 | Source     | Observed behavior: live check 2026-09-05 |
-| Test cases | —                                        |
+| Test cases | POST-BOOKS-009                           |
 
 **What to cover**
 The non-atomic batch: a `collectionOfIsbns` holding one catalogue ISBN and one unknown ISBN returns `201` and echoes **both** back, yet only the valid one is actually persisted. The response body misreports what was stored.
@@ -332,7 +332,7 @@ High priority despite being an edge case: this is the condition that proves the 
 | Category   | State                                         |
 | Technique  | Decision table                                |
 | Source     | Spec: `docs/api-spec/book-store-endpoints.md` |
-| Test cases | —                                             |
+| Test cases | POST-BOOKS-010                                |
 
 **What to cover**
 The state-dependent rejection: the same ISBN, valid and accepted on first submission, is refused with `400`/`1210` when submitted again by the same user. The endpoint is not idempotent — a repeat is an error, not a no-op.
@@ -363,7 +363,7 @@ Independently testable via a seeded fixture — it does not depend on COND-POST-
 | Category   | Authorization                                 |
 | Technique  | EP                                            |
 | Source     | Spec: `docs/api-spec/book-store-endpoints.md` |
-| Test cases | —                                             |
+| Test cases | POST-BOOKS-011                                |
 
 **What to cover**
 An otherwise entirely valid request sent with no `Authorization` header is refused with `401`/`1200`, and no book is added.
@@ -391,7 +391,7 @@ None.
 | Category   | Authorization                                                        |
 | Technique  | EP                                                                   |
 | Source     | Spec: `docs/api-spec/book-store-endpoints.md`; live check 2026-09-05 |
-| Test cases | —                                                                    |
+| Test cases | POST-BOOKS-012                                                       |
 
 **What to cover**
 A present but syntactically invalid bearer token is refused with `401`/`1200`, identically to an absent header.
@@ -418,7 +418,7 @@ Kept separate from COND-POST-BOOKS-011 despite the identical response — same p
 | Category   | Authorization                            |
 | Technique  | Decision table                           |
 | Source     | Observed behavior: live check 2026-09-05 |
-| Test cases | —                                        |
+| Test cases | POST-BOOKS-013                           |
 
 **What to cover**
 The cross-user authorization boundary: user A holds a valid token but names user B's `userId` in the body. The request is refused with `401`/`1200` — the token's owner must match the body's `userId`.
