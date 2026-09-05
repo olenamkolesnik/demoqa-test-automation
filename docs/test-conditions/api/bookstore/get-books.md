@@ -44,7 +44,7 @@ _None — endpoint takes no parameters._
 | Category   | Behavior                                      |
 | Technique  | EP                                            |
 | Source     | Spec: `docs/api-spec/book-store-endpoints.md` |
-| Test cases | —                                             |
+| Test cases | GET-BOOKS-001                                 |
 
 **What to cover**
 A request to the endpoint with no parameters and no `Authorization` header returns `200` with a `books` array of `BookModal` objects, and the collection is non-empty — also confirming the documented "no auth required" claim, since no bearer token is sent and no `401` occurs.
