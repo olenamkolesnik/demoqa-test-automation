@@ -29,3 +29,26 @@ export const AllBooksResponseSchema = z
   .strict();
 
 export type AllBooksResponse = z.infer<typeof AllBooksResponseSchema>;
+
+// POST /BookStore/v1/Books request body — confirmed live via
+// docs/api-spec/book-store-endpoints.md.
+export const AddBooksPayloadSchema = z.object({
+  userId: z.string(),
+  collectionOfIsbns: z.array(z.object({ isbn: z.string() })),
+});
+
+export type AddBooksPayload = z.infer<typeof AddBooksPayloadSchema>;
+
+// POST /BookStore/v1/Books success response — confirmed live as an object
+// { books: [{ isbn }] }, not the bare array Swagger declares. Note the
+// response echoes submitted ISBNs and is not proof of persistence — a batch
+// mixing a valid and an unknown ISBN echoes both but only the valid one is
+// actually stored (docs/api-spec/book-store-endpoints.md, live check
+// 2026-09-05).
+export const AddBooksResponseSchema = z
+  .object({
+    books: z.array(z.object({ isbn: z.string() })),
+  })
+  .strict();
+
+export type AddBooksResponse = z.infer<typeof AddBooksResponseSchema>;
