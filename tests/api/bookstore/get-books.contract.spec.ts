@@ -1,5 +1,5 @@
-import { test, expect } from '../../src/fixtures/book-store.fixtures';
-import { AllBooksResponseSchema } from '../../src/types/book-store.schema';
+import { test, expect } from '../../../src/fixtures/book-store.fixtures';
+import { AllBooksResponseSchema } from '../../../src/types/book-store.schema';
 
 test(
   'GET /BookStore/v1/Books success response matches schema',

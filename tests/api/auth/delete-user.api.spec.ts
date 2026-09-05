@@ -1,6 +1,6 @@
-import { test, expect } from '../../src/fixtures/account.fixtures';
-import { parseJsonBody } from '../../src/utils/api-response.util';
-import { ApiErrorResponseSchema } from '../../src/types/api-error.schema';
+import { test, expect } from '../../../src/fixtures/account.fixtures';
+import { parseJsonBody } from '../../../src/utils/api-response.util';
+import { ApiErrorResponseSchema } from '../../../src/types/api-error.schema';
 
 test(
   'Delete own user account with a valid token',

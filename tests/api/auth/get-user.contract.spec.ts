@@ -1,6 +1,6 @@
-import { test, expect } from '../../src/fixtures/account.fixtures';
-import { GetUserResponseSchema } from '../../src/types/account.schema';
-import { ApiErrorResponseSchema } from '../../src/types/api-error.schema';
+import { test, expect } from '../../../src/fixtures/account.fixtures';
+import { GetUserResponseSchema } from '../../../src/types/account.schema';
+import { ApiErrorResponseSchema } from '../../../src/types/api-error.schema';
 
 test(
   'GET /Account/v1/User/{UUID} success response matches schema',

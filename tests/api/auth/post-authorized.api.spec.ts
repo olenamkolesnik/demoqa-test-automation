@@ -1,8 +1,8 @@
-import { test, expect } from '../../src/fixtures/account.fixtures';
-import { buildUniqueUsername, buildValidPassword } from '../../src/data/user.factory';
-import { parseJsonBody } from '../../src/utils/api-response.util';
-import { AuthorizedResponseSchema } from '../../src/types/account.schema';
-import { ApiErrorResponseSchema } from '../../src/types/api-error.schema';
+import { test, expect } from '../../../src/fixtures/account.fixtures';
+import { buildUniqueUsername, buildValidPassword } from '../../../src/data/user.factory';
+import { parseJsonBody } from '../../../src/utils/api-response.util';
+import { AuthorizedResponseSchema } from '../../../src/types/account.schema';
+import { ApiErrorResponseSchema } from '../../../src/types/api-error.schema';
 
 const REQUIRED_FIELD_MESSAGE = 'UserName and Password required.';
 const USER_NOT_FOUND_MESSAGE = 'User not found!';

@@ -1,7 +1,7 @@
-import { test, expect } from '../../src/fixtures/account.fixtures';
-import { parseJsonBody } from '../../src/utils/api-response.util';
-import { GetUserResponseSchema } from '../../src/types/account.schema';
-import { ApiErrorResponseSchema } from '../../src/types/api-error.schema';
+import { test, expect } from '../../../src/fixtures/account.fixtures';
+import { parseJsonBody } from '../../../src/utils/api-response.util';
+import { GetUserResponseSchema } from '../../../src/types/account.schema';
+import { ApiErrorResponseSchema } from '../../../src/types/api-error.schema';
 
 test(
   'Get own user profile with a valid token',

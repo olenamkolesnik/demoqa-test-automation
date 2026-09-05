@@ -1,8 +1,8 @@
-import { test, expect } from '../../src/fixtures/account.fixtures';
-import { buildUniqueUsername, invalidPasswords } from '../../src/data/user.factory';
-import { parseJsonBody } from '../../src/utils/api-response.util';
-import { CreateUserResponseSchema } from '../../src/types/account.schema';
-import { ApiErrorResponseSchema } from '../../src/types/api-error.schema';
+import { test, expect } from '../../../src/fixtures/account.fixtures';
+import { buildUniqueUsername, invalidPasswords } from '../../../src/data/user.factory';
+import { parseJsonBody } from '../../../src/utils/api-response.util';
+import { CreateUserResponseSchema } from '../../../src/types/account.schema';
+import { ApiErrorResponseSchema } from '../../../src/types/api-error.schema';
 
 test(
   'POST /Account/v1/User success response matches schema',

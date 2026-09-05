@@ -1,6 +1,6 @@
-import { test, expect } from '../../src/fixtures/book-store.fixtures';
-import { parseJsonBody } from '../../src/utils/api-response.util';
-import { AllBooksResponseSchema } from '../../src/types/book-store.schema';
+import { test, expect } from '../../../src/fixtures/book-store.fixtures';
+import { parseJsonBody } from '../../../src/utils/api-response.util';
+import { AllBooksResponseSchema } from '../../../src/types/book-store.schema';
 
 test(
   'Get book list without authentication token',

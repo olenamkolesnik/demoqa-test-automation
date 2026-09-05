@@ -1,7 +1,7 @@
-import { test, expect } from '../../src/fixtures/account.fixtures';
-import { buildUniqueUsername } from '../../src/data/user.factory';
-import { GenerateTokenResponseSchema } from '../../src/types/account.schema';
-import { ApiErrorResponseSchema } from '../../src/types/api-error.schema';
+import { test, expect } from '../../../src/fixtures/account.fixtures';
+import { buildUniqueUsername } from '../../../src/data/user.factory';
+import { GenerateTokenResponseSchema } from '../../../src/types/account.schema';
+import { ApiErrorResponseSchema } from '../../../src/types/api-error.schema';
 
 test(
   'POST /Account/v1/GenerateToken success/failure response matches schema',
