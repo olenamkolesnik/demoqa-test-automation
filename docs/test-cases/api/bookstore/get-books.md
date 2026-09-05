@@ -8,7 +8,7 @@
 | Preconditions  | None                                                                |
 | Test data      | None — request has no query params, body, or `Authorization` header |
 | Postconditions | None — read-only request, no state created                          |
-| Automation     | Not automated                                                       |
+| Automation     | Automated → `get-books.api.spec.ts`                                 |
 
 **Steps & expected results**
 
