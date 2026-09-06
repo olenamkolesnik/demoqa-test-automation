@@ -1,5 +1,15 @@
 [
   {
+    "run": 55,
+    "status": "success",
+    "sha": "32a13a4",
+    "ref": "feat/put-books",
+    "pr": 26,
+    "actor": "olenamkolesnik",
+    "date": "2026-09-06T15:45:58.529Z",
+    "workflowUrl": "https://github.com/olenamkolesnik/demoqa-test-automation/actions/runs/34043112479"
+  },
+  {
     "run": 54,
     "status": "success",
     "sha": "84c1fe5",
