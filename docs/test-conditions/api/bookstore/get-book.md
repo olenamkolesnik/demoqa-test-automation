@@ -65,7 +65,7 @@ Unlike that sibling, this endpoint has a real input surface, so it has a genuine
 | Category   | Input field                                                          |
 | Technique  | EP                                                                   |
 | Source     | Spec: `docs/api-spec/book-store-endpoints.md`; live check 2026-09-06 |
-| Test cases | —                                                                    |
+| Test cases | GET-BOOK-001                                                         |
 
 **What to cover**
 The core valid class: an `ISBN` present in the catalogue returns `200` with that specific book's full `BookModal`, as a bare object rather than an array wrapper, and the returned `isbn` matches the one requested.
@@ -98,7 +98,7 @@ The bare-object shape is worth asserting explicitly: the sibling `GET /BookStore
 | Category   | Input field                                   |
 | Technique  | EP                                            |
 | Source     | Spec: `docs/api-spec/book-store-endpoints.md` |
-| Test cases | —                                             |
+| Test cases | GET-BOOK-002                                  |
 
 **What to cover**
 The invalid class for `ISBN`: a value shaped like a real ISBN but absent from the catalogue is rejected with `400`/`1205`.
@@ -126,7 +126,7 @@ The same `unknownIsbn` constant already used by `post-books.md` (COND-POST-BOOKS
 | Category   | Input field                              |
 | Technique  | BVA                                      |
 | Source     | Observed behavior: live check 2026-09-06 |
-| Test cases | —                                        |
+| Test cases | GET-BOOK-003                             |
 
 **What to cover**
 The zero-length boundary of the `ISBN` parameter: present in the query string but holding no value. The request is handled and rejected with `400`/`1205` — **not** crashed into the `500` that an absent parameter produces.
@@ -157,7 +157,7 @@ Undocumented before the 2026-09-06 live check; reproduced across three runs.
 | Category   | Input field                              |
 | Technique  | EP                                       |
 | Source     | Observed behavior: live check 2026-09-06 |
-| Test cases | —                                        |
+| Test cases | GET-BOOK-004                             |
 
 **What to cover**
 The invalid class where `ISBN` is present but not shaped like an ISBN at all — an arbitrary alphabetic string, or a whitespace-only value — is rejected with `400`/`1205`, identically to a well-formed-but-unknown value. This confirms the endpoint validates catalogue membership rather than string format.
@@ -189,7 +189,7 @@ Low priority: the response is byte-identical to COND-GET-BOOK-002, and no separa
 | Category   | Input field                              |
 | Technique  | EP                                       |
 | Source     | Observed behavior: live check 2026-09-06 |
-| Test cases | —                                        |
+| Test cases | GET-BOOK-005                             |
 
 **What to cover**
 The distinct invalid class where the `ISBN` query parameter is omitted from the URL entirely: the server does not validate it and returns an unhandled `500` with an HTML page leaking a Sequelize stack trace, rather than the `400` its empty-value sibling produces.
@@ -222,7 +222,7 @@ Requires a raw request rather than the typed client, since the client signature 
 | Category   | Input field                              |
 | Technique  | Exploratory heuristic                    |
 | Source     | Observed behavior: live check 2026-09-06 |
-| Test cases | —                                        |
+| Test cases | GET-BOOK-006                             |
 
 **What to cover**
 Query-parameter case sensitivity: a request spelling the parameter `isbn` instead of `ISBN`, with an otherwise valid catalogue value, is treated exactly as if no parameter were supplied — `500` with the same stack trace.
@@ -253,7 +253,7 @@ Low priority: this is a client-error scenario with no user-facing path — nothi
 | Category   | Authorization                            |
 | Technique  | Decision table                           |
 | Source     | Observed behavior: live check 2026-09-06 |
-| Test cases | —                                        |
+| Test cases | GET-BOOK-007                             |
 
 **What to cover**
 The endpoint is unauthenticated in the strong sense: a request carrying a **bogus** bearer token still returns `200` with the requested book, identical to a request with no header at all. The credential is not merely optional — it is never evaluated, so no `401` is reachable.
