@@ -91,7 +91,7 @@ Four behaviors from that check shape the conditions:
 | Category   | Input field                              |
 | Technique  | EP                                       |
 | Source     | Observed behavior: live check 2026-09-06 |
-| Test cases | —                                        |
+| Test cases | PUT-BOOKS-001                            |
 
 **What to cover**
 The invalid class where the path `ISBN` names a real catalogue book that the caller does not own: the replacement is refused with `400`/`1206`, and the collection is left unchanged.
@@ -125,7 +125,7 @@ The unchanged-collection assertion is what distinguishes a genuine rejection fro
 | Category   | Input field                              |
 | Technique  | EP                                       |
 | Source     | Observed behavior: live check 2026-09-06 |
-| Test cases | —                                        |
+| Test cases | PUT-BOOKS-002                            |
 
 **What to cover**
 The invalid class where the path `ISBN` exists in no catalogue at all: it is refused with `400`/`1206` — the collection-membership check runs _before_ catalogue validation, so the response names the user's collection rather than the catalogue.
@@ -157,7 +157,7 @@ The substantive half is the "not `1205`" expectation. The sibling `GET /BookStor
 | Category   | Input field                              |
 | Technique  | EP                                       |
 | Source     | Observed behavior: live check 2026-09-06 |
-| Test cases | —                                        |
+| Test cases | PUT-BOOKS-003                            |
 
 **What to cover**
 The invalid class where the replacement `isbn` in the body names no catalogue book: refused with `400`/`1205`, and the collection is left unchanged.
@@ -189,7 +189,7 @@ Uses the same `0000000000000` value as COND-POST-BOOKS-008 and GET-BOOK-002 agai
 | Category   | Input field                              |
 | Technique  | BVA                                      |
 | Source     | Observed behavior: live check 2026-09-06 |
-| Test cases | —                                        |
+| Test cases | PUT-BOOKS-004                            |
 
 **What to cover**
 The zero-length boundary of the required `userId` body field: present but holding no value, rejected with `400`/`1207` "Request Body is Invalid!" — a body-shape failure, not the `401`/`1207` "User Id not correct!" that an unknown-but-present identifier produces.
@@ -219,7 +219,7 @@ The status/message split is the point. On `DELETE /BookStore/v1/Books` an empty 
 | Category   | Input field                              |
 | Technique  | EP                                       |
 | Source     | Observed behavior: live check 2026-09-06 |
-| Test cases | —                                        |
+| Test cases | PUT-BOOKS-005                            |
 
 **What to cover**
 The invalid class where `userId` is a syntactically valid UUID belonging to no user: rejected with `401`/`1207` "User Id not correct!" — a different status _and_ message from the empty-string case.
@@ -252,7 +252,7 @@ Paired deliberately with COND-PUT-BOOKS-004: this endpoint splits empty from unk
 | Category   | Input field                              |
 | Technique  | EP                                       |
 | Source     | Observed behavior: live check 2026-09-06 |
-| Test cases | —                                        |
+| Test cases | PUT-BOOKS-006                            |
 
 **What to cover**
 The invalid class where the `userId` key is omitted from the request body entirely: the request is validated and refused with `400`/`1207`, **not** crashed into a `500` the way `POST /BookStore/v1/Books` handles the same omission.
@@ -284,7 +284,7 @@ Needs a raw request rather than the typed client, since the client signature mak
 | Category   | Input field                              |
 | Technique  | EP                                       |
 | Source     | Observed behavior: live check 2026-09-06 |
-| Test cases | —                                        |
+| Test cases | PUT-BOOKS-007                            |
 
 **What to cover**
 The invalid class where the replacement `isbn` key is omitted from the request body entirely: refused with `400`/`1207`, identically to an absent `userId`.
@@ -316,7 +316,7 @@ Also needs a raw request, for the same reason as COND-PUT-BOOKS-006.
 | Category   | Input field                              |
 | Technique  | BVA                                      |
 | Source     | Observed behavior: live check 2026-09-06 |
-| Test cases | —                                        |
+| Test cases | PUT-BOOKS-014                            |
 
 **What to cover**
 The empty boundary of the request body as a whole: a syntactically valid but entirely empty JSON object, with **both** required keys absent at once, refused with `400`/`1207`.
@@ -353,7 +353,7 @@ Needs a raw request, for the same reason as COND-PUT-BOOKS-006 and -007 — the 
 | Category   | State                                                                |
 | Technique  | EP                                                                   |
 | Source     | Spec: `docs/api-spec/book-store-endpoints.md`; live check 2026-09-06 |
-| Test cases | —                                                                    |
+| Test cases | PUT-BOOKS-008                                                        |
 
 **What to cover**
 The core valid class: an authenticated user replaces a book they own with a different catalogue book they do not own. The response is `200` carrying the full `GetUserResult`, the named book is gone, the replacement is present, and every other book in the collection is untouched.
@@ -391,7 +391,7 @@ Merging the response-shape check into this condition rather than splitting it ou
 | Category   | State                                    |
 | Technique  | Exploratory heuristic                    |
 | Source     | Observed behavior: live check 2026-09-06 |
-| Test cases | —                                        |
+| Test cases | PUT-BOOKS-009                            |
 
 **What to cover**
 The data-integrity defect this endpoint owns: a user holding two books replaces one of them with the _other_ one they already own. The call returns `200` rather than a duplicate-rejection error, and the collection shrinks from two entries to one — a book is destroyed with no error surfaced.
@@ -428,7 +428,7 @@ Distinct from COND-PUT-BOOKS-008 in outcome, not just input: 008 preserves the c
 | Category   | State                                    |
 | Technique  | BVA                                      |
 | Source     | Observed behavior: live check 2026-09-06 |
-| Test cases | —                                        |
+| Test cases | PUT-BOOKS-010                            |
 
 **What to cover**
 The no-op boundary of the replacement operation: the path `ISBN` and the body `isbn` name the same book, which the caller demonstrably owns. The call is refused with `400`/`1206` "ISBN supplied is not available in User's Collection!" — a message contradicting the actual state, since the book _is_ in the collection.
@@ -465,7 +465,7 @@ The unchanged-collection check matters here: given COND-PUT-BOOKS-009's data los
 | Category   | Authorization                                 |
 | Technique  | EP                                            |
 | Source     | Spec: `docs/api-spec/book-store-endpoints.md` |
-| Test cases | —                                             |
+| Test cases | PUT-BOOKS-011                                 |
 
 **What to cover**
 An otherwise entirely valid replacement sent with no `Authorization` header is refused with `401`/`1200`, and the collection is left intact.
@@ -496,7 +496,7 @@ Priority High on the same basis as COND-DELETE-BOOKS-007 and COND-AUTH-018: an a
 | Category   | Authorization                                 |
 | Technique  | EP                                            |
 | Source     | Spec: `docs/api-spec/book-store-endpoints.md` |
-| Test cases | —                                             |
+| Test cases | PUT-BOOKS-012                                 |
 
 **What to cover**
 A present but syntactically invalid bearer token is refused with `401`/`1200`, identically to an absent header.
@@ -526,7 +526,7 @@ Kept separate from COND-PUT-BOOKS-011 despite the identical response — same pr
 | Category   | Authorization                            |
 | Technique  | Decision table                           |
 | Source     | Observed behavior: live check 2026-09-06 |
-| Test cases | —                                        |
+| Test cases | PUT-BOOKS-013                            |
 
 **What to cover**
 The cross-user authorization boundary: user A holds a valid token but names user B's `userId` in the body. The request is refused with `401`/`1200` and B's collection is left intact — the token's owner must match the named `userId`.
