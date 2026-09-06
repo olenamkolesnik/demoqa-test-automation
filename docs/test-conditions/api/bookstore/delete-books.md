@@ -76,7 +76,7 @@ Three behaviors established by the 2026-09-06 live check shape the conditions be
 | Category   | Input field                              |
 | Technique  | EP                                       |
 | Source     | Observed behavior: live check 2026-09-06 |
-| Test cases | —                                        |
+| Test cases | DELETE-BOOKS-004                         |
 
 **What to cover**
 The invalid class where the required `UserId` query parameter is omitted from the URL entirely: the request is validated and refused with `401`/`1207`, **not** crashed into a `500` the way `POST /BookStore/v1/Books` handles an absent required key.
@@ -107,7 +107,7 @@ Needs a raw request rather than the typed client, since the client signature mak
 | Category   | Input field                              |
 | Technique  | BVA                                      |
 | Source     | Observed behavior: live check 2026-09-06 |
-| Test cases | —                                        |
+| Test cases | DELETE-BOOKS-005                         |
 
 **What to cover**
 The zero-length boundary of the required `UserId` parameter: present in the query string but holding no value, rejected with `401`/`1207`.
@@ -135,7 +135,7 @@ Kept separate from COND-DELETE-BOOKS-001 despite the identical response: absent 
 | Category   | Input field                              |
 | Technique  | EP                                       |
 | Source     | Observed behavior: live check 2026-09-06 |
-| Test cases | —                                        |
+| Test cases | DELETE-BOOKS-006                         |
 
 **What to cover**
 The invalid class where `UserId` is a syntactically valid UUID belonging to no user: rejected with `401`/`1207`, byte-identical to the absent and empty cases.
@@ -165,7 +165,7 @@ Kept separate from COND-DELETE-BOOKS-001/002 despite the identical response, fol
 | Category   | State                                                                |
 | Technique  | EP                                                                   |
 | Source     | Spec: `docs/api-spec/book-store-endpoints.md`; live check 2026-09-06 |
-| Test cases | —                                                                    |
+| Test cases | DELETE-BOOKS-001                                                     |
 
 **What to cover**
 The core valid class: an authenticated user with books in their collection deletes with their own `UserId`. The response is `204` with a genuinely empty body, and the collection is empty afterwards — every book removed, not merely the first.
@@ -199,7 +199,7 @@ Merging the read-back into this condition rather than splitting it out follows t
 | Category   | State                                    |
 | Technique  | BVA                                      |
 | Source     | Observed behavior: live check 2026-09-06 |
-| Test cases | —                                        |
+| Test cases | DELETE-BOOKS-002                         |
 
 **What to cover**
 The zero-item boundary of the collection: a freshly registered user whose collection has never held a book deletes anyway, and the call succeeds with `204` rather than reporting nothing-to-delete as an error.
@@ -228,7 +228,7 @@ Undocumented before the 2026-09-06 live check; reproduced on two users. Independ
 | Category   | State                                    |
 | Technique  | Exploratory heuristic                    |
 | Source     | Observed behavior: live check 2026-09-06 |
-| Test cases | —                                        |
+| Test cases | DELETE-BOOKS-003                         |
 
 **What to cover**
 The state transition this endpoint owns: a successful delete on a populated collection, followed immediately by the identical request with the same token. The second call also returns `204` — the endpoint is idempotent in the REST sense.
@@ -263,7 +263,7 @@ Sequential within its own scope (delete, then delete again), which is a sequence
 | Category   | Authorization                                 |
 | Technique  | EP                                            |
 | Source     | Spec: `docs/api-spec/book-store-endpoints.md` |
-| Test cases | —                                             |
+| Test cases | DELETE-BOOKS-007                              |
 
 **What to cover**
 An otherwise entirely valid request sent with no `Authorization` header is refused with `401`/`1200`, and the collection is left intact.
@@ -293,7 +293,7 @@ Priority High on the same basis as COND-AUTH-018: an authorization gap on a dest
 | Category   | Authorization                                 |
 | Technique  | EP                                            |
 | Source     | Spec: `docs/api-spec/book-store-endpoints.md` |
-| Test cases | —                                             |
+| Test cases | DELETE-BOOKS-008                              |
 
 **What to cover**
 A present but syntactically invalid bearer token is refused with `401`/`1200`, identically to an absent header.
@@ -321,7 +321,7 @@ Kept separate from COND-DELETE-BOOKS-007 despite the identical response — same
 | Category   | Authorization                            |
 | Technique  | Decision table                           |
 | Source     | Observed behavior: live check 2026-09-06 |
-| Test cases | —                                        |
+| Test cases | DELETE-BOOKS-009                         |
 
 **What to cover**
 The cross-user authorization boundary: user A holds a valid token but names user B's `UserId` in the query string. The request is refused with `401`/`1200` and B's collection is left intact — the token's owner must match the named `UserId`.
