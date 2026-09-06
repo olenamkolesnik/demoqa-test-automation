@@ -26,7 +26,7 @@ Success is `204` with a genuinely empty body — Swagger's `BooksResult` schema 
 | Preconditions  | User account exists and token generated; the user's collection contains "9781449325862" and "9781449331818" (seeded via POST /BookStore/v1/Books) |
 | Test data      | UserId: the created user's `userId` / seeded isbn 1: "9781449325862" / seeded isbn 2: "9781449331818"                                             |
 | Postconditions | User deleted via DELETE /Account/v1/User/{userId}; collection empty from step 1 until deletion                                                    |
-| Automation     | Not automated                                                                                                                                     |
+| Automation     | Automated → `delete-books.api.spec.ts`                                                                                                            |
 
 **Steps & expected results**
 
@@ -52,7 +52,7 @@ The empty-body check in step 1 is the assertion that separates live behavior fro
 | Preconditions  | User account exists with an empty collection — no book has ever been added (created via POST /Account/v1/User) and token generated (POST /Account/v1/GenerateToken) |
 | Test data      | UserId: the created user's `userId` / collection state: `[]` (zero books, never populated)                                                                          |
 | Postconditions | User deleted via DELETE /Account/v1/User/{userId}; collection still empty                                                                                           |
-| Automation     | Not automated                                                                                                                                                       |
+| Automation     | Automated → `delete-books.api.spec.ts`                                                                                                                              |
 
 **Steps & expected results**
 
@@ -77,7 +77,7 @@ Seeds its own empty user, so it does not depend on DELETE-BOOKS-001 having run.
 | Preconditions  | User account exists and token generated; the user's collection contains "9781449325862" (seeded via POST /BookStore/v1/Books) |
 | Test data      | UserId: the created user's `userId` / seeded isbn: "9781449325862" / the same request sent twice with the same token          |
 | Postconditions | User deleted via DELETE /Account/v1/User/{userId}; collection empty                                                           |
-| Automation     | Not automated                                                                                                                 |
+| Automation     | Automated → `delete-books.api.spec.ts`                                                                                        |
 
 **Steps & expected results**
 
@@ -103,7 +103,7 @@ Distinct from DELETE-BOOKS-002 in precondition: 002 never had books, this case h
 | Preconditions  | User account exists (created via POST /Account/v1/User) and token generated (POST /Account/v1/GenerateToken)                         |
 | Test data      | URL: `/BookStore/v1/Books` with no `?UserId=` segment at all — the parameter is omitted, not sent empty / header: valid bearer token |
 | Postconditions | User deleted via DELETE /Account/v1/User/{userId}; no collection changed                                                             |
-| Automation     | Not automated                                                                                                                        |
+| Automation     | Automated → `delete-books.api.spec.ts`                                                                                               |
 
 **Steps & expected results**
 
@@ -128,7 +128,7 @@ The automated version needs a raw request: the typed client makes `userId` manda
 | Preconditions  | User account exists (created via POST /Account/v1/User) and token generated (POST /Account/v1/GenerateToken) |
 | Test data      | UserId: "" (empty string, 0 chars — the parameter is present in the query string but has no value)           |
 | Postconditions | User deleted via DELETE /Account/v1/User/{userId}; no collection changed                                     |
-| Automation     | Not automated                                                                                                |
+| Automation     | Automated → `delete-books.api.spec.ts`                                                                       |
 
 **Steps & expected results**
 
@@ -151,7 +151,7 @@ The zero-length boundary of the required `UserId` parameter. Kept separate from 
 | Preconditions  | User account exists (created via POST /Account/v1/User) and token generated (POST /Account/v1/GenerateToken) |
 | Test data      | UserId: "11111111-2222-3333-4444-555555555555" (valid UUID format, belongs to no user)                       |
 | Postconditions | User deleted via DELETE /Account/v1/User/{userId}; no collection changed                                     |
-| Automation     | Not automated                                                                                                |
+| Automation     | Automated → `delete-books.api.spec.ts`                                                                       |
 
 **Steps & expected results**
 
@@ -174,7 +174,7 @@ Response is identical to DELETE-BOOKS-004 and DELETE-BOOKS-005, but the input cl
 | Preconditions  | User account exists and token generated; the user's collection contains "9781449325862" (seeded via POST /BookStore/v1/Books) |
 | Test data      | UserId: the created user's `userId` / seeded isbn: "9781449325862" / no `Authorization` header sent                           |
 | Postconditions | User deleted via DELETE /Account/v1/User/{userId}; collection still contains "9781449325862" until deletion                   |
-| Automation     | Not automated                                                                                                                 |
+| Automation     | Automated → `delete-books.api.spec.ts`                                                                                        |
 
 **Steps & expected results**
 
@@ -198,7 +198,7 @@ Step 2 is what makes the case meaningful: a 401 that still emptied the collectio
 | Preconditions  | User account exists and token generated; the user's collection contains "9781449325862" (seeded via POST /BookStore/v1/Books) |
 | Test data      | Header: `Authorization: Bearer not-a-real-token` / UserId: the created user's `userId`                                        |
 | Postconditions | User deleted via DELETE /Account/v1/User/{userId}; collection still contains "9781449325862" until deletion                   |
-| Automation     | Not automated                                                                                                                 |
+| Automation     | Automated → `delete-books.api.spec.ts`                                                                                        |
 
 **Steps & expected results**
 
