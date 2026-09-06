@@ -22,7 +22,7 @@ Three behaviors established by the 2026-09-06 live check apply across the cases 
 | Preconditions  | None                                                               |
 | Test data      | ISBN: "9781449325862" (Git Pocket Guide — a known catalogue entry) |
 | Postconditions | None — read-only request, no state created                         |
-| Automation     | Not automated                                                      |
+| Automation     | Automated → `get-book.api.spec.ts`                                 |
 
 **Steps & expected results**
 
@@ -47,7 +47,7 @@ The bare-object shape matters: the sibling `GET /BookStore/v1/Books` wraps its r
 | Preconditions  | None                                                            |
 | Test data      | ISBN: "0000000000000" (13 digits, not present in the catalogue) |
 | Postconditions | None — read-only request, no state created                      |
-| Automation     | Not automated                                                   |
+| Automation     | Automated → `get-book.api.spec.ts`                              |
 
 **Steps & expected results**
 
@@ -70,7 +70,7 @@ The same "not a real book" value used by POST-BOOKS-008 against the same catalog
 | Preconditions  | None                                                                        |
 | Test data      | ISBN: "" (parameter present in the query string but with no value, 0 chars) |
 | Postconditions | None — read-only request, no state created                                  |
-| Automation     | Not automated                                                               |
+| Automation     | Automated → `get-book.api.spec.ts`                                          |
 
 **Steps & expected results**
 
@@ -119,7 +119,7 @@ Its condition is Low priority, so this case is expected to be skipped by the aut
 | Preconditions  | None                                                                                                 |
 | Test data      | URL: `/BookStore/v1/Book` with no `?ISBN=` segment at all — the parameter is omitted, not sent empty |
 | Postconditions | None — read-only request, no state created                                                           |
-| Automation     | Not automated                                                                                        |
+| Automation     | Automated → `get-book.api.spec.ts`                                                                   |
 
 **Steps & expected results**
 
@@ -169,7 +169,7 @@ Documents that the query parameter is case-sensitive — a reader might reasonab
 | Preconditions  | None                                                                     |
 | Test data      | Header: `Authorization: Bearer not-a-real-token` / ISBN: "9781449325862" |
 | Postconditions | None — read-only request, no state created                               |
-| Automation     | Not automated                                                            |
+| Automation     | Automated → `get-book.api.spec.ts`                                       |
 
 **Steps & expected results**
 
