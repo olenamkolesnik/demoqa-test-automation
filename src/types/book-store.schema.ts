@@ -52,3 +52,30 @@ export const AddBooksResponseSchema = z
   .strict();
 
 export type AddBooksResponse = z.infer<typeof AddBooksResponseSchema>;
+
+// PUT /BookStore/v1/Books/{ISBN} request body — confirmed live via
+// docs/api-spec/book-store-endpoints.md. isbn is the replacement book; the
+// book being replaced is the path parameter, not part of this payload.
+export const ReplaceBookPayloadSchema = z.object({
+  userId: z.string(),
+  isbn: z.string(),
+});
+
+export type ReplaceBookPayload = z.infer<typeof ReplaceBookPayloadSchema>;
+
+// PUT /BookStore/v1/Books/{ISBN} success response — confirmed live as the
+// full GetUserResult (lowercase userId), embedding this resource's own
+// live-verified BookSchema rather than AccountBookSchema: unlike Account's
+// GetUser/CreateUser responses (whose books[] has never been observed
+// populated), this endpoint's books[] is confirmed live to match BookSchema's
+// fields exactly — reusing AccountBookSchema here would force a shape onto an
+// endpoint that hasn't verified it holds.
+export const ReplaceBookResponseSchema = z
+  .object({
+    userId: z.string(),
+    username: z.string(),
+    books: z.array(BookSchema),
+  })
+  .strict();
+
+export type ReplaceBookResponse = z.infer<typeof ReplaceBookResponseSchema>;

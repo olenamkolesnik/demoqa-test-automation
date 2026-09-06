@@ -1,6 +1,6 @@
 # DemoQA Book Store — BookStore API (Confirmed)
 
-Source: raw Swagger spec extracted from `https://demoqa.com/swagger/swagger-ui-init.js` (saved as [`book-store-api.swagger.json`](./book-store-api.swagger.json)), cross-checked against live API calls on 2026-09-01, extended for `POST /BookStore/v1/Books` by a live check on 2026-09-05, and for `DELETE /BookStore/v1/Books` and `GET /BookStore/v1/Book` by live checks on 2026-09-06. Where the Swagger doc and live behavior disagreed, **live behavior wins** — the doc has several inaccuracies, noted below. See [`account-endpoints.md`](./account-endpoints.md) for the `/Account` endpoints.
+Source: raw Swagger spec extracted from `https://demoqa.com/swagger/swagger-ui-init.js` (saved as [`book-store-api.swagger.json`](./book-store-api.swagger.json)), cross-checked against live API calls on 2026-09-01, extended for `POST /BookStore/v1/Books` by a live check on 2026-09-05, for `DELETE /BookStore/v1/Books` and `GET /BookStore/v1/Book` by live checks on 2026-09-06, and for `PUT /BookStore/v1/Books/{ISBN}` by a live check on 2026-09-06. Where the Swagger doc and live behavior disagreed, **live behavior wins** — the doc has several inaccuracies, noted below. See [`account-endpoints.md`](./account-endpoints.md) for the `/Account` endpoints.
 
 ## GET /BookStore/v1/Books (all books)
 
@@ -62,14 +62,34 @@ Request: `{ userId: string, collectionOfIsbns: [{ isbn: string }] }`
 
 Auth: `Authorization: Bearer <token>` header required.
 
-Path param: `ISBN` (the book being replaced). Request body: `{ userId: string, isbn: string }` (the new ISBN).
+Path param: `ISBN` (the book being replaced — must already be in the caller's collection). Request body: `{ userId: string, isbn: string }` (the new ISBN).
 
-| Case                  | Status | Body                                                                              |
-| --------------------- | ------ | --------------------------------------------------------------------------------- |
-| Success               | `200`  | `{ userId: string, username: string, books: BookModal[] }` (full `GetUserResult`) |
-| Missing/invalid token | `401`  | `{ code: "1200", message: "User not authorized!" }`                               |
+| Case                                         | Status | Body                                                                                                                    |
+| -------------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------- |
+| Success                                      | `200`  | `{ userId: string, username: string, books: BookModal[] }` (full `GetUserResult`)                                       |
+| Path `ISBN` not in the user's collection     | `400`  | `{ code: "1206", message: "ISBN supplied is not available in User's Collection!" }` — **live-verified 2026-09-06**      |
+| Path `ISBN` unknown to the catalogue         | `400`  | `{ code: "1206", ... }` — same as above; membership is checked before catalogue validity — **live-verified 2026-09-06** |
+| Path `ISBN` equals the body `isbn`           | `400`  | `{ code: "1206", ... }` — **live-verified 2026-09-06**; see findings, this is a defect                                  |
+| Body `isbn` unknown to the catalogue         | `400`  | `{ code: "1205", message: "ISBN supplied is not available in Books Collection!" }` — **live-verified 2026-09-06**       |
+| Body `isbn` already in the user's collection | `200`  | Succeeds and **silently drops a book** — **live-verified 2026-09-06**; see findings                                     |
+| `userId` well-formed but unknown             | `401`  | `{ code: "1207", message: "User Id not correct!" }` — **live-verified 2026-09-06**                                      |
+| `userId` empty string                        | `400`  | `{ code: "1207", message: "Request Body is Invalid!" }` — **live-verified 2026-09-06**                                  |
+| `userId` or `isbn` key absent from body      | `400`  | `{ code: "1207", message: "Request Body is Invalid!" }` — **live-verified 2026-09-06**; no `500`                        |
+| Empty JSON object body `{}`                  | `400`  | `{ code: "1207", message: "Request Body is Invalid!" }` — **live-verified 2026-09-06**                                  |
+| Missing/invalid token                        | `401`  | `{ code: "1200", message: "User not authorized!" }`                                                                     |
+| Token belonging to a different user          | `401`  | `{ code: "1200", message: "User not authorized!" }` — **live-verified 2026-09-06**; target's collection intact          |
 
-Matches the doc — response schema (`GetUserResult`, lowercase `userId`) and status codes both confirmed live.
+**Live findings, 2026-09-06** (each reproduced on two independent `qa_`-prefixed users):
+
+- **Replacing a book with one the user already owns silently destroys a book.** A user holding `[A, B]` who replaces `A` with `B` gets `200` and a collection of `[B]` — the entry count drops from two to one with no error and no warning. The `200` body accurately reports the reduced collection, so the response is not lying; the operation itself is. This is the most serious defect on this resource: ordinary user actions lose data.
+- **Replacing a book with itself is rejected as "not in your collection".** `PUT /Books/{A}` with body `isbn: A`, for a user who demonstrably owns `A`, returns `400`/`1206` "ISBN supplied is not available in User's Collection!" — a message that contradicts the actual state. The no-op case is not merely unsupported, it reports a false reason.
+- **This endpoint validates its body; `POST` does not.** An absent `userId` or `isbn` key returns a handled `400`/`1207`, where `POST /BookStore/v1/Books` returns `500` with a Sequelize stack trace for the same omission. Three endpoints on this resource now handle an absent required field three different ways: `POST` crashes (`500`), `DELETE /Books` validates to `401`/`1207`, and `PUT` validates to `400`/`1207`. Do not generalise one endpoint's handling to another.
+- **`1207` is overloaded a third way.** This endpoint returns `400`/"Request Body is Invalid!" for a malformed body **and** `401`/"User Id not correct!" for a well-formed-but-unknown `userId` — while `POST` uses `400`/"Collection of books required." and `DELETE /Books` uses `401`/"User Id not correct!". Never assert a `1207` code without also asserting its status and message.
+- **`1206` is new to this resource.** No other `/BookStore` endpoint returns it. It means "not in _your_ collection", distinct from `1205`'s "not in the _catalogue_" — and the path `ISBN` is checked for collection membership before catalogue validity, so an ISBN that is neither returns `1206`, not `1205`.
+- **Ordinary replacement preserves the rest of the collection.** A user holding `[A, C]` replacing `A` with `B` correctly ends at `[B, C]`. The data loss above is specific to a target the user already owns, not to multi-book collections generally.
+- **Cross-user replacement is refused.** Token A naming user B's `userId` returns `401`/`1200`, with B's collection left intact.
+- **The `200` body's book order is not the read-back order.** The `PUT` response listed `[C, B]` where `GET /Account/v1/User/{UUID}` returned `[B, C]` — same set, different sequence. Assert collection membership, never positional order.
+- **The `200` body can echo a duplicate entry that was never persisted.** When the replacement target is already owned (the duplicate-target defect above), the response body itself lists the surviving book **twice** — `[C, C]` for a two-item response where the actual post-state, confirmed by `GET /Account/v1/User/{UUID}`, is a single entry `[C]`. The response is not merely reordered here, it is factually wrong about the collection's size. Never assert `books.length` or membership against the `PUT` response body alone for this case — read back via `GET /Account/v1/User/{UUID}` to get the real state, the same precedent already established for `POST /BookStore/v1/Books`'s partial-batch echo (COND-POST-BOOKS-009).
 
 ## DELETE /BookStore/v1/Book (remove one book from a user's collection)
 
