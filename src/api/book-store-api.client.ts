@@ -22,4 +22,12 @@ export class BookStoreApiClient extends BaseApiClient {
       { requestPayload: payload }
     );
   }
+
+  deleteAllBooks({ userId, token }: { userId: string; token: string }): Promise<APIResponse> {
+    const path = `${this.basePath}/Books`;
+    return this.logged(
+      this.request.delete(path, { params: { UserId: userId }, headers: this.authHeader(token) }),
+      `DELETE ${path}`
+    );
+  }
 }

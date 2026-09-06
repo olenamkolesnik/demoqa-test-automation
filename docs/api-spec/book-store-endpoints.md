@@ -1,6 +1,6 @@
 # DemoQA Book Store — BookStore API (Confirmed)
 
-Source: raw Swagger spec extracted from `https://demoqa.com/swagger/swagger-ui-init.js` (saved as [`book-store-api.swagger.json`](./book-store-api.swagger.json)), cross-checked against live API calls on 2026-09-01, extended for `POST /BookStore/v1/Books` by a live check on 2026-09-05. Where the Swagger doc and live behavior disagreed, **live behavior wins** — the doc has several inaccuracies, noted below. See [`account-endpoints.md`](./account-endpoints.md) for the `/Account` endpoints.
+Source: raw Swagger spec extracted from `https://demoqa.com/swagger/swagger-ui-init.js` (saved as [`book-store-api.swagger.json`](./book-store-api.swagger.json)), cross-checked against live API calls on 2026-09-01, extended for `POST /BookStore/v1/Books` by a live check on 2026-09-05 and for `DELETE /BookStore/v1/Books` by a live check on 2026-09-06. Where the Swagger doc and live behavior disagreed, **live behavior wins** — the doc has several inaccuracies, noted below. See [`account-endpoints.md`](./account-endpoints.md) for the `/Account` endpoints.
 
 ## GET /BookStore/v1/Books (all books)
 
@@ -80,10 +80,23 @@ Auth: `Authorization: Bearer <token>` header required.
 
 Query param: `UserId`
 
-| Case                  | Status | Body                                                |
-| --------------------- | ------ | --------------------------------------------------- |
-| Success               | `204`  | (empty)                                             |
-| Missing/invalid token | `401`  | `{ code: "1200", message: "User not authorized!" }` |
+| Case                                     | Status | Body                                                                               |
+| ---------------------------------------- | ------ | ---------------------------------------------------------------------------------- |
+| Success (collection had books)           | `204`  | (empty)                                                                            |
+| Success (collection already empty)       | `204`  | (empty) — **live-verified 2026-09-06**; idempotent, not an error                   |
+| Repeat delete of an already-emptied user | `204`  | (empty) — **live-verified 2026-09-06**                                             |
+| Missing/invalid token                    | `401`  | `{ code: "1200", message: "User not authorized!" }`                                |
+| Token belonging to a different user      | `401`  | `{ code: "1200", message: "User not authorized!" }` — **live-verified 2026-09-06** |
+| `UserId` query param absent entirely     | `401`  | `{ code: "1207", message: "User Id not correct!" }` — **live-verified 2026-09-06** |
+| `UserId` present but empty               | `401`  | `{ code: "1207", message: "User Id not correct!" }` — **live-verified 2026-09-06** |
+| `UserId` well-formed but unknown         | `401`  | `{ code: "1207", message: "User Id not correct!" }` — **live-verified 2026-09-06** |
+
+**Live findings, 2026-09-06** (each reproduced on two independent `qa_`-prefixed users):
+
+- **This endpoint is idempotent.** Deleting an already-empty collection, and repeating a delete that already succeeded, both return `204` — not an error. This is the opposite of `DELETE /Account/v1/User/{UUID}`, which returns `200`/`1207` on a repeat. Do not carry the `/Account` precedent over to this endpoint.
+- **An absent `UserId` does not crash.** Unlike `POST /BookStore/v1/Books`, where omitting a required key returns `500` with a stack trace, omitting `UserId` here is handled: `401`/`1207`, byte-identical to an empty or unknown value. Absent, empty, and unknown all collapse into one response on this endpoint.
+- **Cross-user deletes are refused** in both directions (token A + `UserId` B, and the reverse): `401`/`1200`, with the target's collection left intact.
+- **`1207` is overloaded here too** — `401`/"User Id not correct!", matching `POST /BookStore/v1/Books`'s `userId` cases but differing from the `400`/"Collection of books required." variant on that same endpoint. Never assert a `1207` code without also asserting its status and message.
 
 **Doc discrepancy:** same pattern — Swagger labels `204` as schema `BooksResult`, but live behavior returns an **empty body** on success. Do not expect a response payload on success.
 
