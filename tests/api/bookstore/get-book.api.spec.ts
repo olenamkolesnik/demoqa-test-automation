@@ -57,7 +57,10 @@ test(
     const bodyText = await response.text();
 
     expect.soft(response.status()).toBe(500);
-    expect.soft(bodyText).toContain('WHERE parameter "isbn" has invalid "undefined" value');
+    // Body is HTML with entity-encoded quotes, not literal `"isbn"`.
+    expect
+      .soft(bodyText)
+      .toContain('WHERE parameter &quot;isbn&quot; has invalid &quot;undefined&quot; value');
   }
 );
 
