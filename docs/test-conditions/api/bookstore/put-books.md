@@ -404,10 +404,16 @@ Setup: caller's collection seeded with
        [{ isbn: "9781449325862" }, { isbn: "9781449337711" }]
 URL:  PUT /BookStore/v1/Books/9781449325862
 Body: { "userId": "<own UUID>", "isbn": "9781449337711" }   # target already owned
-Expected (current, defective): 200; books has exactly ONE entry, 9781449337711
+Expected (current, defective): 200
+  Response body: books lists 9781449337711 TWICE — the response itself is
+    factually wrong about the collection size, not merely stale or reordered
+  Actual persisted state (GET /Account/v1/User/{UUID}): exactly ONE entry, 9781449337711
 Not: 400 with { code: "1210", message: "ISBN already present in the User's Collection!" }
      — which is what POST /BookStore/v1/Books returns for a duplicate
-Verify persistence: GET /Account/v1/User/{UUID} → exactly one ISBN, 9781449337711
+Assert the read-back, not the response body, for collection size/membership —
+the response body is not a trustworthy record of what was stored (live-verified
+2026-09-06; the same unreliability already documented for POST's partial-batch
+echo, COND-POST-BOOKS-009, now confirmed on PUT too)
 ```
 
 **Notes**
@@ -416,6 +422,8 @@ Pins current (defective) behavior so a future fix surfaces as an intentional cha
 Priority High on the same basis as COND-DELETE-BOOKS-007: this is user data being destroyed by an ordinary, non-malicious action. It is the most consequential behavior on the endpoint, and the count assertion — exactly one entry, not merely "contains 9781449337711" — is the whole point. A membership-only assertion would pass while the book disappeared.
 
 Distinct from COND-PUT-BOOKS-008 in outcome, not just input: 008 preserves the collection size, 009 reduces it. Both start from a two-book collection, which is what makes the contrast legible.
+
+**Second finding, surfaced by stage 4's live test run (not caught during stage 1's live probing):** the `200` response body itself echoes the surviving book twice rather than once — `[C, C]` for a response whose actual post-state is `[C]` alone. This is a stronger defect than "the collection shrinks silently": the response is not merely uninformative about the loss, it actively misreports the collection's size. Confirmed by a second live probe (two independent runs) after the automated test caught it. `docs/api-spec/book-store-endpoints.md` was amended in the same pass.
 
 ---
 

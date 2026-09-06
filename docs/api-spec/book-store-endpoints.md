@@ -89,6 +89,7 @@ Path param: `ISBN` (the book being replaced — must already be in the caller's 
 - **Ordinary replacement preserves the rest of the collection.** A user holding `[A, C]` replacing `A` with `B` correctly ends at `[B, C]`. The data loss above is specific to a target the user already owns, not to multi-book collections generally.
 - **Cross-user replacement is refused.** Token A naming user B's `userId` returns `401`/`1200`, with B's collection left intact.
 - **The `200` body's book order is not the read-back order.** The `PUT` response listed `[C, B]` where `GET /Account/v1/User/{UUID}` returned `[B, C]` — same set, different sequence. Assert collection membership, never positional order.
+- **The `200` body can echo a duplicate entry that was never persisted.** When the replacement target is already owned (the duplicate-target defect above), the response body itself lists the surviving book **twice** — `[C, C]` for a two-item response where the actual post-state, confirmed by `GET /Account/v1/User/{UUID}`, is a single entry `[C]`. The response is not merely reordered here, it is factually wrong about the collection's size. Never assert `books.length` or membership against the `PUT` response body alone for this case — read back via `GET /Account/v1/User/{UUID}` to get the real state, the same precedent already established for `POST /BookStore/v1/Books`'s partial-batch echo (COND-POST-BOOKS-009).
 
 ## DELETE /BookStore/v1/Book (remove one book from a user's collection)
 

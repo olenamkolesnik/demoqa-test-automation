@@ -1,4 +1,4 @@
-import type { AddBooksPayload, ReplaceBookPayload } from '../types/book-store.schema';
+import type { AddBooksPayload } from '../types/book-store.schema';
 
 // Known-good catalogue ISBNs, stable across the shared public backend's book
 // list (docs/api-spec/book-store-endpoints.md documents the collection as
@@ -31,19 +31,6 @@ export function buildAddBooksPayload(
   return {
     userId,
     collectionOfIsbns: [{ isbn: knownIsbns.first }],
-    ...overrides,
-  };
-}
-
-// Same no-default rationale as buildAddBooksPayload above: userId must be an
-// id the caller already registered, so a bare call can't invent one safely.
-export function buildReplaceBookPayload(
-  userId: string,
-  overrides?: Partial<ReplaceBookPayload>
-): ReplaceBookPayload {
-  return {
-    userId,
-    isbn: knownIsbns.second,
     ...overrides,
   };
 }

@@ -25,7 +25,7 @@ Two ISBN roles must be kept straight when reading these cases: the **path** `ISB
 | Preconditions  | User account exists with a token generated, and the user's collection holds exactly one book: "9781449325862"                              |
 | Test data      | Path ISBN: "9781449337711" (a real catalogue book the user does **not** own) / Body: `{ "userId": "<own UUID>", "isbn": "9781449331818" }` |
 | Postconditions | User account deleted via DELETE /Account/v1/User/{userId}, which removes the collection with it                                            |
-| Automation     | Not automated                                                                                                                              |
+| Automation     | Automated → `put-books.api.spec.ts`                                                                                                        |
 
 **Steps & expected results**
 
@@ -51,7 +51,7 @@ Step 2 is what separates a genuine rejection from a `400` returned after the wri
 | Preconditions  | User account exists with a token generated, and the user's collection holds exactly one book: "9781449325862"         |
 | Test data      | Path ISBN: "0000000000000" (13 digits, in no catalogue) / Body: `{ "userId": "<own UUID>", "isbn": "9781449331818" }` |
 | Postconditions | User account deleted via DELETE /Account/v1/User/{userId}, which removes the collection with it                       |
-| Automation     | Not automated                                                                                                         |
+| Automation     | Automated → `put-books.api.spec.ts`                                                                                   |
 
 **Steps & expected results**
 
@@ -76,7 +76,7 @@ Same `0000000000000` value as POST-BOOKS-008 and GET-BOOK-002 against the same c
 | Preconditions  | User account exists with a token generated, and the user's collection holds exactly one book: "9781449325862"           |
 | Test data      | Path ISBN: "9781449325862" (a book the user **does** own) / Body: `{ "userId": "<own UUID>", "isbn": "0000000000000" }` |
 | Postconditions | User account deleted via DELETE /Account/v1/User/{userId}, which removes the collection with it                         |
-| Automation     | Not automated                                                                                                           |
+| Automation     | Automated → `put-books.api.spec.ts`                                                                                     |
 
 **Steps & expected results**
 
@@ -102,7 +102,7 @@ The path ISBN here is deliberately one the user owns, so the only invalid elemen
 | Preconditions  | User account exists with a token generated, and the user's collection holds exactly one book: "9781449325862" |
 | Test data      | Path ISBN: "9781449325862" / Body: `{ "userId": "", "isbn": "9781449331818" }` — `userId` present but 0 chars |
 | Postconditions | User account deleted via DELETE /Account/v1/User/{userId}, which removes the collection with it               |
-| Automation     | Not automated                                                                                                 |
+| Automation     | Automated → `put-books.api.spec.ts`                                                                           |
 
 **Steps & expected results**
 
@@ -127,7 +127,7 @@ Asserting the code `1207` alone would pass against either endpoint's behavior an
 | Preconditions  | User account exists with a token generated, and the user's collection holds exactly one book: "9781449325862"                                                        |
 | Test data      | Path ISBN: "9781449325862" / Body: `{ "userId": "11111111-2222-3333-4444-555555555555", "isbn": "9781449331818" }` — a syntactically valid UUID belonging to no user |
 | Postconditions | User account deleted via DELETE /Account/v1/User/{userId}, which removes the collection with it                                                                      |
-| Automation     | Not automated                                                                                                                                                        |
+| Automation     | Automated → `put-books.api.spec.ts`                                                                                                                                  |
 
 **Steps & expected results**
 
@@ -152,7 +152,7 @@ Uses the same unknown-UUID value already established for `POST` and `DELETE` on 
 | Preconditions  | User account exists with a token generated, and the user's collection holds exactly one book: "9781449325862"        |
 | Test data      | Path ISBN: "9781449325862" / Body: `{ "isbn": "9781449331818" }` — the `userId` key omitted entirely, not sent empty |
 | Postconditions | User account deleted via DELETE /Account/v1/User/{userId}, which removes the collection with it                      |
-| Automation     | Not automated                                                                                                        |
+| Automation     | Automated → `put-books.api.spec.ts`                                                                                  |
 
 **Steps & expected results**
 
@@ -177,7 +177,7 @@ The automated version needs a raw request — the typed client makes `userId` ma
 | Preconditions  | User account exists with a token generated, and the user's collection holds exactly one book: "9781449325862" |
 | Test data      | Path ISBN: "9781449325862" / Body: `{ "userId": "<own UUID>" }` — the `isbn` key omitted entirely             |
 | Postconditions | User account deleted via DELETE /Account/v1/User/{userId}, which removes the collection with it               |
-| Automation     | Not automated                                                                                                 |
+| Automation     | Automated → `put-books.api.spec.ts`                                                                           |
 
 **Steps & expected results**
 
@@ -202,7 +202,7 @@ The automated version needs a raw request, for the same reason as PUT-BOOKS-006.
 | Preconditions  | User account exists with a token generated, and the user's collection holds exactly one book: "9781449325862"   |
 | Test data      | Path ISBN: "9781449325862" / Body: `{}` — a valid JSON object with zero fields; both `userId` and `isbn` absent |
 | Postconditions | User account deleted via DELETE /Account/v1/User/{userId}, which removes the collection with it                 |
-| Automation     | Not automated                                                                                                   |
+| Automation     | Automated → `put-books.api.spec.ts`                                                                             |
 
 **Steps & expected results**
 
@@ -229,7 +229,7 @@ The automated version needs a raw request — the typed client requires both fie
 | Preconditions  | User account exists with a token generated, and the user's collection holds exactly two books: "9781449325862" and "9781449337711"        |
 | Test data      | Path ISBN: "9781449325862" (owned) / Body: `{ "userId": "<own UUID>", "isbn": "9781449331818" }` (a catalogue book the user does not own) |
 | Postconditions | User account deleted via DELETE /Account/v1/User/{userId}, which removes the collection with it                                           |
-| Automation     | Not automated                                                                                                                             |
+| Automation     | Automated → `put-books.api.spec.ts`                                                                                                       |
 
 **Steps & expected results**
 
@@ -257,21 +257,21 @@ Assert membership, not position: the `200` body and the step-2 read-back list th
 | Preconditions  | User account exists with a token generated, and the user's collection holds exactly two books: "9781449325862" and "9781449337711"                                 |
 | Test data      | Path ISBN: "9781449325862" (owned) / Body: `{ "userId": "<own UUID>", "isbn": "9781449337711" }` — the replacement is the **other** book already in the collection |
 | Postconditions | User account deleted via DELETE /Account/v1/User/{userId}, which removes the collection with it                                                                    |
-| Automation     | Not automated                                                                                                                                                      |
+| Automation     | Automated → `put-books.api.spec.ts`                                                                                                                                |
 
 **Steps & expected results**
 
-| #   | Action                                                                                                                                                    | Expected result                                                                                                                                        |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1   | Send PUT /BookStore/v1/Books/9781449325862 with header `Authorization: Bearer <own token>` and body `{ "userId": "<own UUID>", "isbn": "9781449337711" }` | Status 200 (not 400/1210); `books` holds exactly **one** entry, with `isbn` equal to "9781449337711" — the collection has shrunk from two books to one |
-| 2   | Send GET /Account/v1/User/{userId} with the same token                                                                                                    | `books` holds exactly one entry, "9781449337711" — confirming a book was permanently destroyed, not merely omitted from the response                   |
+| #   | Action                                                                                                                                                    | Expected result                                                                                                                                                        |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Send PUT /BookStore/v1/Books/9781449325862 with header `Authorization: Bearer <own token>` and body `{ "userId": "<own UUID>", "isbn": "9781449337711" }` | Status 200 (not 400/1210); response body's `books` lists "9781449337711" **twice** — the response itself misreports the collection size, not merely stale or reordered |
+| 2   | Send GET /Account/v1/User/{userId} with the same token                                                                                                    | `books` holds exactly **one** entry, "9781449337711" — confirming a book was permanently destroyed, and that the response body's count of two is not the real state    |
 
 **Notes**
 **This pins a defect, not correct behavior.** The expected results deliberately encode what the endpoint _does_, so that a future fix surfaces as an intentional change rather than a silent one — the same rationale as POST-BOOKS-004/005 and GET-BOOK-005.
 
 The "not 400/1210" expectation records what a correct implementation would plausibly return: `POST /BookStore/v1/Books` already has `1210` "ISBN already present in the User's Collection!" for exactly this situation and does not reuse it here.
 
-The **count** assertion — exactly one entry, not merely "contains 9781449337711" — is the entire point of the case. A membership-only check would pass while the book disappeared. Step 2 is what proves the loss is real rather than a reporting artifact.
+**The response body is not a trustworthy record of the collection here** — live-verified 2026-09-06 (surfaced by the automated test's first run, then reproduced independently): the `200` body echoes the surviving ISBN twice, while the real persisted state (step 2) holds it once. The **count** assertion belongs on the step-2 read-back, not the response body; asserting size against the response alone would report a _different_ wrong number (two) than the truth (one), which is worse than an assertion that simply misses the defect. Step 2 is what proves the loss is real rather than a reporting artifact — and, here, what the reporting artifact itself looks like.
 
 Distinct from PUT-BOOKS-008 in outcome, not just input: both start from the same two-book collection, 008 preserves the size and 009 reduces it, which is what makes the contrast legible.
 
@@ -287,7 +287,7 @@ Distinct from PUT-BOOKS-008 in outcome, not just input: both start from the same
 | Preconditions  | User account exists with a token generated, and the user's collection holds exactly one book: "9781449325862"                      |
 | Test data      | Path ISBN: "9781449325862" / Body: `{ "userId": "<own UUID>", "isbn": "9781449325862" }` — path and body ISBN identical, and owned |
 | Postconditions | User account deleted via DELETE /Account/v1/User/{userId}, which removes the collection with it                                    |
-| Automation     | Not automated                                                                                                                      |
+| Automation     | Automated → `put-books.api.spec.ts`                                                                                                |
 
 **Steps & expected results**
 
@@ -315,7 +315,7 @@ Step 2 matters given PUT-BOOKS-009's data loss: a rejected no-op that nonetheles
 | Preconditions  | User account exists with a token generated, and the user's collection holds exactly one book: "9781449325862"             |
 | Test data      | Path ISBN: "9781449325862" / Body: `{ "userId": "<own UUID>", "isbn": "9781449331818" }` / No `Authorization` header sent |
 | Postconditions | User account deleted via DELETE /Account/v1/User/{userId}, which removes the collection with it                           |
-| Automation     | Not automated                                                                                                             |
+| Automation     | Automated → `put-books.api.spec.ts`                                                                                       |
 
 **Steps & expected results**
 
@@ -341,7 +341,7 @@ Step 2 is what makes the case meaningful: a `401` that performed the swap anyway
 | Preconditions  | User account exists with a token generated, and the user's collection holds exactly one book: "9781449325862"                               |
 | Test data      | Path ISBN: "9781449325862" / Body: `{ "userId": "<own UUID>", "isbn": "9781449331818" }` / Header: `Authorization: Bearer not-a-real-token` |
 | Postconditions | User account deleted via DELETE /Account/v1/User/{userId}, which removes the collection with it                                             |
-| Automation     | Not automated                                                                                                                               |
+| Automation     | Automated → `put-books.api.spec.ts`                                                                                                         |
 
 **Steps & expected results**
 
