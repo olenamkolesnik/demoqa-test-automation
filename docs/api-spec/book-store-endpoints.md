@@ -1,6 +1,6 @@
 # DemoQA Book Store — BookStore API (Confirmed)
 
-Source: raw Swagger spec extracted from `https://demoqa.com/swagger/swagger-ui-init.js` (saved as [`book-store-api.swagger.json`](./book-store-api.swagger.json)), cross-checked against live API calls on 2026-09-01, extended for `POST /BookStore/v1/Books` by a live check on 2026-09-05 and for `DELETE /BookStore/v1/Books` by a live check on 2026-09-06. Where the Swagger doc and live behavior disagreed, **live behavior wins** — the doc has several inaccuracies, noted below. See [`account-endpoints.md`](./account-endpoints.md) for the `/Account` endpoints.
+Source: raw Swagger spec extracted from `https://demoqa.com/swagger/swagger-ui-init.js` (saved as [`book-store-api.swagger.json`](./book-store-api.swagger.json)), cross-checked against live API calls on 2026-09-01, extended for `POST /BookStore/v1/Books` by a live check on 2026-09-05, and for `DELETE /BookStore/v1/Books` and `GET /BookStore/v1/Book` by live checks on 2026-09-06. Where the Swagger doc and live behavior disagreed, **live behavior wins** — the doc has several inaccuracies, noted below. See [`account-endpoints.md`](./account-endpoints.md) for the `/Account` endpoints.
 
 ## GET /BookStore/v1/Books (all books)
 
@@ -12,14 +12,24 @@ Matches the doc — no auth required, no error cases (the collection is never em
 
 ## GET /BookStore/v1/Book (single book)
 
-Query param: `ISBN`
+Query param: `ISBN` — **case-sensitive** (see live findings below).
 
-| Case         | Status | Body                                                                               |
-| ------------ | ------ | ---------------------------------------------------------------------------------- |
-| Success      | `200`  | `BookModal` (bare object)                                                          |
-| Unknown ISBN | `400`  | `{ code: "1205", message: "ISBN supplied is not available in Books Collection!" }` |
+| Case                                     | Status | Body                                                                                                              |
+| ---------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------- |
+| Success                                  | `200`  | `BookModal` (bare object)                                                                                         |
+| Unknown ISBN                             | `400`  | `{ code: "1205", message: "ISBN supplied is not available in Books Collection!" }`                                |
+| `ISBN` present but empty                 | `400`  | `{ code: "1205", message: "ISBN supplied is not available in Books Collection!" }` — **live-verified 2026-09-06** |
+| `ISBN` non-numeric / malformed           | `400`  | `{ code: "1205", message: "ISBN supplied is not available in Books Collection!" }` — **live-verified 2026-09-06** |
+| `ISBN` query param absent entirely       | `500`  | HTML error page with a Sequelize stack trace — **live-verified 2026-09-06**                                       |
+| Param spelled `isbn` (wrong casing)      | `500`  | HTML error page, identical to absent — **live-verified 2026-09-06**                                               |
+| Any `Authorization` header (valid/bogus) | `200`  | Ignored entirely; unauthenticated endpoint — **live-verified 2026-09-06**                                         |
 
-Matches the doc.
+**Live findings, 2026-09-06** (each reproduced across three independent runs):
+
+- **An absent `ISBN` crashes the server.** Omitting the query parameter returns `500` with an HTML page leaking a Sequelize stack trace (`WHERE parameter "isbn" has invalid "undefined" value`). This matches `POST /BookStore/v1/Books`'s absent-key behavior and is the **opposite** of `DELETE /BookStore/v1/Books`, where an absent `UserId` is validated into a `401`/`1207`. Absent and empty are not equivalent here: an empty `ISBN` _is_ handled, returning `400`/`1205`.
+- **The query parameter is case-sensitive.** `?isbn=...` (lowercase) is treated exactly as if the parameter were absent — same `500`, same stack trace. Only `ISBN` is read.
+- **Every invalid-but-present `ISBN` collapses to one response.** Empty, whitespace, non-numeric, and well-formed-but-unknown all return `400`/`1205` with identical text. The endpoint validates catalogue membership, not ISBN format.
+- **Auth is ignored, not rejected.** A bogus bearer token returns `200` with the book, confirming the documented "GET endpoints are unauthenticated" claim — the header is not merely optional, it has no effect at all.
 
 ## POST /BookStore/v1/Books (add books to a user's collection)
 

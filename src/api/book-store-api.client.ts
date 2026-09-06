@@ -14,6 +14,14 @@ export class BookStoreApiClient extends BaseApiClient {
     return this.logged(this.request.get(path), `GET ${path}`);
   }
 
+  getBook(isbn: string): Promise<APIResponse> {
+    const path = `${this.basePath}/Book`;
+    return this.logged(
+      this.request.get(path, { params: { ISBN: isbn } }),
+      `GET ${path}?ISBN=${isbn}`
+    );
+  }
+
   addBooks(payload: AddBooksPayload, token: string): Promise<APIResponse> {
     const path = `${this.basePath}/Books`;
     return this.logged(
