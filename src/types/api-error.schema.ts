@@ -6,5 +6,3 @@ export const ApiErrorResponseSchema = z
     message: z.string(),
   })
   .strict();
-
-export type ApiErrorResponse = z.infer<typeof ApiErrorResponseSchema>;

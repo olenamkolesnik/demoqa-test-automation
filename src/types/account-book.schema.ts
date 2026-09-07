@@ -23,5 +23,3 @@ export const AccountBookSchema = z
     website: z.string(),
   })
   .strict();
-
-export type AccountBook = z.infer<typeof AccountBookSchema>;

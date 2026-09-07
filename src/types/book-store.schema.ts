@@ -28,8 +28,6 @@ export const AllBooksResponseSchema = z
   })
   .strict();
 
-export type AllBooksResponse = z.infer<typeof AllBooksResponseSchema>;
-
 // POST /BookStore/v1/Books request body — confirmed live via
 // docs/api-spec/book-store-endpoints.md.
 export const AddBooksPayloadSchema = z.object({
@@ -50,8 +48,6 @@ export const AddBooksResponseSchema = z
     books: z.array(z.object({ isbn: z.string() })),
   })
   .strict();
-
-export type AddBooksResponse = z.infer<typeof AddBooksResponseSchema>;
 
 // PUT /BookStore/v1/Books/{ISBN} request body — confirmed live via
 // docs/api-spec/book-store-endpoints.md. isbn is the replacement book; the
@@ -77,5 +73,3 @@ export const ReplaceBookResponseSchema = z
     books: z.array(BookSchema),
   })
   .strict();
-
-export type ReplaceBookResponse = z.infer<typeof ReplaceBookResponseSchema>;
