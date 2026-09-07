@@ -1,5 +1,10 @@
-import { test, expect, getUserBookIsbns } from '../../../src/fixtures/book-store.fixtures';
-import { knownIsbns, unknownUserId } from '../../../src/data/book-store.factory';
+import { test, expect } from '../../../src/fixtures/book-store.fixtures';
+import { getUserBookIsbns } from '../../../src/utils/user-books.util';
+import {
+  buildAddBooksPayload,
+  knownIsbns,
+  unknownUserId,
+} from '../../../src/data/book-store.factory';
 import { parseJsonBody } from '../../../src/utils/api-response.util';
 import { ApiErrorResponseSchema } from '../../../src/types/api-error.schema';
 
@@ -11,10 +16,12 @@ test(
     // empty-array assertion below can only pass if the whole collection is
     // cleared, not merely the first book — the distinction this test case
     // exists to prove (see COND-DELETE-BOOKS-004's Notes).
-    const addResponse = await bookStoreApiClient.addBooks(
-      { userId: seedUserWithBook.userId, collectionOfIsbns: [{ isbn: knownIsbns.second }] },
-      seedUserWithBook.token
-    );
+    const addResponse = await bookStoreApiClient.addBooks({
+      payload: buildAddBooksPayload(seedUserWithBook.userId, {
+        collectionOfIsbns: [{ isbn: knownIsbns.second }],
+      }),
+      token: seedUserWithBook.token,
+    });
     expect.soft(addResponse.status()).toBe(201);
 
     const response = await bookStoreApiClient.deleteAllBooks({

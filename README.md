@@ -11,33 +11,39 @@
 
 ISTQB-aligned test automation for the [DemoQA](https://demoqa.com) Book Store application, covering both the REST API and the web UI with TypeScript and Playwright.
 
-**API coverage** — account management (`/Account/v1`): user creation, token generation, authorization checks, and profile retrieval. Functional tests assert behaviour; separate contract tests validate response bodies against Zod schemas.
+**API coverage** — full functional and contract coverage of both REST resources:
 
-**UI coverage** — planned: login, book catalogue browsing, collection management, and profile state. See [Current scope](#current-scope) for what is implemented today.
+- **Account management** (`/Account/v1`) — user creation, token generation, authorization checks, profile retrieval, and deletion.
+- **Book Store** (`/BookStore/v1`) — catalogue listing, single-book lookup, and adding/replacing/removing books on a user's collection.
+
+Functional tests assert behaviour; separate contract tests validate response bodies against Zod schemas.
+
+**UI coverage** — planned: login, book catalogue browsing, collection management, and profile state. `src/pages/` and `tests/ui/` are placeholders today.
 
 Test design follows equivalence partitioning, boundary value analysis, and decision-table coverage of authorization states. Every automated test traces to a reviewed test case in `docs/test-cases/`, which in turn traces to a test condition in `docs/test-conditions/`.
 
 ## Current scope
 
-| Area                          | Status                                                  |
-| ----------------------------- | ------------------------------------------------------- |
-| `GET /Account/v1/User/{UUID}` | Automated — 3 functional + 2 contract tests             |
-| `POST /Account/v1/User`       | Specified in `docs/test-cases/`, not yet automated      |
-| BookStore API (`/BookStore`)  | Specified in `docs/api-spec/`, not yet automated        |
-| UI (all flows)                | Planned — `src/pages/` and `tests/ui/` are placeholders |
+| Area                                                         | Status                                                                                                                            |
+| ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| `/Account/v1` (create, get, delete, token, authorized)       | Automated — functional + contract tests, tagged `@AUTH-001`–`@AUTH-036`                                                           |
+| `/BookStore/v1` (get books, get book, POST/PUT/DELETE books) | Automated — functional + contract tests, tagged `@GET-BOOKS-*`, `@GET-BOOK-*`, `@POST-BOOKS-*`, `@PUT-BOOKS-*`, `@DELETE-BOOKS-*` |
+| UI (all flows)                                               | Planned — `src/pages/` and `tests/ui/` are placeholders                                                                           |
 
 ## Project structure
 
 ```
 src/
-  api/         Typed API clients — send requests, return the raw response, never assert
-  types/       Zod schemas and the types inferred from them
-  data/        Pure test-data factories (unique usernames, valid/invalid passwords)
-  fixtures/    Setup and teardown — seed a user, hand it to the test, delete it after
-  utils/       Cross-cutting helpers: logging, secret redaction, response parsing
+  api/         Typed API clients (account, book store) — send requests, return the raw response, never assert
+  types/       Zod schemas and the types inferred from them, per resource
+  data/        Pure test-data factories (unique usernames, valid/invalid passwords, book payloads)
+  fixtures/    Setup and teardown — seed a user/book, hand it to the test, delete it after
+  utils/       Cross-cutting helpers: logging, secret redaction, response parsing, custom matchers
   pages/       Page objects (UI — not yet populated)
 tests/
-  api/         *.api.spec.ts (functional) and *.contract.spec.ts (schema validation)
+  api/
+    auth/      Account API specs (*.api.spec.ts functional, *.contract.spec.ts schema validation)
+    bookstore/ Book Store API specs (*.api.spec.ts functional, *.contract.spec.ts schema validation)
   ui/          UI specs (not yet populated)
 docs/          Test plan, coding standards, API spec, test conditions and test cases
 scripts/       CI maintenance — report publishing
@@ -127,7 +133,7 @@ Recommended companions: `dbaeumer.vscode-eslint` and `esbenp.prettier-vscode`.
 | `npx playwright test --repeat-each 5`         | Re-run tests repeatedly to expose flakiness                           |
 | `npx playwright test --workers 1`             | Run serially — useful when debugging shared-state interference        |
 
-Available tags: `@positive`, `@negative`, `@contract`, `@AUTH`, plus one per test case (`@AUTH-012`, `@AUTH-013`, `@AUTH-014`) linking each test back to `docs/test-cases/`.
+Available tags: `@positive`, `@negative`, `@contract`, plus one per test case linking each test back to `docs/test-cases/` — `@AUTH-001`–`@AUTH-036` for the Account API, and `@GET-BOOKS-*` / `@GET-BOOK-*` / `@POST-BOOKS-*` / `@PUT-BOOKS-*` / `@DELETE-BOOKS-*` for the Book Store API.
 
 ### Playwright-specific commands
 

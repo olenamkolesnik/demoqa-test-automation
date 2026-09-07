@@ -1,15 +1,15 @@
 import type { APIRequestContext, APIResponse } from '@playwright/test';
 import { BaseApiClient } from './base-api.client';
+import type { AuthorizedUserRequest } from './authorized-request';
 import type { LoginPayload } from '../types/account.schema';
-
-interface AuthorizedUserRequest {
-  userId: string;
-  token: string;
-}
 
 export class AccountApiClient extends BaseApiClient {
   private readonly basePath = '/Account/v1';
 
+  // Re-declared solely to widen BaseApiClient's protected constructor to
+  // public: fixtures must be able to `new` this client. Not a redundant
+  // forwarder — removing it makes the class uninstantiable outside its own
+  // declaration (TS2674).
   constructor(request: APIRequestContext) {
     super(request);
   }

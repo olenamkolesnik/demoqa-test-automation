@@ -1,5 +1,11 @@
-import { test, expect, getUserBookIsbns } from '../../../src/fixtures/book-store.fixtures';
-import { knownIsbns, unknownIsbn, unknownUserId } from '../../../src/data/book-store.factory';
+import { test, expect } from '../../../src/fixtures/book-store.fixtures';
+import { getUserBookIsbns } from '../../../src/utils/user-books.util';
+import {
+  buildAddBooksPayload,
+  knownIsbns,
+  unknownIsbn,
+  unknownUserId,
+} from '../../../src/data/book-store.factory';
 import { parseJsonBody } from '../../../src/utils/api-response.util';
 import { ReplaceBookResponseSchema } from '../../../src/types/book-store.schema';
 import { ApiErrorResponseSchema } from '../../../src/types/api-error.schema';
@@ -169,10 +175,12 @@ test(
     // the replacement is scoped to one entry, not the whole collection —
     // the distinction this test case exists to prove (see
     // COND-PUT-BOOKS-008's Notes).
-    const addResponse = await bookStoreApiClient.addBooks(
-      { userId: seedUserWithBook.userId, collectionOfIsbns: [{ isbn: knownIsbns.third }] },
-      seedUserWithBook.token
-    );
+    const addResponse = await bookStoreApiClient.addBooks({
+      payload: buildAddBooksPayload(seedUserWithBook.userId, {
+        collectionOfIsbns: [{ isbn: knownIsbns.third }],
+      }),
+      token: seedUserWithBook.token,
+    });
     expect(addResponse.status()).toBe(201);
 
     const response = await bookStoreApiClient.replaceBook({
@@ -209,10 +217,12 @@ test(
   async ({ bookStoreApiClient, accountApiClient, seedUserWithBook }) => {
     // Seeded the same way as PUT-BOOKS-008: two owned ISBNs, so the
     // replacement target (knownIsbns.third) is already in the collection.
-    const addResponse = await bookStoreApiClient.addBooks(
-      { userId: seedUserWithBook.userId, collectionOfIsbns: [{ isbn: knownIsbns.third }] },
-      seedUserWithBook.token
-    );
+    const addResponse = await bookStoreApiClient.addBooks({
+      payload: buildAddBooksPayload(seedUserWithBook.userId, {
+        collectionOfIsbns: [{ isbn: knownIsbns.third }],
+      }),
+      token: seedUserWithBook.token,
+    });
     expect(addResponse.status()).toBe(201);
 
     const response = await bookStoreApiClient.replaceBook({
