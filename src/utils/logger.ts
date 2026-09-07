@@ -11,10 +11,13 @@ const levelColors: Record<Level, string> = {
   ERROR: '\x1b[31m',
 };
 
-// Color only when stdout is an interactive terminal and this isn't CI —
-// raw escape codes otherwise corrupt log viewers (e.g. GitHub Actions).
+// Always colored except on CI, where raw escape codes would corrupt the log
+// viewer (e.g. GitHub Actions). Not gated on isTTY here: Playwright applies
+// its own separate ANSI-stripping decision to worker stdout ahead of this,
+// based on its own isTTY check — an interactive terminal already passes that,
+// so this function only needs to add the CI exception on top of it.
 function colorEnabled(): boolean {
-  return Boolean(process.stdout.isTTY) && !process.env.CI;
+  return !process.env.CI;
 }
 
 // test.info() only works while a test is actually executing and throws
