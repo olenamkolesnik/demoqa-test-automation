@@ -33,9 +33,9 @@ function format(level: Level, message: string): string {
   const context = testContext();
 
   if (!colorEnabled()) {
-    return `${timestamp} ${context}[${level}] ${message}`;
+    return `${timestamp} [${level}] ${context}${message}`;
   }
-  return `${dim}${timestamp}${reset} ${context}${levelColors[level]}[${level}]${reset} ${message}`;
+  return `${dim}${timestamp}${reset} ${levelColors[level]}[${level}]${reset} ${context}${message}`;
 }
 
 // Only the literal string "true" enables debug output — a plain truthy
