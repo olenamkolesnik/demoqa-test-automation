@@ -25,11 +25,11 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Fixed worker count on CI rather than the core-count default: these are
-     I/O-bound API tests waiting on a remote sandbox, so useful concurrency is
-     not limited by the runner's 2 cores. Locally, Playwright's default (half
-     the available cores) is left alone. */
-  workers: process.env.CI ? 4 : undefined,
+  /* Fixed worker count everywhere rather than Playwright's core-count default:
+     these are I/O-bound API tests waiting on a remote sandbox, so useful
+     concurrency is not limited by CPU cores. Locally this also sidesteps the
+     "half the cores" default, which collapses to 1 worker on a 2-core laptop. */
+  workers: process.env.CI ? 4 : 3,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: process.env.CI
     ? [
