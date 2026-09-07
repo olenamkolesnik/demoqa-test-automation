@@ -1,4 +1,5 @@
-import { test, expect, getUserBookIsbns } from '../../../src/fixtures/book-store.fixtures';
+import { test, expect } from '../../../src/fixtures/book-store.fixtures';
+import { getUserBookIsbns } from '../../../src/utils/user-books.util';
 import {
   buildAddBooksPayload,
   knownIsbns,
@@ -13,10 +14,8 @@ test(
   "Add a single valid book to the user's own collection",
   { tag: ['@POST-BOOKS-001', '@positive'] },
   async ({ bookStoreApiClient, seedUserForBooks, accountApiClient }) => {
-    const payload = buildAddBooksPayload(seedUserForBooks.userId, {
-      collectionOfIsbns: [{ isbn: knownIsbns.first }],
-    });
-    const response = await bookStoreApiClient.addBooks(payload, seedUserForBooks.token);
+    const payload = buildAddBooksPayload(seedUserForBooks.userId);
+    const response = await bookStoreApiClient.addBooks({ payload, token: seedUserForBooks.token });
 
     expect.soft(response.status()).toBe(201);
     const body = await parseJsonBody(response, AddBooksResponseSchema);
@@ -39,7 +38,7 @@ test(
     const payload = buildAddBooksPayload(seedUserForBooks.userId, {
       collectionOfIsbns: [{ isbn: knownIsbns.second }, { isbn: knownIsbns.third }],
     });
-    const response = await bookStoreApiClient.addBooks(payload, seedUserForBooks.token);
+    const response = await bookStoreApiClient.addBooks({ payload, token: seedUserForBooks.token });
 
     expect.soft(response.status()).toBe(201);
     const body = await parseJsonBody(response, AddBooksResponseSchema);
@@ -58,7 +57,7 @@ test(
   { tag: ['@POST-BOOKS-003', '@boundary'] },
   async ({ bookStoreApiClient, seedUserForBooks }) => {
     const payload = buildAddBooksPayload(seedUserForBooks.userId, { collectionOfIsbns: [] });
-    const response = await bookStoreApiClient.addBooks(payload, seedUserForBooks.token);
+    const response = await bookStoreApiClient.addBooks({ payload, token: seedUserForBooks.token });
     const error = await parseJsonBody(response, ApiErrorResponseSchema);
 
     expect.soft(response.status()).toBe(400);
@@ -107,10 +106,8 @@ test(
   'Add books with an empty-string userId',
   { tag: ['@POST-BOOKS-006', '@boundary'] },
   async ({ bookStoreApiClient, seedUserForBooks }) => {
-    const payload = buildAddBooksPayload('', {
-      collectionOfIsbns: [{ isbn: knownIsbns.first }],
-    });
-    const response = await bookStoreApiClient.addBooks(payload, seedUserForBooks.token);
+    const payload = buildAddBooksPayload('');
+    const response = await bookStoreApiClient.addBooks({ payload, token: seedUserForBooks.token });
     const error = await parseJsonBody(response, ApiErrorResponseSchema);
 
     expect.soft(response.status()).toBe(401);
@@ -123,10 +120,8 @@ test(
   'Add books with a well-formed but unknown userId',
   { tag: ['@POST-BOOKS-007', '@negative'] },
   async ({ bookStoreApiClient, seedUserForBooks }) => {
-    const payload = buildAddBooksPayload(unknownUserId, {
-      collectionOfIsbns: [{ isbn: knownIsbns.first }],
-    });
-    const response = await bookStoreApiClient.addBooks(payload, seedUserForBooks.token);
+    const payload = buildAddBooksPayload(unknownUserId);
+    const response = await bookStoreApiClient.addBooks({ payload, token: seedUserForBooks.token });
     const error = await parseJsonBody(response, ApiErrorResponseSchema);
 
     expect.soft(response.status()).toBe(401);
@@ -142,7 +137,7 @@ test(
     const payload = buildAddBooksPayload(seedUserForBooks.userId, {
       collectionOfIsbns: [{ isbn: unknownIsbn }],
     });
-    const response = await bookStoreApiClient.addBooks(payload, seedUserForBooks.token);
+    const response = await bookStoreApiClient.addBooks({ payload, token: seedUserForBooks.token });
     const error = await parseJsonBody(response, ApiErrorResponseSchema);
 
     expect.soft(response.status()).toBe(400);
@@ -158,7 +153,7 @@ test(
     const payload = buildAddBooksPayload(seedUserForBooks.userId, {
       collectionOfIsbns: [{ isbn: knownIsbns.first }, { isbn: unknownIsbn }],
     });
-    const response = await bookStoreApiClient.addBooks(payload, seedUserForBooks.token);
+    const response = await bookStoreApiClient.addBooks({ payload, token: seedUserForBooks.token });
 
     // Documents current (non-atomic) behavior: the response echoes both
     // ISBNs, but only the valid one is actually persisted — verified below.
@@ -179,10 +174,8 @@ test(
   "Add a book already present in the user's collection",
   { tag: ['@POST-BOOKS-010', '@negative'] },
   async ({ bookStoreApiClient, seedUserWithBook }) => {
-    const payload = buildAddBooksPayload(seedUserWithBook.userId, {
-      collectionOfIsbns: [{ isbn: knownIsbns.first }],
-    });
-    const response = await bookStoreApiClient.addBooks(payload, seedUserWithBook.token);
+    const payload = buildAddBooksPayload(seedUserWithBook.userId);
+    const response = await bookStoreApiClient.addBooks({ payload, token: seedUserWithBook.token });
     const error = await parseJsonBody(response, ApiErrorResponseSchema);
 
     expect.soft(response.status()).toBe(400);
@@ -195,10 +188,8 @@ test(
   'Add a book without an Authorization header',
   { tag: ['@POST-BOOKS-011', '@negative'] },
   async ({ bookStoreApiClient, seedUserForBooks, accountApiClient }) => {
-    const payload = buildAddBooksPayload(seedUserForBooks.userId, {
-      collectionOfIsbns: [{ isbn: knownIsbns.first }],
-    });
-    const response = await bookStoreApiClient.addBooks(payload, '');
+    const payload = buildAddBooksPayload(seedUserForBooks.userId);
+    const response = await bookStoreApiClient.addBooks({ payload, token: '' });
     const error = await parseJsonBody(response, ApiErrorResponseSchema);
 
     expect.soft(response.status()).toBe(401);
@@ -217,10 +208,8 @@ test(
   'Add a book with a malformed bearer token',
   { tag: ['@POST-BOOKS-012', '@negative'] },
   async ({ bookStoreApiClient, seedUserForBooks }) => {
-    const payload = buildAddBooksPayload(seedUserForBooks.userId, {
-      collectionOfIsbns: [{ isbn: knownIsbns.first }],
-    });
-    const response = await bookStoreApiClient.addBooks(payload, 'not-a-real-token');
+    const payload = buildAddBooksPayload(seedUserForBooks.userId);
+    const response = await bookStoreApiClient.addBooks({ payload, token: 'not-a-real-token' });
     const error = await parseJsonBody(response, ApiErrorResponseSchema);
 
     expect.soft(response.status()).toBe(401);

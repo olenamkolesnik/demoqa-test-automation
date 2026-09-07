@@ -2,20 +2,10 @@ import { test as base } from '@playwright/test';
 import { AccountApiClient } from '../api/account-api.client';
 import { buildNewUserPayload } from '../data/user.factory';
 import { parseJsonBody } from '../utils/api-response.util';
-import { logger } from '../utils/logger';
-import { deleteAndLogOrphanOnFailure } from './teardown.util';
-import { CreateUserResponseSchema, GenerateTokenResponseSchema } from '../types/account.schema';
+import { deleteSeededUser, seedAuthorizedUser } from './seed-user.util';
+import { CreateUserResponseSchema } from '../types/account.schema';
+import type { SeededAuthorizedUser, SeededUser } from './seed-user.util';
 import type { LoginPayload } from '../types/account.schema';
-
-interface SeededUser {
-  userName: string;
-  password: string;
-  userId: string;
-}
-
-interface SeededAuthorizedUser extends SeededUser {
-  token: string;
-}
 
 // For tests whose own DELETE call under test is expected to actually delete
 // the user (the success case, or a repeat-delete case proving
@@ -50,54 +40,18 @@ interface AccountFixtures {
   userUnderTest: UserUnderTest;
 }
 
-async function deleteUserAndLogOrphanOnFailure(
-  client: AccountApiClient,
-  payload: LoginPayload,
-  userId: string,
-  existingToken?: string
-): Promise<void> {
-  let token: string | null | undefined = existingToken;
-
-  if (!token) {
-    try {
-      const tokenResponse = await parseJsonBody(
-        await client.generateToken(payload),
-        GenerateTokenResponseSchema
-      );
-      token = tokenResponse.token;
-    } catch (error) {
-      logger.error(
-        `Teardown token re-fetch threw for orphaned user userId=${userId} userName=${payload.userName}: ${String(error)}`
-      );
-      return;
-    }
-  }
-
-  if (!token) {
-    logger.error(
-      `Teardown could not acquire a token to delete orphaned user userId=${userId} userName=${payload.userName}`
-    );
-    return;
-  }
-
-  await deleteAndLogOrphanOnFailure(
-    () => client.deleteUser({ userId, token }),
-    () => `orphaned userId=${userId} userName=${payload.userName}`,
-    204
-  );
-}
-
 export const test = base.extend<AccountFixtures>({
   accountApiClient: async ({ request }, use) => {
     await use(new AccountApiClient(request));
   },
 
   // Registers a user and nothing else — deliberately no GenerateToken call
-  // before use(). POST /Account/v1/Authorized reports token state rather than
-  // credential validity, so AUTH-030 depends on this fixture handing over a
-  // user that has never been tokenized in order to observe `false`. Teardown's
-  // token fetch runs after use() and so does not disturb that; do not move it
-  // or add a setup-phase token here without splitting off a separate fixture.
+  // before use(), which is why this fixture does not reuse seedAuthorizedUser.
+  // POST /Account/v1/Authorized reports token state rather than credential
+  // validity, so AUTH-030 depends on this fixture handing over a user that has
+  // never been tokenized in order to observe `false`. Teardown's token fetch
+  // runs after use() and so does not disturb that; do not move it or add a
+  // setup-phase token here without splitting off a separate fixture.
   seedUser: async ({ accountApiClient }, use) => {
     const payload = buildNewUserPayload();
     const createResponse = await accountApiClient.createUser(payload);
@@ -105,51 +59,24 @@ export const test = base.extend<AccountFixtures>({
 
     await use({ userName: payload.userName, password: payload.password, userId: created.userID });
 
-    await deleteUserAndLogOrphanOnFailure(accountApiClient, payload, created.userID);
+    await deleteSeededUser(accountApiClient, payload, created.userID);
   },
 
   seedAuthorizedUser: async ({ accountApiClient }, use) => {
-    const payload = buildNewUserPayload();
-    const createResponse = await accountApiClient.createUser(payload);
-    const created = await parseJsonBody(createResponse, CreateUserResponseSchema);
-    const tokenResponse = await accountApiClient.generateToken(payload);
-    const { token } = await parseJsonBody(tokenResponse, GenerateTokenResponseSchema);
+    const { payload, userId, token } = await seedAuthorizedUser(accountApiClient);
 
-    if (!token) {
-      logger.error(
-        `seedAuthorizedUser could not acquire a token for userId=${created.userID} userName=${payload.userName}`
-      );
-      throw new Error('seedAuthorizedUser: token acquisition failed');
-    }
+    await use({ userName: payload.userName, password: payload.password, userId, token });
 
-    await use({
-      userName: payload.userName,
-      password: payload.password,
-      userId: created.userID,
-      token,
-    });
-
-    await deleteUserAndLogOrphanOnFailure(accountApiClient, payload, created.userID, token);
+    await deleteSeededUser(accountApiClient, payload, userId, token);
   },
 
   seedAuthorizedUserForSelfDelete: async ({ accountApiClient }, use) => {
-    const payload = buildNewUserPayload();
-    const createResponse = await accountApiClient.createUser(payload);
-    const created = await parseJsonBody(createResponse, CreateUserResponseSchema);
-    const tokenResponse = await accountApiClient.generateToken(payload);
-    const { token } = await parseJsonBody(tokenResponse, GenerateTokenResponseSchema);
-
-    if (!token) {
-      logger.error(
-        `seedAuthorizedUserForSelfDelete could not acquire a token for userId=${created.userID} userName=${payload.userName}`
-      );
-      throw new Error('seedAuthorizedUserForSelfDelete: token acquisition failed');
-    }
+    const { payload, userId, token } = await seedAuthorizedUser(accountApiClient);
 
     const state: SelfDeletingAuthorizedUser = {
       userName: payload.userName,
       password: payload.password,
-      userId: created.userID,
+      userId,
       token,
       deleted: false,
     };
@@ -159,9 +86,9 @@ export const test = base.extend<AccountFixtures>({
     // The test sets state.deleted = true after its own successful delete.
     // Skip teardown's delete in that case — the user is already gone, and a
     // second delete attempt would return 200/1207 rather than 204, which
-    // deleteUserAndLogOrphanOnFailure would misread as a failed cleanup.
+    // deleteSeededUser would misread as a failed cleanup.
     if (!state.deleted) {
-      await deleteUserAndLogOrphanOnFailure(accountApiClient, payload, created.userID, token);
+      await deleteSeededUser(accountApiClient, payload, userId, token);
     }
   },
 
@@ -177,11 +104,7 @@ export const test = base.extend<AccountFixtures>({
     // rather than in the test body. Undefined means the registration under
     // test was expected to fail, so there is nothing to delete.
     if (userUnderTest.createdUserId !== undefined) {
-      await deleteUserAndLogOrphanOnFailure(
-        accountApiClient,
-        userUnderTest.payload,
-        userUnderTest.createdUserId
-      );
+      await deleteSeededUser(accountApiClient, userUnderTest.payload, userUnderTest.createdUserId);
     }
   },
 });

@@ -130,6 +130,8 @@ Query param: `UserId`
 
 **Doc discrepancy:** same pattern — Swagger labels `204` as schema `BooksResult`, but live behavior returns an **empty body** on success. Do not expect a response payload on success.
 
+**Deleting the owning Account user also removes the collection (live-verified 2026-09-07, three independent `qa_`-prefixed users).** After `DELETE /Account/v1/User/{UUID}` returns `204`, a follow-up `GET /Account/v1/User/{UUID}` returns `401`/`1207` "User not found!" — the user and their books are gone together, so a collection cannot outlive its owner. This is why the book-seeding fixtures in `src/fixtures/book-store.fixtures.ts` tear down the user only: an explicit `DELETE /BookStore/v1/Books` before deleting the user would be a redundant round-trip, not extra safety. Re-verify this if user-deletion behavior ever changes, since the fixtures' cleanup correctness depends on it.
+
 ## Auth mechanism
 
 Same as `/Account` endpoints — `Authorization: Bearer <token>` header required for all mutating operations (`POST`, `PUT`, `DELETE`). `GET` endpoints are unauthenticated.
