@@ -55,7 +55,7 @@ Four divergence dispositions (`docs/ui-spec/login-form.requirements.md`, accepte
 | Category   | Input field                                 |
 | Technique  | EP                                          |
 | Source     | REQ-LOGIN-010, REQ-LOGIN-012, REQ-LOGIN-014 |
-| Test cases | —                                           |
+| Test cases | LOGIN-FORM-001                              |
 
 **What to cover**
 Submitting with the username empty and the password filled blocks submission client-side and marks only the username field.
@@ -78,7 +78,7 @@ The only observable signal is the `is-invalid` CSS class — no message, no ARIA
 | Category   | Input field                                 |
 | Technique  | EP                                          |
 | Source     | REQ-LOGIN-011, REQ-LOGIN-012, REQ-LOGIN-014 |
-| Test cases | —                                           |
+| Test cases | LOGIN-FORM-002                              |
 
 **What to cover**
 Submitting with the password empty and the username filled blocks submission client-side and marks only the password field.
@@ -101,7 +101,7 @@ Same CSS-selector exception as COND-LOGIN-FORM-001.
 | Category   | Input field                                 |
 | Technique  | BVA                                         |
 | Source     | REQ-LOGIN-010, REQ-LOGIN-011, REQ-LOGIN-012 |
-| Test cases | —                                           |
+| Test cases | LOGIN-FORM-003                              |
 
 **What to cover**
 Submitting with both fields empty marks both fields, confirming the check is per-field rather than form-wide.
@@ -124,7 +124,7 @@ Empty (0 characters) is the boundary of the required check. Kept separate from C
 | Category   | Input field         |
 | Technique  | BVA                 |
 | Source     | REQ-LOGIN-015       |
-| Test cases | —                   |
+| Test cases | LOGIN-FORM-004      |
 
 **What to cover**
 Whitespace-only input satisfies the required check and is submitted to the server, which rejects it — no client-side blocking occurs.
@@ -147,7 +147,7 @@ Immediately above the empty boundary in COND-LOGIN-FORM-003: a string of length 
 | Category   | Input field         |
 | Technique  | BVA                 |
 | Source     | REQ-LOGIN-022       |
-| Test cases | —                   |
+| Test cases | LOGIN-FORM-005      |
 
 **What to cover**
 A long credential value is neither truncated nor rejected by the form; it is submitted whole and answered by the server.
@@ -170,7 +170,7 @@ userName: "q" × 10000   password: "q" × 10000   → field value length stays 1
 | Category   | Input field         |
 | Technique  | EP                  |
 | Source     | REQ-LOGIN-023       |
-| Test cases | —                   |
+| Test cases | LOGIN-FORM-006      |
 
 **What to cover**
 Credentials containing markup and punctuation are accepted by the form and transmitted verbatim, with no client-side sanitisation or error.
@@ -197,7 +197,7 @@ Functional observation only — this is not a security test, and `docs/test-plan
 | Category   | Behavior                     |
 | Technique  | EP                           |
 | Source     | REQ-LOGIN-001, REQ-LOGIN-002 |
-| Test cases | —                            |
+| Test cases | LOGIN-FORM-007               |
 
 **What to cover**
 Submitting the correct username and password for a registered account authenticates the user, hands off to the authenticated area, and renders no error.
@@ -221,7 +221,7 @@ The single most important condition in this file — if it fails, no authenticat
 | Category   | Behavior                     |
 | Technique  | EP                           |
 | Source     | REQ-LOGIN-030, REQ-LOGIN-033 |
-| Test cases | —                            |
+| Test cases | LOGIN-FORM-008               |
 
 **What to cover**
 A well-formed username that matches no account is rejected; the user stays on the form, the error is displayed, and no field-level invalid marking remains.
@@ -242,7 +242,7 @@ userName: "qa_nonexistent_<random>"   password: "Aa1!aaaaaaaa"
 | Category   | Behavior                     |
 | Technique  | EP                           |
 | Source     | REQ-LOGIN-030, REQ-LOGIN-031 |
-| Test cases | —                            |
+| Test cases | LOGIN-FORM-009               |
 
 **What to cover**
 A correct username with an incorrect password is rejected with exactly the same message as an unknown username, so the response does not disclose which credential was wrong.
@@ -266,7 +266,7 @@ The non-disclosure property is the point of this condition, and it is only obser
 | Category   | Behavior            |
 | Technique  | EP                  |
 | Source     | REQ-LOGIN-034       |
-| Test cases | —                   |
+| Test cases | LOGIN-FORM-010      |
 
 **What to cover**
 After a rejected submission, both fields still hold what the user typed, so the input can be corrected rather than retyped.
@@ -287,7 +287,7 @@ userName: "qa_retained_probe"   password: "WrongPass1!"
 | Category   | Behavior            |
 | Technique  | EP                  |
 | Source     | REQ-LOGIN-032       |
-| Test cases | —                   |
+| Test cases | LOGIN-FORM-016      |
 
 **What to cover**
 The authentication error is exposed in the accessibility tree as a paragraph, not only as styled text, so it can be located by its accessible role and content.
@@ -310,7 +310,7 @@ This is the counterpart to COND-LOGIN-FORM-INF-001: unlike the blank-field marki
 | Category   | Behavior              |
 | Technique  | Exploratory heuristic |
 | Source     | REQ-LOGIN-024         |
-| Test cases | —                     |
+| Test cases | LOGIN-FORM-011        |
 
 **What to cover**
 The password field remains masked after a rejected submission — a failure never exposes the typed password on screen.
@@ -333,7 +333,7 @@ Any rejected credential pair → #password retains type="password" after the err
 | Category   | Behavior              |
 | Technique  | Exploratory heuristic |
 | Source     | REQ-LOGIN-040         |
-| Test cases | —                     |
+| Test cases | LOGIN-FORM-012        |
 
 **What to cover**
 Pressing Enter within the form submits it, so the form can be completed without a pointer.
@@ -360,7 +360,7 @@ Re-verified on 2026-09-10 with a genuine `keyboard.press('Enter')`, which matche
 | Category   | State               |
 | Technique  | State transition    |
 | Source     | REQ-LOGIN-003       |
-| Test cases | —                   |
+| Test cases | LOGIN-FORM-013      |
 
 **What to cover**
 Reaching `/login` with an active session presents no login form at all — the controls are replaced by a sign-out control and an "already logged in" message with a link to the profile.
@@ -384,7 +384,7 @@ High priority despite being an edge case: this is the project's main test-isolat
 | Category   | State               |
 | Technique  | State transition    |
 | Source     | REQ-LOGIN-051       |
-| Test cases | —                   |
+| Test cases | LOGIN-FORM-014      |
 
 **What to cover**
 The New User control takes a visitor without an account from the login form to the registration page.
@@ -407,7 +407,7 @@ Covers the transition only. The registration form's own behavior is out of scope
 | Category   | State                 |
 | Technique  | Exploratory heuristic |
 | Source     | REQ-LOGIN-050         |
-| Test cases | —                     |
+| Test cases | LOGIN-FORM-015        |
 
 **What to cover**
 Both inputs expose an accessible name, so they are addressable by role and label rather than by CSS.
