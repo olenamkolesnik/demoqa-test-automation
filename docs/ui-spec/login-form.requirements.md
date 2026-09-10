@@ -125,10 +125,10 @@ Six consecutive failures for one username produced no lockout, no CAPTCHA, no de
 
 ## Human review gate
 
-- [ ] **No `observed` requirement encodes current behavior as the oracle.** Six candidates are isolated as DIVERGENCE-1 to -6 rather than written as intended behavior.
+- [x] **No `observed` requirement encodes current behavior as the oracle** (2026-09-10). Six candidates are isolated as DIVERGENCE-1 to -6 rather than written as intended behavior.
 - [x] **Each divergence's Disposition is signed off** (2026-09-10). Three `Accept as-is` (2, 4, 6) and three `Defect — do not automate` (1, 3, 5); none carries a standing failing test. The two that changed the requirement set have been applied.
-- [ ] **No `assumed` requirement remains.** All requirements are now `observed` or `inferred`. Two earlier `assumed` items (in-progress indication, duplicate-submission guard) were resolved: one by observation (REQ-LOGIN-041), one by deletion — a requirement with no evidence is not a requirement.
-- [ ] **Requirements are testable statements, not implementation detail.** Each Statement names component behavior; DOM specifics (`is-invalid`, `p#name`, `#newUser`) appear only in Evidence and Divergences.
+- [x] **No `assumed` requirement remains** (2026-09-10). All requirements are now `observed` or `inferred`. Two earlier `assumed` items (in-progress indication, duplicate-submission guard) were resolved: one by observation (REQ-LOGIN-041), one by deletion — a requirement with no evidence is not a requirement.
+- [x] **Requirements are testable statements, not implementation detail** (2026-09-10). Each Statement names component behavior; DOM specifics (`is-invalid`, `p#name`, `#newUser`) appear only in Evidence and Divergences.
 
 **Reviewer notes.** REQ-LOGIN-032 is the only remaining `medium`-confidence requirement: the error message is exposed in the accessibility tree, but no `role="alert"` or live region was checked, so whether it is _announced_ is unconfirmed. Not blocking — announcement is an accessibility concern, excluded from scope by `docs/test-plan.md` §2. REQ-LOGIN-040 was raised to `high` on 2026-09-10 after re-verification with a real keypress.
 
