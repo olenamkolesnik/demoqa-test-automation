@@ -26,8 +26,12 @@ export class LoginPage {
     this.errorParagraph = page.getByText('Invalid username or password!');
     this.alreadyLoggedInText = page.getByText('You are already logged in.');
     this.logOut = page.getByRole('button', { name: 'Log out' });
-    // exact: true — the left nav also renders a "Profile" link, which a
-    // substring match would collide with (verified live 2026-09-11)
+    // exact: true — the left nav renders link "Profile" (capital P) on every
+    // page; the already-signed-in state's own link is "profile". Accessible-name
+    // matching is case-insensitive unless exact is set, so exact: true is what
+    // separates them here — both the whole-string match and the case matter.
+    // Verified 2026-09-11; see the Element reference in
+    // docs/ui-spec/login-form.requirements.md.
     this.profile = page.getByRole('link', { name: 'profile', exact: true });
   }
 
