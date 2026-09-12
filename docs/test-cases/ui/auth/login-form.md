@@ -20,7 +20,7 @@ storage, so "signed out" means a fresh browser context.
 | Preconditions  | Browser is signed out (fresh context)                          |
 | Test data      | userName: "" (left empty) / password: "Aa1!aaaaaaaa"           |
 | Postconditions | None — no account is created and no request reaches the server |
-| Automation     | Not automated                                                  |
+| Automation     | Automated → `tests/ui/login-form.ui.spec.ts`                   |
 
 **Steps & expected results**
 
@@ -35,7 +35,9 @@ storage, so "signed out" means a fresh browser context.
 There is no message and no accessible signal for this state — the only indicator is the field
 styling. (Automation: the UserName input carries the `is-invalid` CSS class and the Password input
 does not; no request is sent to `/Account/v1/GenerateToken`.) This is the documented exception to
-the locator-priority rule in `docs/coding-standards.md`.
+the locator-priority rule in `docs/coding-standards.md`. The request-level observation is not
+asserted by the automated spec — see `tests/ui/login-form.ui.spec.ts`'s file-level comment; it
+remains manually verified via REQ-LOGIN-014.
 
 ---
 
@@ -49,7 +51,7 @@ the locator-priority rule in `docs/coding-standards.md`.
 | Preconditions  | Browser is signed out (fresh context)                          |
 | Test data      | userName: "qa_user_valid" / password: "" (left empty)          |
 | Postconditions | None — no account is created and no request reaches the server |
-| Automation     | Not automated                                                  |
+| Automation     | Automated → `tests/ui/login-form.ui.spec.ts`                   |
 
 **Steps & expected results**
 
@@ -62,7 +64,8 @@ the locator-priority rule in `docs/coding-standards.md`.
 
 **Notes**
 Same styling-only signal as LOGIN-FORM-001. (Automation: the Password input carries `is-invalid`,
-the UserName input does not; no request is sent.)
+the UserName input does not; no request is sent.) The request-level observation is not asserted by
+the automated spec — see LOGIN-FORM-001's Notes.
 
 ---
 
@@ -76,7 +79,7 @@ the UserName input does not; no request is sent.)
 | Preconditions  | Browser is signed out (fresh context)                          |
 | Test data      | userName: "" / password: "" (both left empty)                  |
 | Postconditions | None — no account is created and no request reaches the server |
-| Automation     | Not automated                                                  |
+| Automation     | Automated → `tests/ui/login-form.ui.spec.ts`                   |
 
 **Steps & expected results**
 
@@ -88,7 +91,8 @@ the UserName input does not; no request is sent.)
 **Notes**
 This is the only case that shows both fields marked at once, which is what demonstrates the check
 is per-field rather than form-wide. (Automation: both inputs carry `is-invalid`; no request is
-sent.)
+sent.) The request-level observation is not asserted by the automated spec — see LOGIN-FORM-001's
+Notes.
 
 ---
 
@@ -102,7 +106,7 @@ sent.)
 | Preconditions  | Browser is signed out (fresh context)                               |
 | Test data      | userName: three space characters / password: three space characters |
 | Postconditions | None — no account is created; the attempt is rejected by the server |
-| Automation     | Not automated                                                       |
+| Automation     | Automated → `tests/ui/login-form.ui.spec.ts`                        |
 
 **Steps & expected results**
 
@@ -116,7 +120,8 @@ sent.)
 **Notes**
 Whitespace is treated as a value, not as an empty field — contrast with LOGIN-FORM-003, where the
 same form blocks submission entirely. The required check draws its line between zero characters and
-one. (Automation: no `is-invalid` on either input; a request _is_ sent.)
+one. (Automation: no `is-invalid` on either input; a request _is_ sent.) The request-level
+observation is not asserted by the automated spec — see LOGIN-FORM-001's Notes.
 
 ---
 
@@ -187,7 +192,7 @@ the server is injectable. Security testing is out of scope (`docs/test-plan.md` 
 | Preconditions  | User account exists (created via API: POST /Account/v1/User); browser is signed out (fresh context)     |
 | Test data      | userName: "qa_login_ok_001" / password: "Aa1!aaaaaaaa" (valid complexity: upper, lower, digit, special) |
 | Postconditions | User signed out; account "qa_login_ok_001" deleted via DELETE /Account/v1/User/{userId}                 |
-| Automation     | Not automated                                                                                           |
+| Automation     | Automated → `tests/ui/login-form.ui.spec.ts`                                                            |
 
 **Steps & expected results**
 
@@ -215,7 +220,7 @@ holds it in React memory only, so it cannot be injected.
 | Preconditions  | Browser is signed out (fresh context); no account exists with this name |
 | Test data      | userName: "qa_nonexistent_001" / password: "Aa1!aaaaaaaa"               |
 | Postconditions | None — no account is created                                            |
-| Automation     | Not automated                                                           |
+| Automation     | Automated → `tests/ui/login-form.ui.spec.ts`                            |
 
 **Steps & expected results**
 
@@ -242,7 +247,7 @@ exist on the shared backend.
 | Preconditions  | User account exists (created via API: POST /Account/v1/User); browser is signed out (fresh context) |
 | Test data      | userName: "qa_login_wrongpw_001" / password: "WrongPass1!" (not the account's password)             |
 | Postconditions | Account "qa_login_wrongpw_001" deleted via DELETE /Account/v1/User/{userId}                         |
-| Automation     | Not automated                                                                                       |
+| Automation     | Automated → `tests/ui/login-form.ui.spec.ts`                                                        |
 
 **Steps & expected results**
 
@@ -263,15 +268,15 @@ security property.
 
 ### TC: Correct a rejected attempt without retyping
 
-| Field          | Value                                                 |
-| -------------- | ----------------------------------------------------- |
-| ID             | LOGIN-FORM-010                                        |
-| Condition      | COND-LOGIN-FORM-010                                   |
-| Risk           | —                                                     |
-| Preconditions  | Browser is signed out (fresh context)                 |
-| Test data      | userName: "qa_retained_001" / password: "WrongPass1!" |
-| Postconditions | None — no account is created                          |
-| Automation     | Not automated                                         |
+| Field          | Value                                                       |
+| -------------- | ----------------------------------------------------------- |
+| ID             | LOGIN-FORM-010                                              |
+| Condition      | COND-LOGIN-FORM-010                                         |
+| Risk           | —                                                           |
+| Preconditions  | Browser is signed out (fresh context)                       |
+| Test data      | userName: "qa_retained_001" / password: "WrongPass1!"       |
+| Postconditions | None — no account is created                                |
+| Automation     | Evaluated, not automated — kept as manual exploratory check |
 
 **Steps & expected results**
 
@@ -286,19 +291,26 @@ Step 2 combines entry and submission deliberately — the subject of this case i
 rejection, not the act of entering. The values must persist so the user can amend one field rather
 than start again.
 
+Not automated: REQ-LOGIN-034 (field values persist after a rejected attempt) is a real, high-risk
+requirement, already manually verified (2026-09-10, see docs/ui-spec/login-form.requirements.md).
+Core negative-login behavior is already automated via LOGIN-FORM-009; this case's only
+incremental assertion beyond that is the field-retention check itself. Deprioritized for automation
+as low-marginal-value relative to its maintenance cost, not because the requirement is unfounded —
+kept as a manual exploratory check instead.
+
 ---
 
 ### TC: Password stays hidden after a rejected attempt
 
-| Field          | Value                                               |
-| -------------- | --------------------------------------------------- |
-| ID             | LOGIN-FORM-011                                      |
-| Condition      | COND-LOGIN-FORM-011                                 |
-| Risk           | —                                                   |
-| Preconditions  | Browser is signed out (fresh context)               |
-| Test data      | userName: "qa_masked_001" / password: "WrongPass1!" |
-| Postconditions | None — no account is created                        |
-| Automation     | Not automated                                       |
+| Field          | Value                                                       |
+| -------------- | ----------------------------------------------------------- |
+| ID             | LOGIN-FORM-011                                              |
+| Condition      | COND-LOGIN-FORM-011                                         |
+| Risk           | —                                                           |
+| Preconditions  | Browser is signed out (fresh context)                       |
+| Test data      | userName: "qa_masked_001" / password: "WrongPass1!"         |
+| Postconditions | None — no account is created                                |
+| Automation     | Evaluated, not automated — kept as manual exploratory check |
 
 **Steps & expected results**
 
@@ -310,7 +322,14 @@ than start again.
 
 **Notes**
 A failed attempt must not expose the typed password to anyone looking at the screen. There is no
-show/hide control on this form. (Automation: the Password input retains `type="password"`.)
+show/hide control on this form.
+
+Not automated: REQ-LOGIN-024 (password stays masked, including after a failed attempt) is a real,
+high-risk requirement, already manually verified (2026-09-10, see
+docs/ui-spec/login-form.requirements.md). `type="password"` masking is enforced by the browser's
+own rendering, not by application logic — the app only sets the attribute once, so there is no code
+path here that could regress independent of the browser itself. Kept as a manual exploratory check
+instead of automation.
 
 ---
 
@@ -324,7 +343,7 @@ show/hide control on this form. (Automation: the Password input retains `type="p
 | Preconditions  | Browser is signed out (fresh context)                 |
 | Test data      | userName: "qa_keyboard_001" / password: "WrongPass1!" |
 | Postconditions | None — no account is created                          |
-| Automation     | Not automated                                         |
+| Automation     | Automated → `tests/ui/login-form.ui.spec.ts`          |
 
 **Steps & expected results**
 
@@ -351,7 +370,7 @@ not a dispatched keyboard event — a synthetic event proves less than it appear
 | Preconditions  | User account exists (created via API: POST /Account/v1/User) and is signed in through the login form |
 | Test data      | userName: "qa_already_in_001" / password: "Aa1!aaaaaaaa"                                             |
 | Postconditions | User signed out; account "qa_already_in_001" deleted via DELETE /Account/v1/User/{userId}            |
-| Automation     | Not automated                                                                                        |
+| Automation     | Automated → `tests/ui/login-form.ui.spec.ts`                                                         |
 
 **Steps & expected results**
 
@@ -366,19 +385,24 @@ a session left open by an earlier test makes the form disappear, and the resulti
 missing locator rather than the real cause. The session cannot be cleared through storage — only a
 fresh browser context or the Log out control ends it.
 
+Automation covers step 1 only (the already-logged-in state replacing the form). Step 2 (profile
+link navigation and the profile page's content) is not re-asserted here — LOGIN-FORM-007 already
+covers arriving at /profile and its content after a fresh login, and clicking through from this
+state exercises the same navigation.
+
 ---
 
 ### TC: Reach registration from the login form
 
-| Field          | Value                                 |
-| -------------- | ------------------------------------- |
-| ID             | LOGIN-FORM-014                        |
-| Condition      | COND-LOGIN-FORM-014                   |
-| Risk           | —                                     |
-| Preconditions  | Browser is signed out (fresh context) |
-| Test data      | None                                  |
-| Postconditions | None                                  |
-| Automation     | Not automated                         |
+| Field          | Value                                                                          |
+| -------------- | ------------------------------------------------------------------------------ |
+| ID             | LOGIN-FORM-014                                                                 |
+| Condition      | COND-LOGIN-FORM-014                                                            |
+| Risk           | —                                                                              |
+| Preconditions  | Browser is signed out (fresh context)                                          |
+| Test data      | None                                                                           |
+| Postconditions | None                                                                           |
+| Automation     | Evaluated, not automated in this file — belongs to registration-suite coverage |
 
 **Steps & expected results**
 
@@ -390,6 +414,9 @@ fresh browser context or the Log out control ends it.
 **Notes**
 Covers arrival only. The registration form's own behavior is out of scope, and `/register` is
 CAPTCHA-gated, so nothing beyond reaching the page can be checked.
+
+Not automated here: this transition is the entry point into the registration flow, so its
+automated coverage belongs alongside the registration suite rather than in login-form.ui.spec.ts.
 
 ---
 
@@ -422,15 +449,15 @@ and the same for Password resolve.)
 
 ### TC: See why a login attempt was rejected
 
-| Field          | Value                                               |
-| -------------- | --------------------------------------------------- |
-| ID             | LOGIN-FORM-016                                      |
-| Condition      | COND-LOGIN-FORM-016                                 |
-| Risk           | —                                                   |
-| Preconditions  | Browser is signed out (fresh context)               |
-| Test data      | userName: "qa_errmsg_001" / password: "WrongPass1!" |
-| Postconditions | None — no account is created                        |
-| Automation     | Not automated                                       |
+| Field          | Value                                                       |
+| -------------- | ----------------------------------------------------------- |
+| ID             | LOGIN-FORM-016                                              |
+| Condition      | COND-LOGIN-FORM-016                                         |
+| Risk           | —                                                           |
+| Preconditions  | Browser is signed out (fresh context)                       |
+| Test data      | userName: "qa_errmsg_001" / password: "WrongPass1!"         |
+| Postconditions | None — no account is created                                |
+| Automation     | Evaluated, not automated — kept as manual exploratory check |
 
 **Steps & expected results**
 
@@ -444,3 +471,9 @@ Unlike the blank-field marking, this message is real text in the page and can be
 content. Whether a screen reader _announces_ it on appearance was not checked — there is no
 `role="alert"` or live region — but announcement is an accessibility concern excluded from scope
 (`docs/test-plan.md` §2). This case covers the message being present and readable.
+
+Not automated: the condition's real point — that the error is discoverable via the accessibility
+tree, not only via CSS — is not actually exercised by a `toHaveText` assertion, since any locator
+(accessible or not) would satisfy the same check. The message text and non-navigation are already
+covered by LOGIN-FORM-009/012. Kept as a manual exploratory check instead of an automated test that
+would only duplicate existing coverage without testing the discoverability claim itself.

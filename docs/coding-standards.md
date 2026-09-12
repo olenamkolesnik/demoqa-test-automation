@@ -104,6 +104,7 @@ Every test creates its own data via a `seed*` fixture. Never reuse another test'
 | `*.api.spec.ts`      | `tests/api/<feature>/` | `post-user.api.spec.ts`      |
 | `*.contract.spec.ts` | `tests/api/<feature>/` | `post-user.contract.spec.ts` |
 | `*.page.ts`          | `src/ui/pages/`        | `books.page.ts`              |
+| `index.ts` (barrel)  | `src/ui/pages/`        | re-exports every page object |
 | `*.component.ts`     | `src/ui/components/`   | `header.component.ts`        |
 | `*.flow.ts`          | `src/ui/flows/`        | `login.flow.ts`              |
 | `*.ui.spec.ts`       | `tests/ui/`            | `login.ui.spec.ts`           |
@@ -424,6 +425,18 @@ This mirrors how `src/fixtures/` already composes `src/api/` + `src/data/` for A
 A UI test sets up its precondition via the API fixtures already built for this, not by driving the UI through steps that aren't the thing under test. A test for "add book to collection" logs in via an API-seeded fixture and only drives the UI for the collection interaction itself — it does not also exercise the registration/login UI flow as a side effect of getting to the starting state. This is faster and less flaky than UI-driven setup, and is exactly why Risk-2 ("API-seeded UI coupling") already exists in `docs/test-plan.md` §8 — the risk is named because the technique is the default, not an occasional shortcut.
 
 The one exception: a test whose actual subject _is_ the registration or login flow itself — there, driving the UI is the point, not overhead to avoid.
+
+### One barrel, for page objects only
+
+`src/ui/pages/index.ts` re-exports every page object, so a spec imports the pages it drives in one line:
+
+```ts
+import { LoginPage, ProfilePage, RegisterPage } from '../../src/ui/pages';
+```
+
+This earns its place because a UI journey naturally touches two or three pages at once and the page objects are a closed, uniform set — the barrel hides no ambiguity about where a name comes from, since `LoginPage` could only live in `login.page.ts`.
+
+**Do not add barrels to the API layers.** `src/types/`, `src/data/`, `src/api/` and `src/fixtures/` are imported selectively — one schema, one factory helper — and there a barrel would obscure which module a name came from and widen what each spec pulls in. Add a second barrel only if `src/ui/components/` or `src/ui/flows/` reaches the same "imported as a group" shape.
 
 ### Locator strategy
 

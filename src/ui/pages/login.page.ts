@@ -11,7 +11,6 @@ export class LoginPage {
   private readonly usernameInput: Locator;
   private readonly passwordInput: Locator;
   private readonly loginButton: Locator;
-  private readonly newUser: Locator;
   private readonly errorParagraph: Locator;
   private readonly alreadyLoggedInText: Locator;
   private readonly logOut: Locator;
@@ -22,7 +21,6 @@ export class LoginPage {
     this.passwordInput = page.getByRole('textbox', { name: 'Password' });
     // exact: true — the left nav also renders a link named "Login"
     this.loginButton = page.getByRole('button', { name: 'Login', exact: true });
-    this.newUser = page.getByRole('button', { name: 'New User' });
     this.errorParagraph = page.getByText('Invalid username or password!');
     this.alreadyLoggedInText = page.getByText('You are already logged in.');
     this.logOut = page.getByRole('button', { name: 'Log out' });
@@ -48,18 +46,20 @@ export class LoginPage {
     await this.loginButton.click();
   }
 
+  async loginAs(credentials: LoginCredentials): Promise<void> {
+    await this.goto();
+    await this.fillCredentials(credentials);
+    await this.clickLogin();
+  }
+
   async submitWithEnterKey(): Promise<void> {
     await this.passwordInput.press('Enter');
   }
 
-  async clickNewUser(): Promise<void> {
-    await this.newUser.click();
-  }
-
-  async clickProfileLink(): Promise<void> {
-    await this.profile.click();
-  }
-
+  // is-invalid is the only signal for a blocked blank-field submission — no
+  // message, no aria-invalid, nothing in the accessibility tree (DIVERGENCE-1,
+  // docs/ui-spec/login-form.requirements.md). Callers assert toHaveClass on
+  // these locators directly rather than through a dedicated helper.
   usernameField(): Locator {
     return this.usernameInput;
   }
@@ -68,29 +68,8 @@ export class LoginPage {
     return this.passwordInput;
   }
 
-  loginSubmitButton(): Locator {
-    return this.loginButton;
-  }
-
-  newUserButton(): Locator {
-    return this.newUser;
-  }
-
   errorMessage(): Locator {
     return this.errorParagraph;
-  }
-
-  // The is-invalid class is the only signal for a blocked blank-field submission
-  // — no message, no aria-invalid, nothing in the accessibility tree
-  // (DIVERGENCE-1, docs/ui-spec/login-form.requirements.md). This is the
-  // documented exception to the locator-priority rule; the CSS is scoped onto the
-  // accessible locator rather than used bare.
-  invalidMarkedUsernameField(): Locator {
-    return this.usernameInput.and(this.page.locator('.is-invalid'));
-  }
-
-  invalidMarkedPasswordField(): Locator {
-    return this.passwordInput.and(this.page.locator('.is-invalid'));
   }
 
   alreadyLoggedInMessage(): Locator {
@@ -103,15 +82,5 @@ export class LoginPage {
 
   profileLink(): Locator {
     return this.profile;
-  }
-
-  // Non-retrying reads, unlike every query above: safe only once the caller has
-  // synchronised on the outcome (awaiting errorMessage() after a submit).
-  getUsernameValue(): Promise<string> {
-    return this.usernameInput.inputValue();
-  }
-
-  getPasswordValue(): Promise<string> {
-    return this.passwordInput.inputValue();
   }
 }
