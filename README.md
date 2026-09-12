@@ -18,7 +18,7 @@ ISTQB-aligned test automation for the [DemoQA](https://demoqa.com) Book Store ap
 
 Functional tests assert behaviour; separate contract tests validate response bodies against Zod schemas.
 
-**UI coverage** — planned: login, book catalogue browsing, collection management, and profile state. `src/pages/` and `tests/ui/` are placeholders today.
+**UI coverage** — in progress. The login form has a live-verified test basis, test conditions, and reviewed manual test cases (`docs/ui-spec/`, `docs/test-conditions/ui/`, `docs/test-cases/ui/`), and its page object is written; no UI spec is automated yet. Book catalogue browsing, collection management, and profile state are still planned.
 
 Test design follows equivalence partitioning, boundary value analysis, and decision-table coverage of authorization states. Every automated test traces to a reviewed test case in `docs/test-cases/`, which in turn traces to a test condition in `docs/test-conditions/`.
 
@@ -28,7 +28,8 @@ Test design follows equivalence partitioning, boundary value analysis, and decis
 | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
 | `/Account/v1` (create, get, delete, token, authorized)       | Automated — functional + contract tests, tagged `@AUTH-001`–`@AUTH-036`                                                           |
 | `/BookStore/v1` (get books, get book, POST/PUT/DELETE books) | Automated — functional + contract tests, tagged `@GET-BOOKS-*`, `@GET-BOOK-*`, `@POST-BOOKS-*`, `@PUT-BOOKS-*`, `@DELETE-BOOKS-*` |
-| UI (all flows)                                               | Planned — `src/pages/` and `tests/ui/` are placeholders                                                                           |
+| UI — login form                                              | Test basis, conditions, cases and page object done; spec not yet automated                                                        |
+| UI — catalogue, collection, profile                          | Planned                                                                                                                           |
 
 ## Project structure
 
@@ -39,13 +40,16 @@ src/
   data/        Pure test-data factories (unique usernames, valid/invalid passwords, book payloads)
   fixtures/    Setup and teardown — seed a user/book, hand it to the test, delete it after
   utils/       Cross-cutting helpers: logging, secret redaction, response parsing, custom matchers
-  pages/       Page objects (UI — not yet populated)
+  ui/
+    pages/     Page objects — locators plus single-page actions, never assert
+    components/  Widgets shared across pages (not yet populated)
+    flows/     Multi-page journeys composed from page objects (not yet populated)
 tests/
   api/
     auth/      Account API specs (*.api.spec.ts functional, *.contract.spec.ts schema validation)
     bookstore/ Book Store API specs (*.api.spec.ts functional, *.contract.spec.ts schema validation)
   ui/          UI specs (not yet populated)
-docs/          Test plan, coding standards, API spec, test conditions and test cases
+docs/          Test plan, coding standards, API and UI specs, test conditions and test cases
 scripts/       CI maintenance — report publishing
 ```
 

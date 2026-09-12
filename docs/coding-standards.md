@@ -32,14 +32,14 @@ tests/  →  fixtures/  →  api/  →  types/
 UI side (see **UI test architecture** below for the full layer table):
 
 ```
-tests/  →  flows/  →  pages/  →  components/
-              ↓
-        api/ fixtures/ (for API-seeded setup — see API-seeded UI tests)
+tests/ui/  →  ui/flows/  →  ui/pages/  →  ui/components/
+                  ↓
+            api/ fixtures/ (for API-seeded setup — see API-seeded UI tests)
 ```
 
 Never the reverse in either chain — a schema must not import a client; a client must not import a fixture; a page object must not import a flow; a component must not import a page. If you find yourself importing "up" either chain, the logic is in the wrong layer.
 
-The two chains meet only at `tests/` (a UI test may use both a flow and an API fixture, per **API-seeded UI tests**) and at `utils/` (shared by both sides) — `src/pages/`, `src/components/`, `src/flows/` never import from `src/api/`, `src/fixtures/`, `src/data/`, or `src/types/` directly; only the test file coordinates both sides.
+The two chains meet only at `tests/` (a UI test may use both a flow and an API fixture, per **API-seeded UI tests**) and at `utils/` (shared by both sides) — `src/ui/pages/`, `src/ui/components/`, `src/ui/flows/` never import from `src/api/`, `src/fixtures/`, `src/data/`, or `src/types/` directly; only the test file coordinates both sides.
 
 ---
 
@@ -103,9 +103,10 @@ Every test creates its own data via a `seed*` fixture. Never reuse another test'
 | `*.util.ts`          | `src/utils/`           | `redact.util.ts`             |
 | `*.api.spec.ts`      | `tests/api/<feature>/` | `post-user.api.spec.ts`      |
 | `*.contract.spec.ts` | `tests/api/<feature>/` | `post-user.contract.spec.ts` |
-| `*.page.ts`          | `src/pages/`           | `books.page.ts`              |
-| `*.component.ts`     | `src/components/`      | `header.component.ts`        |
-| `*.flow.ts`          | `src/flows/`           | `login.flow.ts`              |
+| `*.page.ts`          | `src/ui/pages/`        | `books.page.ts`              |
+| `index.ts` (barrel)  | `src/ui/pages/`        | re-exports every page object |
+| `*.component.ts`     | `src/ui/components/`   | `header.component.ts`        |
+| `*.flow.ts`          | `src/ui/flows/`        | `login.flow.ts`              |
 | `*.ui.spec.ts`       | `tests/ui/`            | `login.ui.spec.ts`           |
 
 API test files are named `<verb>-<resource>` and live under `tests/api/<feature>/` — same `<feature>` and `<verb>-<resource>` derivation as `docs/test-conditions/` and `docs/test-cases/` (see `write-test-conditions`), so an endpoint's spec, conditions, test cases, and code all share one filename stem and mirror the same feature-area folder structure (e.g. `tests/api/auth/post-user.api.spec.ts`, `tests/api/bookstore/get-books.api.spec.ts`).
@@ -165,7 +166,7 @@ npx playwright test --grep-invert @negative
 
 - **Single Responsibility**: see Layer responsibilities above.
 - **Open/Closed**: adding an endpoint means adding a method to an existing client class or a new client class — never changing an existing method's signature to accommodate one new caller.
-- **Liskov substitution**: every `src/components/` class takes the same `(page: Page)` constructor shape and is composed into a page object the same way (see UI test architecture below) — any component must be substitutable into that composition without the page object needing to know which one it got. At the API layer: a future subclass must not narrow or change the meaning of an inherited method — e.g. a `BookStoreApiClient extends BaseApiClient` must not make `logged()` throw when the base class contract says it never does.
+- **Liskov substitution**: every `src/ui/components/` class takes the same `(page: Page)` constructor shape and is composed into a page object the same way (see UI test architecture below) — any component must be substitutable into that composition without the page object needing to know which one it got. At the API layer: a future subclass must not narrow or change the meaning of an inherited method — e.g. a `BookStoreApiClient extends BaseApiClient` must not make `logged()` throw when the base class contract says it never does.
 - **Interface segregation**: prefer small, focused fixture names (`seedUser`, `seedAuthorizedUser`) over one fixture with options controlling which parts of setup run. The same applies to shared schemas: `LoginPayloadSchema` is reused by `GenerateToken` and `Authorized` because both genuinely need the exact same two fields — the moment a third caller needs only one of those fields, that's a signal to split the schema rather than force the new caller to depend on a shape bigger than what it uses.
 - **Dependency inversion**: fixtures depend on client abstractions (constructor-injected `APIRequestContext`, never constructed manually) — a test never `new`s a client or reaches for a global request context directly.
 
@@ -175,8 +176,8 @@ Naming the patterns already implicit in the layer structure above, so the vocabu
 
 - **Factory** — `src/data/*.factory.ts`. `buildNewUserPayload()`, `buildValidPassword()`, etc. construct fully-formed objects so callers never assemble a request payload by hand field-by-field. Kept a plain-function factory (not a class) since there's no polymorphic family of products to select between — just one shape per resource.
 - **Facade** — `BaseApiClient` (and every class extending it). A test or fixture calls one method (`client.getUser({ userId, token })`) that internally hides request construction, logging, and redaction — the caller never touches `APIRequestContext`, `logger`, or `redact()` directly. This is also why "API clients never assert" matters for the pattern to hold: a facade that also threw on your behalf would be leaking the complexity it exists to hide.
-- **Page Object (Model)** — `src/pages/`, composing **Component** objects (`src/components/`) for widgets shared across pages. See UI test architecture below for the full shape; this is the standard UI-automation pattern, not a project-specific invention, which is exactly why the tests/pages/components/flows layering should look familiar to anyone who has used Playwright or Selenium's POM conventions before.
-- **Flow (Journey) object** — `src/flows/`, one level above Page Objects. See "Flows compose page objects" below for the full shape. Not a universally standardized name the way Page Object is — some teams call this a "workflow" or "scenario" object — but the role is the same wherever it appears: a class that orchestrates a multi-page sequence by composing page objects, exposing one method per journey rather than per page, so a test that needs "log in" doesn't re-describe the login page's steps itself.
+- **Page Object (Model)** — `src/ui/pages/`, composing **Component** objects (`src/ui/components/`) for widgets shared across pages. See UI test architecture below for the full shape; this is the standard UI-automation pattern, not a project-specific invention, which is exactly why the tests/pages/components/flows layering should look familiar to anyone who has used Playwright or Selenium's POM conventions before.
+- **Flow (Journey) object** — `src/ui/flows/`, one level above Page Objects. See "Flows compose page objects" below for the full shape. Not a universally standardized name the way Page Object is — some teams call this a "workflow" or "scenario" object — but the role is the same wherever it appears: a class that orchestrates a multi-page sequence by composing page objects, exposing one method per journey rather than per page, so a test that needs "log in" doesn't re-describe the login page's steps itself.
 - **Builder-ish factories with overrides** — `buildNewUserPayload(overrides?)` accepts a partial override object rather than requiring every field on every call, similar in spirit to a Builder without the fluent chaining — appropriate here because the shape being built is small and flat, not deep enough to need a true Builder's step-by-step assembly.
 - **Singleton (module-level)** — `logger` (`src/utils/logger.ts`) is a single exported object; every importer gets the same instance, since an ES module's top-level `const` is evaluated once per process regardless of how many files import it. This is a lighter-weight version of the classic Singleton (no private constructor or `getInstance()` needed — the module system provides the "only one instance" guarantee for free) and is appropriate here because a shared logger is exactly the kind of cross-cutting, stateless-enough utility Singleton is meant for. Not a pattern to reach for casually elsewhere: a Singleton hides a dependency inside whatever imports it directly, which is why `BaseApiClient`'s actual dependencies (the request context) are still constructor-injected rather than also being singletons — `logger` is the one deliberate exception, not a precedent for making everything a shared global.
 
@@ -375,12 +376,12 @@ Everything above governs how test _code_ is structured. This section governs whe
 
 Three sibling layers under `src/`, same flat-folder convention as the API side (`api/`, `data/`, `fixtures/`, ...):
 
-| Layer             | Job                                                                          | Must never                                                                 |
-| ----------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `src/components/` | Reusable widgets that appear on multiple pages (nav bar, modal, table row)   | Know which page it's used on; assert; hold test data                       |
-| `src/pages/`      | One class per page — locators + single-page actions, composes components     | Span multiple pages; assert; call another page object directly             |
-| `src/flows/`      | Multi-page journeys composed from page objects (e.g. "register then log in") | Contain locators directly; assert (a flow returns state, the test asserts) |
-| `tests/`          | Assert. One test, one focus.                                                 | Construct a page object directly if a flow already covers the journey      |
+| Layer                | Job                                                                          | Must never                                                                 |
+| -------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `src/ui/components/` | Reusable widgets that appear on multiple pages (nav bar, modal, table row)   | Know which page it's used on; assert; hold test data                       |
+| `src/ui/pages/`      | One class per page — locators + single-page actions, composes components     | Span multiple pages; assert; call another page object directly             |
+| `src/ui/flows/`      | Multi-page journeys composed from page objects (e.g. "register then log in") | Contain locators directly; assert (a flow returns state, the test asserts) |
+| `tests/`             | Assert. One test, one focus.                                                 | Construct a page object directly if a flow already covers the journey      |
 
 ### Composition, not inheritance
 
@@ -401,10 +402,10 @@ A component reusable across unrelated pages (e.g. `HeaderComponent` on every pag
 
 ### Flows compose page objects; page objects don't compose each other
 
-A page object's methods only ever act on its own page. Moving from one page to another — a multi-step journey — is a `src/flows/` job:
+A page object's methods only ever act on its own page. Moving from one page to another — a multi-step journey — is a `src/ui/flows/` job:
 
 ```ts
-// src/flows/registration.flow.ts
+// src/ui/flows/registration.flow.ts
 export class RegistrationFlow {
   constructor(private readonly page: Page) {}
 
@@ -424,6 +425,18 @@ This mirrors how `src/fixtures/` already composes `src/api/` + `src/data/` for A
 A UI test sets up its precondition via the API fixtures already built for this, not by driving the UI through steps that aren't the thing under test. A test for "add book to collection" logs in via an API-seeded fixture and only drives the UI for the collection interaction itself — it does not also exercise the registration/login UI flow as a side effect of getting to the starting state. This is faster and less flaky than UI-driven setup, and is exactly why Risk-2 ("API-seeded UI coupling") already exists in `docs/test-plan.md` §8 — the risk is named because the technique is the default, not an occasional shortcut.
 
 The one exception: a test whose actual subject _is_ the registration or login flow itself — there, driving the UI is the point, not overhead to avoid.
+
+### One barrel, for page objects only
+
+`src/ui/pages/index.ts` re-exports every page object, so a spec imports the pages it drives in one line:
+
+```ts
+import { LoginPage, ProfilePage, RegisterPage } from '../../src/ui/pages';
+```
+
+This earns its place because a UI journey naturally touches two or three pages at once and the page objects are a closed, uniform set — the barrel hides no ambiguity about where a name comes from, since `LoginPage` could only live in `login.page.ts`.
+
+**Do not add barrels to the API layers.** `src/types/`, `src/data/`, `src/api/` and `src/fixtures/` are imported selectively — one schema, one factory helper — and there a barrel would obscure which module a name came from and widen what each spec pulls in. Add a second barrel only if `src/ui/components/` or `src/ui/flows/` reaches the same "imported as a group" shape.
 
 ### Locator strategy
 
