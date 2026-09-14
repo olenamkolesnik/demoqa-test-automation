@@ -21,7 +21,7 @@ Derived from `docs/test-conditions/ui/auth/register-form.md`. One test case per 
 | Preconditions  | None — the form is reachable signed in or signed out                                                      |
 | Test data      | firstName: "" (left empty) / lastName: "Lovelace" / userName: "qa_reg_req_001" / password: "Aa1!aaaaaaaa" |
 | Postconditions | None — no account is created and no request reaches the server                                            |
-| Automation     | Not automated                                                                                             |
+| Automation     | Automated → `tests/ui/register-form.ui.spec.ts`                                                           |
 
 **Steps & expected results**
 
@@ -51,7 +51,7 @@ The First Name field's id is all-lowercase `#firstname`, unlike `#userName` — 
 | Preconditions  | None                                                                                                 |
 | Test data      | firstName: "Ada" / lastName: "" (left empty) / userName: "qa_reg_req_002" / password: "Aa1!aaaaaaaa" |
 | Postconditions | None — no account is created and no request reaches the server                                       |
-| Automation     | Not automated                                                                                        |
+| Automation     | Automated → `tests/ui/register-form.ui.spec.ts`                                                      |
 
 **Steps & expected results**
 
@@ -79,7 +79,7 @@ Same styling-only signal as REGISTER-FORM-001 (DIVERGENCE-1). The id is all-lowe
 | Preconditions  | None                                                                                           |
 | Test data      | firstName: "Ada" / lastName: "Lovelace" / userName: "" (left empty) / password: "Aa1!aaaaaaaa" |
 | Postconditions | None — no account is created and no request reaches the server                                 |
-| Automation     | Not automated                                                                                  |
+| Automation     | Automated → `tests/ui/register-form.ui.spec.ts`                                                |
 
 **Steps & expected results**
 
@@ -107,7 +107,7 @@ Same styling-only signal as REGISTER-FORM-001 (DIVERGENCE-1).
 | Preconditions  | None                                                                                             |
 | Test data      | firstName: "Ada" / lastName: "Lovelace" / userName: "qa_reg_req_004" / password: "" (left empty) |
 | Postconditions | None — no account is created and no request reaches the server                                   |
-| Automation     | Not automated                                                                                    |
+| Automation     | Automated → `tests/ui/register-form.ui.spec.ts`                                                  |
 
 **Steps & expected results**
 
@@ -135,7 +135,7 @@ Same styling-only signal as REGISTER-FORM-001 (DIVERGENCE-1).
 | Preconditions  | None                                                                                            |
 | Test data      | firstName: "" / lastName: "" / userName: "" / password: "" (all four left empty — 0 characters) |
 | Postconditions | None — no account is created and no request reaches the server                                  |
-| Automation     | Not automated                                                                                   |
+| Automation     | Automated → `tests/ui/register-form.ui.spec.ts`                                                 |
 
 **Steps & expected results**
 
@@ -161,7 +161,7 @@ The empty boundary. Its neighbour one step outside is REGISTER-FORM-006 (whitesp
 | Preconditions  | None                                                                                        |
 | Test data      | firstName: " " / lastName: " " / userName: " " / password: " " (three spaces in each field) |
 | Postconditions | None — the server rejects the submission, so no account is created                          |
-| Automation     | Not automated                                                                               |
+| Automation     | Automated → `tests/ui/register-form.ui.spec.ts`                                             |
 
 **Steps & expected results**
 
@@ -176,6 +176,8 @@ The boundary this case covers: whitespace is a value, so the required check pass
 
 The rejection cites the **password** rule, not the username, so the message shown is the same one as REGISTER-FORM-008 reached by a different route. Empty and whitespace-only remain two distinct input classes.
 
+⚠️ **Automated test currently red (2026-09-14), by deliberate decision — not an oversight.** This case submits the form, and DIVERGENCE-4 (docs/ui-spec/register-form.requirements.md) appears to block Playwright-automated submissions to `/register` deterministically rather than the ~1-in-5 intermittent rate manual testing found. Fate deferred alongside REGISTER-FORM-007 and -008, which hit the same root cause. See the requirements doc's "Current status" note under DIVERGENCE-4.
+
 ---
 
 ### TC: Register with valid details
@@ -188,7 +190,7 @@ The rejection cites the **password** rule, not the username, so the message show
 | Preconditions  | The chosen username is not already registered                                                                                                                                                  |
 | Test data      | firstName: "Ada" / lastName: "Lovelace" / userName: "qa_reg_ok_001" (must be unique per run — see Notes) / password: "Aa1!aaaaaaaa" (valid complexity: upper, lower, digit, special, 12 chars) |
 | Postconditions | Account "qa_reg_ok_001" deleted via DELETE /Account/v1/User/{userId}                                                                                                                           |
-| Automation     | Not automated                                                                                                                                                                                  |
+| Automation     | Automated → `tests/ui/register-form.ui.spec.ts`                                                                                                                                                |
 
 **Steps & expected results**
 
@@ -211,6 +213,8 @@ The happy path, and the only case in this file that creates a real account — d
 
 Registration does not sign the user in: reaching /profile afterwards still requires going through the login form.
 
+⚠️ **Automated test currently red (2026-09-14), by deliberate decision — not an oversight.** This is the form's only happy-path case, and DIVERGENCE-4 (docs/ui-spec/register-form.requirements.md) appears to block Playwright-automated submissions to `/register` deterministically (6/6 failures across repeated runs, confirmed via network trace) rather than the ~1-in-5 intermittent rate manual testing found. A one-retry tolerance is implemented but has not been shown to help. Fate deferred — see the requirements doc's "Current status" note under DIVERGENCE-4.
+
 ---
 
 ### TC: Register with a password below the complexity rule
@@ -223,7 +227,7 @@ Registration does not sign the user in: reaching /profile afterwards still requi
 | Preconditions  | None                                                                                                                               |
 | Test data      | firstName: "Ada" / lastName: "Lovelace" / userName: "qa_reg_weak_001" / password: "weak" (4 chars, no upper, no digit, no special) |
 | Postconditions | None — the server rejects the submission, so no account is created                                                                 |
-| Automation     | Not automated                                                                                                                      |
+| Automation     | Automated → `tests/ui/register-form.ui.spec.ts`                                                                                    |
 
 **Steps & expected results**
 
@@ -240,6 +244,8 @@ Registration does not sign the user in: reaching /profile afterwards still requi
 The password rule is enforced by the server, not by the form. The Password field carries a complexity rule in its markup, but the form ignores it and submits anyway — so this case must be written against what the server returns, not against the field being blocked before submission (DIVERGENCE-2).
 
 The message is shown as ordinary red text above the form. Whether a screen reader announces it on appearance was not checked — announcement is an accessibility concern excluded from scope (`docs/test-plan.md` §2).
+
+⚠️ **Automated test currently red (2026-09-14), by deliberate decision — not an oversight.** Same root cause as REGISTER-FORM-006/-007: DIVERGENCE-4 (docs/ui-spec/register-form.requirements.md) appears to block Playwright-automated submissions to `/register` deterministically. A one-retry tolerance is implemented but has not been shown to help. Fate deferred — see the requirements doc's "Current status" note under DIVERGENCE-4.
 
 ---
 
@@ -289,7 +295,7 @@ Seed the precondition account through the API rather than by registering twice t
 | Preconditions  | None                                                                                                              |
 | Test data      | firstName: "Ada" / lastName: "Lovelace" / userName: "qa_reg_keep_001" / password: "weak" (rejected by the server) |
 | Postconditions | None — the server rejects the submission, so no account is created                                                |
-| Automation     | Not automated                                                                                                     |
+| Automation     | Automated → `tests/ui/register-form.ui.spec.ts`                                                                   |
 
 **Steps & expected results**
 
@@ -312,15 +318,15 @@ The contrast with REGISTER-FORM-007 is the point: a successful registration clea
 
 ### TC: Return to the login form from registration
 
-| Field          | Value                  |
-| -------------- | ---------------------- |
-| ID             | REGISTER-FORM-011      |
-| Condition      | COND-REGISTER-FORM-011 |
-| Risk           | —                      |
-| Preconditions  | None                   |
-| Test data      | None                   |
-| Postconditions | None                   |
-| Automation     | Not automated          |
+| Field          | Value                                           |
+| -------------- | ----------------------------------------------- |
+| ID             | REGISTER-FORM-011                               |
+| Condition      | COND-REGISTER-FORM-011                          |
+| Risk           | —                                               |
+| Preconditions  | None                                            |
+| Test data      | None                                            |
+| Postconditions | None                                            |
+| Automation     | Automated → `tests/ui/register-form.ui.spec.ts` |
 
 **Steps & expected results**
 
@@ -370,9 +376,9 @@ This case's condition is `Low` priority and is expected to be filtered out when 
 | COND-REGISTER-FORM-003     | REGISTER-FORM-003 |                                                             |
 | COND-REGISTER-FORM-004     | REGISTER-FORM-004 |                                                             |
 | COND-REGISTER-FORM-005     | REGISTER-FORM-005 |                                                             |
-| COND-REGISTER-FORM-006     | REGISTER-FORM-006 |                                                             |
-| COND-REGISTER-FORM-007     | REGISTER-FORM-007 |                                                             |
-| COND-REGISTER-FORM-008     | REGISTER-FORM-008 |                                                             |
+| COND-REGISTER-FORM-006     | REGISTER-FORM-006 | Automated but currently red (DIVERGENCE-4), see Notes       |
+| COND-REGISTER-FORM-007     | REGISTER-FORM-007 | Automated but currently red (DIVERGENCE-4), see Notes       |
+| COND-REGISTER-FORM-008     | REGISTER-FORM-008 | Automated but currently red (DIVERGENCE-4), see Notes       |
 | COND-REGISTER-FORM-009     | REGISTER-FORM-009 | Provisional — expected to fail, not to be automated yet     |
 | COND-REGISTER-FORM-010     | REGISTER-FORM-010 |                                                             |
 | COND-REGISTER-FORM-011     | REGISTER-FORM-011 |                                                             |

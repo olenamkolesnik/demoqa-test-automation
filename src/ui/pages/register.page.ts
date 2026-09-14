@@ -77,6 +77,14 @@ export class RegisterPage {
     });
   }
 
+  // The text DIVERGENCE-4's second shape produces — a real, in-page rejection
+  // when reCAPTCHA is not yet ready, confirmed via network trace to send no
+  // request to /Account/v1/User at all (docs/ui-spec/register-form.requirements.md,
+  // Constraint on test design). Used only to detect this specific known
+  // non-regression outcome, never asserted as the expected result of a case
+  // whose own subject is something else.
+  static readonly RECAPTCHA_NOT_READY_MESSAGE = 'Please verify reCaptcha to register!';
+
   async clickBackToLogin(): Promise<void> {
     await this.backToLoginButton.click();
   }
