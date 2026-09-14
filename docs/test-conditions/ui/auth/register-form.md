@@ -71,7 +71,7 @@ Three divergence dispositions (`docs/ui-spec/register-form.requirements.md`) ins
 | Category   | Input field                           |
 | Technique  | EP                                    |
 | Source     | REQ-REG-010, REQ-REG-011, REQ-REG-013 |
-| Test cases | —                                     |
+| Test cases | REGISTER-FORM-001                     |
 
 **What to cover**
 Submitting with the first name empty and the other three fields filled blocks submission client-side and marks only the first name field.
@@ -97,7 +97,7 @@ The only observable signal is the `is-invalid` CSS class — no message, no ARIA
 | Category   | Input field                           |
 | Technique  | EP                                    |
 | Source     | REQ-REG-010, REQ-REG-011, REQ-REG-013 |
-| Test cases | —                                     |
+| Test cases | REGISTER-FORM-002                     |
 
 **What to cover**
 Submitting with the last name empty and the other three fields filled blocks submission client-side and marks only the last name field.
@@ -123,7 +123,7 @@ Same styling-only signal as COND-REGISTER-FORM-001 (DIVERGENCE-1). Id is all-low
 | Category   | Input field                           |
 | Technique  | EP                                    |
 | Source     | REQ-REG-010, REQ-REG-011, REQ-REG-013 |
-| Test cases | —                                     |
+| Test cases | REGISTER-FORM-003                     |
 
 **What to cover**
 Submitting with the username empty and the other three fields filled blocks submission client-side and marks only the username field.
@@ -149,7 +149,7 @@ Same styling-only signal as COND-REGISTER-FORM-001 (DIVERGENCE-1).
 | Category   | Input field                           |
 | Technique  | EP                                    |
 | Source     | REQ-REG-010, REQ-REG-011, REQ-REG-013 |
-| Test cases | —                                     |
+| Test cases | REGISTER-FORM-004                     |
 
 **What to cover**
 Submitting with the password empty and the other three fields filled blocks submission client-side and marks only the password field.
@@ -175,7 +175,7 @@ Same styling-only signal as COND-REGISTER-FORM-001 (DIVERGENCE-1). This is the o
 | Category   | Input field                           |
 | Technique  | BVA                                   |
 | Source     | REQ-REG-010, REQ-REG-011, REQ-REG-013 |
-| Test cases | —                                     |
+| Test cases | REGISTER-FORM-005                     |
 
 **What to cover**
 Submitting an entirely empty form blocks submission and marks all four fields at once, which is what shows the check is per-field rather than form-wide.
@@ -201,7 +201,7 @@ The empty boundary. Its neighbour one step outside is whitespace-only (COND-REGI
 | Category   | Input field            |
 | Technique  | BVA                    |
 | Source     | REQ-REG-014            |
-| Test cases | —                      |
+| Test cases | REGISTER-FORM-006      |
 
 **What to cover**
 Whitespace is treated as a value, so the client-side required check passes and the credentials are submitted for server validation — the opposite outcome to the empty form, from input that looks equally blank.
@@ -229,7 +229,7 @@ Contrast COND-REGISTER-FORM-005, where the same visually-blank form is blocked e
 | Category   | Behavior                                           |
 | Technique  | EP                                                 |
 | Source     | REQ-REG-001, REQ-REG-002, REQ-REG-003, REQ-REG-004 |
-| Test cases | —                                                  |
+| Test cases | REGISTER-FORM-007                                  |
 
 **What to cover**
 A complete, valid set of details creates the account, confirms it to the user, clears the form, and leaves the user on `/register` without signing them in.
@@ -260,7 +260,7 @@ The valid EP class — the one happy-path condition in this file. The four obser
 | Category   | Behavior                 |
 | Technique  | EP                       |
 | Source     | REQ-REG-030, REQ-REG-033 |
-| Test cases | —                        |
+| Test cases | REGISTER-FORM-008        |
 
 **What to cover**
 A password not meeting the complexity rule is rejected and the specific reason is shown to the user in the page.
@@ -292,7 +292,7 @@ REQ-REG-033 is `medium` confidence: the message is present in the DOM as a parag
 | Category   | Behavior                  |
 | Technique  | EP                        |
 | Source     | REQ-REG-031, DIVERGENCE-3 |
-| Test cases | —                         |
+| Test cases | REGISTER-FORM-009         |
 
 **What to cover**
 Attempting to register a username that already exists tells the user that is why the attempt failed.
@@ -331,7 +331,7 @@ Needs a real pre-existing account, so it carries the same Risk-1 teardown obliga
 | Category   | Behavior               |
 | Technique  | EP                     |
 | Source     | REQ-REG-032            |
-| Test cases | —                      |
+| Test cases | REGISTER-FORM-010      |
 
 **What to cover**
 After a rejected submission all four fields still hold what the user typed, so the input can be corrected rather than retyped.
@@ -359,7 +359,7 @@ Distinct from COND-REGISTER-FORM-007's clearing behavior, and the contrast is th
 | Category   | State                  |
 | Technique  | State transition       |
 | Source     | REQ-REG-051            |
-| Test cases | —                      |
+| Test cases | REGISTER-FORM-011      |
 
 **What to cover**
 From the registration form, the `Back to Login` control transitions the user to the login page.
@@ -386,7 +386,7 @@ Per the login-form pipeline's own retrospective, a transition case whose expecte
 | Category   | State                  |
 | Technique  | State transition       |
 | Source     | REQ-REG-053            |
-| Test cases | —                      |
+| Test cases | REGISTER-FORM-012      |
 
 **What to cover**
 Reaching `/register` with an active session still shows the full registration form, rather than replacing it with an already-signed-in state the way `/login` does.
