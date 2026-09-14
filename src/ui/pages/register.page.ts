@@ -23,10 +23,10 @@ export class RegisterPage {
     this.lastNameInput = page.getByRole('textbox', { name: 'Last Name' });
     this.userNameInput = page.getByRole('textbox', { name: 'UserName' });
     this.passwordInput = page.getByRole('textbox', { name: 'Password' });
-    // exact: true — an h1 "Register" also exists; the button role alone
-    // already disambiguates it, but exact guards the name comparison too
+    // An h1 "Register" also exists, but the button role alone already
+    // disambiguates it — no exact: true needed
     // (docs/ui-spec/register-form.requirements.md, Element reference).
-    this.registerButton = page.getByRole('button', { name: 'Register', exact: true });
+    this.registerButton = page.getByRole('button', { name: 'Register' });
     this.backToLoginButton = page.getByRole('button', { name: 'Back to Login' });
     // Renders the server's password-complexity message on a 400. Stays empty
     // on a 406 duplicate-username response — DIVERGENCE-3, no accessible
@@ -47,6 +47,17 @@ export class RegisterPage {
 
   async clickRegister(): Promise<void> {
     await this.registerButton.click();
+  }
+
+  // Collapses the sequence every one of this file's 12 test cases opens with
+  // (goto → fill → click), matching login.page.ts's loginAs() precedent.
+  // Cases that must pause mid-sequence to assert (e.g. an empty field's
+  // value, or the styling on submit) call fillDetails()/clickRegister()
+  // directly instead.
+  async registerAs(details: RegisterDetails): Promise<void> {
+    await this.goto();
+    await this.fillDetails(details);
+    await this.clickRegister();
   }
 
   // The success signal is a native browser alert ("User Registered

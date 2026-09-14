@@ -7,3 +7,4 @@ export { LoginPage } from './login.page';
 export type { LoginCredentials } from './login.page';
 export { ProfilePage } from './profile.page';
 export { RegisterPage } from './register.page';
+export type { RegisterDetails } from './register.page';
