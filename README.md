@@ -37,6 +37,7 @@ Test design follows equivalence partitioning, boundary value analysis, and decis
 src/
   api/         Typed API clients (account, book store) — send requests, return the raw response, never assert
   types/       Zod schemas and the types inferred from them, per resource
+  forms/       Form field shapes (interfaces only) — a leaf both the API and UI chains may import
   data/        Pure test-data factories (unique usernames, valid/invalid passwords, book payloads)
   fixtures/    Setup and teardown — seed a user/book, hand it to the test, delete it after
   utils/       Cross-cutting helpers: logging, secret redaction, response parsing, custom matchers
