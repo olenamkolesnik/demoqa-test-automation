@@ -1,14 +1,29 @@
-import type { APIResponse } from '@playwright/test';
 import type { ZodType } from 'zod';
 import { logger } from './logger';
 import { redact, redactResponseText } from './redact.util';
+
+// Exactly the four members this module reads, rather than Playwright's
+// `APIResponse`. Both an `APIResponse` (from the API clients) and a page-level
+// `Response` (from `page.waitForResponse()`, which a UI test uses to read the
+// body of a call the page itself made) satisfy this, so both can be validated
+// through the same path — `APIResponse` alone would exclude the latter over
+// `dispose`/`timing` members that are never touched here.
+interface ReadableJsonResponse {
+  json(): Promise<unknown>;
+  text(): Promise<string>;
+  status(): number;
+  url(): string;
+}
 
 // Truncation bound for a non-JSON body quoted into an error message — enough
 // to identify an HTML error page or a stack trace, without pasting a whole
 // page into the test report.
 const BODY_SNIPPET_LENGTH = 500;
 
-export async function parseJsonBody<T>(response: APIResponse, schema: ZodType<T>): Promise<T> {
+export async function parseJsonBody<T>(
+  response: ReadableJsonResponse,
+  schema: ZodType<T>
+): Promise<T> {
   let raw: unknown;
 
   // response.json() throws a bare SyntaxError ("Unexpected token '<'") before
