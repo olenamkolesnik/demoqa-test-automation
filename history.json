@@ -1,5 +1,15 @@
 [
   {
+    "run": 61,
+    "status": "success",
+    "sha": "3ef8b8c",
+    "ref": "feat/ui-register-form",
+    "pr": 29,
+    "actor": "olenamkolesnik",
+    "date": "2026-09-17T16:58:10.754Z",
+    "workflowUrl": "https://github.com/olenamkolesnik/demoqa-test-automation/actions/runs/35249434952"
+  },
+  {
     "run": 60,
     "status": "success",
     "sha": "e143574",
