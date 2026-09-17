@@ -1,15 +1,25 @@
-import type { Locator, Page } from '@playwright/test';
+import type { Locator, Page, Response } from '@playwright/test';
+import type { RegisterDetails } from '../../forms/register-details';
 
-// Duplicates the shape of the form's own fields because src/ui/pages/ must not
-// import from src/types/ (docs/coding-standards.md layer rule).
-export interface RegisterDetails {
-  firstName: string;
-  lastName: string;
-  userName: string;
-  password: string;
+// Browser-side globals for the page.evaluate/waitForFunction callbacks below.
+// Declared here rather than adding "dom" to tsconfig's `lib`, which would put
+// DOM globals in scope across Node-side code where they would be wrong.
+// Reached via globalThis so they are real globals in the page, not closed-over
+// variables (which Playwright cannot serialise).
+interface RecaptchaBrowserGlobals {
+  ___grecaptcha_cfg?: { clients?: Record<string, unknown> };
+  grecaptcha?: { execute?: (id: number) => Promise<string> };
+  document: { querySelector(selector: string): { value: string } | null };
 }
 
+export type { RegisterDetails };
+
 export class RegisterPage {
+  // Failure ceiling, not a wait. An unbounded action inherits the whole
+  // remaining test budget, and this page's advertisement iframes can intercept
+  // pointer events — which surfaces as a bare "Test timeout" naming no step.
+  private static readonly STEP_TIMEOUT_MS = 10_000;
+
   private readonly firstNameInput: Locator;
   private readonly lastNameInput: Locator;
   private readonly userNameInput: Locator;
@@ -29,47 +39,153 @@ export class RegisterPage {
     this.registerButton = page.getByRole('button', { name: 'Register' });
     this.backToLoginButton = page.getByRole('button', { name: 'Back to Login' });
     // Renders the server's password-complexity message on a 400. Stays empty
-    // on a 406 duplicate-username response — DIVERGENCE-3, no accessible
-    // fallback exists for that case.
+    // on a 406 duplicate-username response, with no accessible fallback.
     this.errorParagraph = page.locator('#name');
+  }
+
+  // Performs the reCAPTCHA verification this page never triggers itself —
+  // without it the form's own guard blocks every submission client-side, with
+  // no request and no message. Mechanism and evidence: DIVERGENCE-4 in
+  // docs/ui-spec/register-form.requirements.md.
+  //
+  // **Call before filling, never after** — verifying clears every input.
+  async triggerInvisibleRecaptcha(): Promise<void> {
+    // 1. The widget has registered a client and exposes execute().
+    await this.page.waitForFunction(
+      () => {
+        const browser = globalThis as unknown as RecaptchaBrowserGlobals;
+        return (
+          typeof browser.grecaptcha?.execute === 'function' &&
+          Object.keys(browser.___grecaptcha_cfg?.clients ?? {}).length > 0
+        );
+      },
+      undefined,
+      { timeout: 20_000, polling: 100 }
+    );
+
+    // 2. The widget has issued its **own** initial token. This step is what
+    // makes the rest deterministic: calling execute() before the widget has
+    // settled makes it fire the callback twice, ~250ms apart, each firing
+    // clearing the form — so a fill landing between them is wiped and the
+    // form submits empty. Let the widget finish and exactly one callback
+    // follows.
+    await this.page.waitForFunction(
+      () => {
+        const browser = globalThis as unknown as RecaptchaBrowserGlobals;
+        const el = browser.document.querySelector('textarea[name="g-recaptcha-response"]');
+        return !!el && el.value.length > 0;
+      },
+      undefined,
+      { timeout: 25_000, polling: 100 }
+    );
+
+    const initialToken = await this.page.evaluate(() => {
+      const browser = globalThis as unknown as RecaptchaBrowserGlobals;
+      const el = browser.document.querySelector('textarea[name="g-recaptcha-response"]');
+      return el ? el.value : '';
+    });
+
+    // 3. Trigger verification.
+    await this.page.evaluate(async () => {
+      const browser = globalThis as unknown as RecaptchaBrowserGlobals;
+      const [id] = Object.keys(browser.___grecaptcha_cfg?.clients ?? {});
+      await browser.grecaptcha!.execute!(Number(id));
+    });
+
+    // 4. The token differing from step 2's baseline *is* our callback having
+    // fired — the same event that sets the form's captchaVerified flag and
+    // clears the inputs. Once seen, the form is verified and safe to fill.
+    await this.page.waitForFunction(
+      (previousToken) => {
+        const browser = globalThis as unknown as RecaptchaBrowserGlobals;
+        const el = browser.document.querySelector('textarea[name="g-recaptcha-response"]');
+        return !!el && el.value.length > 0 && el.value !== previousToken;
+      },
+      initialToken,
+      { timeout: 25_000, polling: 100 }
+    );
   }
 
   async goto(): Promise<void> {
     await this.page.goto('/register'); // relative to use.baseURL — never a hardcoded demoqa.com URL
   }
 
-  async fillDetails({ firstName, lastName, userName, password }: RegisterDetails): Promise<void> {
-    await this.firstNameInput.fill(firstName);
-    await this.lastNameInput.fill(lastName);
-    await this.userNameInput.fill(userName);
-    await this.passwordInput.fill(password);
+  async fillDetails(details: RegisterDetails): Promise<void> {
+    const { firstName, lastName, userName, password } = details;
+    const entries: [Locator, string][] = [
+      [this.firstNameInput, firstName],
+      [this.lastNameInput, lastName],
+      [this.userNameInput, userName],
+      [this.passwordInput, password],
+    ];
+
+    for (const [input, value] of entries) {
+      await input.fill(value, { timeout: RegisterPage.STEP_TIMEOUT_MS });
+    }
+
+    // A fill that races reCAPTCHA's callback is wiped, and the form then
+    // submits blank — failing later with a missing success alert rather than
+    // pointing at the wipe. triggerInvisibleRecaptcha() should have prevented
+    // it; checked anyway because the failure is silent and badly misleading.
+    const expected = entries.map(([, value]) => value);
+    const actual = await Promise.all(
+      entries.map(([input]) => input.inputValue({ timeout: RegisterPage.STEP_TIMEOUT_MS }))
+    );
+
+    if (actual.some((value, index) => value !== expected[index])) {
+      throw new Error(
+        `Register form cleared its inputs after they were filled — reCAPTCHA fired a callback later than triggerInvisibleRecaptcha() accounts for (see docs/ui-spec/register-form.requirements.md, DIVERGENCE-4)`
+      );
+    }
   }
 
   async clickRegister(): Promise<void> {
-    await this.registerButton.click();
+    await this.registerButton.click({ timeout: RegisterPage.STEP_TIMEOUT_MS });
   }
 
-  // Collapses the sequence every one of this file's 12 test cases opens with
-  // (goto → fill → click), matching login.page.ts's loginAs() precedent.
-  // Cases that must pause mid-sequence to assert (e.g. an empty field's
-  // value, or the styling on submit) call fillDetails()/clickRegister()
-  // directly instead.
+  // For any case that must reach the server. Verification comes before the
+  // fill — see triggerInvisibleRecaptcha() for both halves of why.
   async registerAs(details: RegisterDetails): Promise<void> {
+    await this.goto();
+    await this.triggerInvisibleRecaptcha();
+    await this.fillDetails(details);
+    await this.clickRegister();
+  }
+
+  // For cases the form rejects on its required-field check, which never reach
+  // the server. The guard is
+  // `allFieldsPresent ? captchaVerified ? …POST… : "verify reCaptcha" : fieldErrors`,
+  // so a blank field never consults the captcha flag — skipping verification
+  // is correct here, and ~1.5s rather than ~11s.
+  //
+  // A separate method rather than a flag on registerAs(): skipping is only
+  // valid when the submission is expected to be blocked client-side, and that
+  // precondition belongs at the call site.
+  async registerExpectingClientSideRejection(details: RegisterDetails): Promise<void> {
     await this.goto();
     await this.fillDetails(details);
     await this.clickRegister();
   }
 
-  // The success signal is a native browser alert ("User Registered
-  // Successfully."), not a DOM node — it cannot be located with getByText
-  // (docs/ui-spec/register-form.requirements.md, Element reference). The
-  // caller must register this handler before calling clickRegister(),
-  // otherwise Playwright auto-dismisses the dialog and the message is lost.
-  // Returns the message rather than asserting it — page objects don't assert
-  // (docs/coding-standards.md, UI test architecture).
-  captureNextDialogMessage(): Promise<string> {
-    return new Promise((resolve) => {
+  // The success signal is a native browser alert, not a DOM node, so it cannot
+  // be located with getByText. Must be called *before* clickRegister() or
+  // Playwright auto-dismisses the dialog and the message is lost. Rejects
+  // rather than hanging if no alert arrives, which would otherwise surface as
+  // an opaque whole-test timeout naming no step.
+  captureNextDialogMessage(timeout = 20_000): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(
+        () =>
+          reject(
+            new Error(
+              `No registration dialog appeared within ${timeout}ms — the submission did not reach the server`
+            )
+          ),
+        timeout
+      );
+
       this.page.once('dialog', async (dialog) => {
+        clearTimeout(timer);
         const message = dialog.message();
         await dialog.accept();
         resolve(message);
@@ -77,13 +193,25 @@ export class RegisterPage {
     });
   }
 
-  // The text DIVERGENCE-4's second shape produces — a real, in-page rejection
-  // when reCAPTCHA is not yet ready, confirmed via network trace to send no
-  // request to /Account/v1/User at all (docs/ui-spec/register-form.requirements.md,
-  // Constraint on test design). Used only to detect this specific known
-  // non-regression outcome, never asserted as the expected result of a case
-  // whose own subject is something else.
-  static readonly RECAPTCHA_NOT_READY_MESSAGE = 'Please verify reCaptcha to register!';
+  // Submitting this form *is* a POST /Account/v1/User, and its 201 body is the
+  // only place a UI test can see the new account's userID — which is what lets
+  // a test tear down through the API rather than /profile's Delete Account.
+  // Returns the raw response; page objects don't validate shapes.
+  //
+  // Subscribe *before* the submission: this is a one-time event, not queryable
+  // state, so it must be a listener rather than a poll.
+  //
+  // The path duplicates AccountApiClient's `${basePath}/User` deliberately —
+  // src/ui/pages/ must not import src/api/, and one string is too thin a
+  // reason for a shared layer. If the endpoint moves, the API suite fails
+  // first. Revisit if a third place needs it.
+  captureNextRegistrationResponse(): Promise<Response> {
+    return this.page.waitForResponse(
+      (response) =>
+        response.url().includes('/Account/v1/User') && response.request().method() === 'POST',
+      { timeout: 30_000 }
+    );
+  }
 
   async clickBackToLogin(): Promise<void> {
     await this.backToLoginButton.click();
