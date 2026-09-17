@@ -10,14 +10,15 @@ These are largely already-established patterns in this codebase, written down ex
 
 Each layer under `src/` has exactly one job. A change driven by one concern (a new endpoint, a new validation rule, a new test-data shape) should touch exactly one layer.
 
-| Layer           | Job                                                        | Must never                                                          |
-| --------------- | ---------------------------------------------------------- | ------------------------------------------------------------------- |
-| `src/types/`    | Define response/request shape (zod schema + inferred type) | Make network calls, contain test logic                              |
-| `src/api/`      | Send requests, return raw `APIResponse`                    | Assert, throw on non-2xx, validate response shape                   |
-| `src/utils/`    | Cross-cutting helpers (parsing, logging, redaction)        | Contain endpoint-specific or test-specific logic                    |
-| `src/data/`     | Build test data (factories)                                | Make network calls, share mutable state, call fixtures or clients   |
-| `src/fixtures/` | Wire client + data together, manage setup/teardown         | Contain assertions (that belongs in the test file)                  |
-| `tests/`        | Assert. One test, one focus.                               | Construct a client or schema directly — always go through a fixture |
+| Layer           | Job                                                           | Must never                                                          |
+| --------------- | ------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `src/types/`    | Define response/request shape (zod schema + inferred type)    | Make network calls, contain test logic                              |
+| `src/forms/`    | Define a form's field shape (interface only), for both chains | Contain behaviour, import any other layer, hold API contracts       |
+| `src/api/`      | Send requests, return raw `APIResponse`                       | Assert, throw on non-2xx, validate response shape                   |
+| `src/utils/`    | Cross-cutting helpers (parsing, logging, redaction)           | Contain endpoint-specific or test-specific logic                    |
+| `src/data/`     | Build test data (factories)                                   | Make network calls, share mutable state, call fixtures or clients   |
+| `src/fixtures/` | Wire client + data together, manage setup/teardown            | Contain assertions (that belongs in the test file)                  |
+| `tests/`        | Assert. One test, one focus.                                  | Construct a client or schema directly — always go through a fixture |
 
 ## Dependency direction
 
@@ -37,9 +38,27 @@ tests/ui/  →  ui/flows/  →  ui/pages/  →  ui/components/
             api/ fixtures/ (for API-seeded setup — see API-seeded UI tests)
 ```
 
+`forms/` sits below both chains — a leaf that either side may import and that imports nothing itself:
+
+```
+   API chain            UI chain
+       ↓                    ↓
+      data/            ui/pages/
+        ↘                 ↙
+           src/forms/        (interfaces only, no dependencies)
+```
+
 Never the reverse in either chain — a schema must not import a client; a client must not import a fixture; a page object must not import a flow; a component must not import a page. If you find yourself importing "up" either chain, the logic is in the wrong layer.
 
-The two chains meet only at `tests/` (a UI test may use both a flow and an API fixture, per **API-seeded UI tests**) and at `utils/` (shared by both sides) — `src/ui/pages/`, `src/ui/components/`, `src/ui/flows/` never import from `src/api/`, `src/fixtures/`, `src/data/`, or `src/types/` directly; only the test file coordinates both sides.
+The two chains meet only at `tests/` (a UI test may use both a flow and an API fixture, per **API-seeded UI tests**), at `utils/` (shared by both sides), and at `forms/` (see below) — `src/ui/pages/`, `src/ui/components/`, `src/ui/flows/` never import from `src/api/`, `src/fixtures/`, `src/data/`, or `src/types/` directly; only the test file coordinates both sides.
+
+### `src/forms/` — form field shapes, importable by both chains
+
+A form's field set is described in `src/forms/` and imported by whichever layers need it: `src/ui/pages/` to drive the form, `src/data/` to build test data for it. This is safe because `src/forms/` is a **leaf** — it holds interfaces only, with no behaviour, no dependencies on any other layer, and so no way to create a cycle.
+
+**Admission rule: the fields a form has.** Nothing with behaviour, and nothing that imports another layer. A shape needed by only one layer stays in that layer.
+
+**Not `src/types/`.** That layer holds zod schemas for **API contracts**, validated against live responses. A form's field set is not an API contract, and the registration form proves it: First Name and Last Name are collected by the form but never transmitted — the request body is `{userName, password}` only (`docs/ui-spec/register-form.requirements.md`). Modelling the two as one shape would encode a relationship that does not hold. The reason `src/ui/pages/` must not import `src/types/` still stands; `src/forms/` is what it imports instead.
 
 ---
 
