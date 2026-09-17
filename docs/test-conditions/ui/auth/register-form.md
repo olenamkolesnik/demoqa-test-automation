@@ -45,7 +45,7 @@ Three divergence dispositions (`docs/ui-spec/register-form.requirements.md`) ins
 
 - REQ-REG-012 — accessible invalid state: DIVERGENCE-1, `Defect — do not automate` (accessibility out of scope, `docs/test-plan.md` §2). Note this disposition **does** direct conditions for REQ-REG-010/-011 to use the `is-invalid` class; what it forbids is asserting an accessible signal that does not exist. COND-REGISTER-FORM-001 to -005 are derived on that instruction.
 - REQ-REG-020 — the unenforced client-side password `pattern`: DIVERGENCE-2, `Accept as-is`. No condition asserts client-side blocking; the observed server-side path is covered by COND-REGISTER-FORM-008 instead.
-- REQ-REG-041 — silent blocked submission: DIVERGENCE-4, `Defect — do not automate` (intermittent, so a standing test would flake rather than fail honestly). Recorded as a constraint on automation instead — see COND-REGISTER-FORM-INF-002.
+- REQ-REG-041 — blocked submission with no feedback: DIVERGENCE-4, `Defect — do not automate`. Root-caused 2026-09-16 (invisible reCAPTCHA never triggered; deterministic, not intermittent) and resolved for automation; the user-facing feedback gap itself remains unmet — see COND-REGISTER-FORM-INF-002.
 
 **One requirement is derived as an expected failure — provisionally**
 
@@ -318,7 +318,7 @@ firstName: "Ada"   lastName: "Lovelace"   userName: "<that same name>"   passwor
 
 Kept deliberately to **one** condition, per the disposition's own instruction. The assertion is intentionally loose — "any user-visible indication" — because the requirement does not dictate which mechanism, and a stricter assertion would fail for a second reason if DemoQA fixed it differently than expected. It will go green by itself when the form starts handling the 406.
 
-Needs a real pre-existing account, so it carries the same Risk-1 teardown obligation as COND-REGISTER-FORM-007. Seeding the precondition through the API rather than by registering twice through the form is both cheaper and avoids compounding DIVERGENCE-4's flakiness.
+Needs a real pre-existing account, so it carries the same Risk-1 teardown obligation as COND-REGISTER-FORM-007. Seeding the precondition through the API rather than by registering twice through the form is cheaper and keeps the setup off the form under test.
 
 ---
 
@@ -443,10 +443,10 @@ DIVERGENCE-1's disposition is `Defect — do not automate`: a real accessibility
 That when a submission is blocked before reaching the server, the form says so rather than appearing to do nothing.
 
 **Why infeasible**
-The behavior is **intermittent**, not absent: measured at 1 silent no-op in 5 consecutive trials, consistently the first submission after a cold page load (2026-09-14). A test asserting the requirement would flake rather than fail honestly — passing on the 4 trials where the submission goes through and failing on the 1 where it does not, with no way to tell that apart from a genuine regression. That is strictly worse than no test.
+_Reasoning corrected 2026-09-16; the original "intermittent, 1 in 5" account was wrong — see DIVERGENCE-4._ The block is **deterministic**, not intermittent: the page runs an invisible reCAPTCHA and the submit guard gates on a React flag only that widget’s callback sets, so an untriggered widget blocks every submission with zero requests. The requirement REQ-REG-041 states (that the form says so rather than appearing to do nothing) is still genuinely unmet, and still worth reporting upstream. It stays unautomated because a test asserting it would be a standing red marker for a cosmetic-feedback defect, not because it would flake.
 
 **Mitigation**
-DIVERGENCE-4's disposition is `Defect — do not automate` for exactly this reason. The finding is carried instead as a **constraint on every automated test in this file**, per the requirements file's _Constraint on test design — the silent first submission_: any test that submits this form must tolerate the silent first-attempt no-op, or the suite inherits a ~20% first-attempt flake rate on COND-REGISTER-FORM-007, its most important case. Whether that means waiting for the reCAPTCHA widget to initialise or retrying the submission is an automation decision, not a test-design one. Revisit if the form gains an in-flight or captcha-pending state.
+No longer a constraint on other tests. `RegisterPage.registerAs()` performs the verification the page never triggers, so every submitting test reaches the server on its first attempt — the ~20% flake rate this section previously warned about does not exist and retry tolerance was removed. Revisit if the form gains an in-flight or captcha-pending state.
 
 ---
 

@@ -424,15 +424,17 @@ A component reusable across unrelated pages (e.g. `HeaderComponent` on every pag
 A page object's methods only ever act on its own page. Moving from one page to another — a multi-step journey — is a `src/ui/flows/` job:
 
 ```ts
-// src/ui/flows/registration.flow.ts
-export class RegistrationFlow {
+// src/ui/flows/book-collection.flow.ts — illustrative; src/ui/flows/ is
+// not yet populated.
+export class BookCollectionFlow {
   constructor(private readonly page: Page) {}
 
-  async registerAndLogIn(credentials: LoginPayload) {
-    const registerPage = new RegisterPage(this.page);
-    await registerPage.submit(credentials);
-    const loginPage = new LoginPage(this.page);
-    await loginPage.logIn(credentials);
+  async addFirstSearchResultToCollection(title: string) {
+    const bookStorePage = new BookStorePage(this.page);
+    await bookStorePage.search(title);
+    await bookStorePage.openFirstResult();
+    const bookDetailPage = new BookDetailPage(this.page);
+    await bookDetailPage.addToCollection();
   }
 }
 ```

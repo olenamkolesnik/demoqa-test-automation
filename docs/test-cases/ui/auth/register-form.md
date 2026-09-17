@@ -6,7 +6,7 @@ Derived from `docs/test-conditions/ui/auth/register-form.md`. One test case per 
 
 **Two constraints apply to every case in this file**, both from `docs/ui-spec/register-form.requirements.md`:
 
-- **The first submission after opening the page may silently do nothing** — no request, no message, no change on screen (measured 1 in 5 trials). A manual tester who sees nothing happen should click Register again before recording a defect; an automated test must tolerate it. This is DIVERGENCE-4, a known form defect.
+- **A submission can be blocked before it reaches the server** — no request, no message, no change on screen. The page runs an invisible reCAPTCHA, and the form’s submit guard gates on a flag only that widget’s callback sets, so nothing is sent until verification happens. A manual tester who sees nothing happen should click Register again before recording a defect. **For automation this is resolved** (DIVERGENCE-4, root-caused 2026-09-16): `RegisterPage.registerAs()` performs that verification, so a submission lands on the first attempt and no retry tolerance is needed.
 - **Every successful registration creates a real account on a shared public backend** (Risk-1, `docs/test-plan.md` §8). Cases that register successfully must delete the account afterwards; cases that are rejected create nothing.
 
 ---
@@ -176,8 +176,6 @@ The boundary this case covers: whitespace is a value, so the required check pass
 
 The rejection cites the **password** rule, not the username, so the message shown is the same one as REGISTER-FORM-008 reached by a different route. Empty and whitespace-only remain two distinct input classes.
 
-⚠️ **Automated test currently red (2026-09-14), by deliberate decision — not an oversight.** This case submits the form, and DIVERGENCE-4 (docs/ui-spec/register-form.requirements.md) appears to block Playwright-automated submissions to `/register` deterministically rather than the ~1-in-5 intermittent rate manual testing found. Fate deferred alongside REGISTER-FORM-007 and -008, which hit the same root cause. See the requirements doc's "Current status" note under DIVERGENCE-4.
-
 ---
 
 ### TC: Register with valid details
@@ -213,8 +211,6 @@ The happy path, and the only case in this file that creates a real account — d
 
 Registration does not sign the user in: reaching /profile afterwards still requires going through the login form.
 
-⚠️ **Automated test currently red (2026-09-14), by deliberate decision — not an oversight.** This is the form's only happy-path case, and DIVERGENCE-4 (docs/ui-spec/register-form.requirements.md) appears to block Playwright-automated submissions to `/register` deterministically (6/6 failures across repeated runs, confirmed via network trace) rather than the ~1-in-5 intermittent rate manual testing found. A one-retry tolerance is implemented but has not been shown to help. Fate deferred — see the requirements doc's "Current status" note under DIVERGENCE-4.
-
 ---
 
 ### TC: Register with a password below the complexity rule
@@ -244,8 +240,6 @@ Registration does not sign the user in: reaching /profile afterwards still requi
 The password rule is enforced by the server, not by the form. The Password field carries a complexity rule in its markup, but the form ignores it and submits anyway — so this case must be written against what the server returns, not against the field being blocked before submission (DIVERGENCE-2).
 
 The message is shown as ordinary red text above the form. Whether a screen reader announces it on appearance was not checked — announcement is an accessibility concern excluded from scope (`docs/test-plan.md` §2).
-
-⚠️ **Automated test currently red (2026-09-14), by deliberate decision — not an oversight.** Same root cause as REGISTER-FORM-006/-007: DIVERGENCE-4 (docs/ui-spec/register-form.requirements.md) appears to block Playwright-automated submissions to `/register` deterministically. A one-retry tolerance is implemented but has not been shown to help. Fate deferred — see the requirements doc's "Current status" note under DIVERGENCE-4.
 
 ---
 
@@ -295,7 +289,7 @@ Seed the precondition account through the API rather than by registering twice t
 | Preconditions  | None                                                                                                              |
 | Test data      | firstName: "Ada" / lastName: "Lovelace" / userName: "qa_reg_keep_001" / password: "weak" (rejected by the server) |
 | Postconditions | None — the server rejects the submission, so no account is created                                                |
-| Automation     | Automated → `tests/ui/register-form.ui.spec.ts`                                                                   |
+| Automation     | Not automated — manual only                                                                                       |
 
 **Steps & expected results**
 
@@ -318,15 +312,15 @@ The contrast with REGISTER-FORM-007 is the point: a successful registration clea
 
 ### TC: Return to the login form from registration
 
-| Field          | Value                                           |
-| -------------- | ----------------------------------------------- |
-| ID             | REGISTER-FORM-011                               |
-| Condition      | COND-REGISTER-FORM-011                          |
-| Risk           | —                                               |
-| Preconditions  | None                                            |
-| Test data      | None                                            |
-| Postconditions | None                                            |
-| Automation     | Automated → `tests/ui/register-form.ui.spec.ts` |
+| Field          | Value                       |
+| -------------- | --------------------------- |
+| ID             | REGISTER-FORM-011           |
+| Condition      | COND-REGISTER-FORM-011      |
+| Risk           | —                           |
+| Preconditions  | None                        |
+| Test data      | None                        |
+| Postconditions | None                        |
+| Automation     | Not automated — manual only |
 
 **Steps & expected results**
 
@@ -376,15 +370,15 @@ This case's condition is `Low` priority and is expected to be filtered out when 
 | COND-REGISTER-FORM-003     | REGISTER-FORM-003 |                                                             |
 | COND-REGISTER-FORM-004     | REGISTER-FORM-004 |                                                             |
 | COND-REGISTER-FORM-005     | REGISTER-FORM-005 |                                                             |
-| COND-REGISTER-FORM-006     | REGISTER-FORM-006 | Automated but currently red (DIVERGENCE-4), see Notes       |
-| COND-REGISTER-FORM-007     | REGISTER-FORM-007 | Automated but currently red (DIVERGENCE-4), see Notes       |
-| COND-REGISTER-FORM-008     | REGISTER-FORM-008 | Automated but currently red (DIVERGENCE-4), see Notes       |
+| COND-REGISTER-FORM-006     | REGISTER-FORM-006 |                                                             |
+| COND-REGISTER-FORM-007     | REGISTER-FORM-007 |                                                             |
+| COND-REGISTER-FORM-008     | REGISTER-FORM-008 |                                                             |
 | COND-REGISTER-FORM-009     | REGISTER-FORM-009 | Provisional — expected to fail, not to be automated yet     |
-| COND-REGISTER-FORM-010     | REGISTER-FORM-010 |                                                             |
-| COND-REGISTER-FORM-011     | REGISTER-FORM-011 |                                                             |
+| COND-REGISTER-FORM-010     | REGISTER-FORM-010 | Not automated — removed from the spec by decision           |
+| COND-REGISTER-FORM-011     | REGISTER-FORM-011 | Not automated — removed from the spec by decision           |
 | COND-REGISTER-FORM-012     | REGISTER-FORM-012 | `Low` priority — expected to be filtered at automation time |
 | COND-REGISTER-FORM-INF-001 | —                 | Infeasible: no accessible signal exists (DIVERGENCE-1)      |
-| COND-REGISTER-FORM-INF-002 | —                 | Infeasible: silent no-op is intermittent (DIVERGENCE-4)     |
+| COND-REGISTER-FORM-INF-002 | —                 | Infeasible: cosmetic feedback gap only (DIVERGENCE-4)       |
 | COND-REGISTER-FORM-INF-003 | —                 | Infeasible: input length never probed on this form          |
 
 All 12 non-infeasible conditions have exactly one test case. The three infeasible entries correctly have none.
