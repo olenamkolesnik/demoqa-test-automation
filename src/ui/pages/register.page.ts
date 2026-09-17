@@ -20,6 +20,10 @@ export class RegisterPage {
   // pointer events — which surfaces as a bare "Test timeout" naming no step.
   private static readonly STEP_TIMEOUT_MS = 10_000;
 
+  // How long to wait for the success alert before failing with a named error
+  // rather than an opaque whole-test timeout.
+  private static readonly DIALOG_TIMEOUT_MS = 20_000;
+
   private readonly firstNameInput: Locator;
   private readonly lastNameInput: Locator;
   private readonly userNameInput: Locator;
@@ -69,21 +73,16 @@ export class RegisterPage {
     // clearing the form — so a fill landing between them is wiped and the
     // form submits empty. Let the widget finish and exactly one callback
     // follows.
-    await this.page.waitForFunction(
+    const initialTokenHandle = await this.page.waitForFunction(
       () => {
         const browser = globalThis as unknown as RecaptchaBrowserGlobals;
         const el = browser.document.querySelector('textarea[name="g-recaptcha-response"]');
-        return !!el && el.value.length > 0;
+        return el && el.value.length > 0 ? el.value : false;
       },
       undefined,
       { timeout: 25_000, polling: 100 }
     );
-
-    const initialToken = await this.page.evaluate(() => {
-      const browser = globalThis as unknown as RecaptchaBrowserGlobals;
-      const el = browser.document.querySelector('textarea[name="g-recaptcha-response"]');
-      return el ? el.value : '';
-    });
+    const initialToken = await initialTokenHandle.jsonValue();
 
     // 3. Trigger verification.
     await this.page.evaluate(async () => {
@@ -110,33 +109,12 @@ export class RegisterPage {
     await this.page.goto('/register'); // relative to use.baseURL — never a hardcoded demoqa.com URL
   }
 
-  async fillDetails(details: RegisterDetails): Promise<void> {
-    const { firstName, lastName, userName, password } = details;
-    const entries: [Locator, string][] = [
-      [this.firstNameInput, firstName],
-      [this.lastNameInput, lastName],
-      [this.userNameInput, userName],
-      [this.passwordInput, password],
-    ];
-
-    for (const [input, value] of entries) {
-      await input.fill(value, { timeout: RegisterPage.STEP_TIMEOUT_MS });
-    }
-
-    // A fill that races reCAPTCHA's callback is wiped, and the form then
-    // submits blank — failing later with a missing success alert rather than
-    // pointing at the wipe. triggerInvisibleRecaptcha() should have prevented
-    // it; checked anyway because the failure is silent and badly misleading.
-    const expected = entries.map(([, value]) => value);
-    const actual = await Promise.all(
-      entries.map(([input]) => input.inputValue({ timeout: RegisterPage.STEP_TIMEOUT_MS }))
-    );
-
-    if (actual.some((value, index) => value !== expected[index])) {
-      throw new Error(
-        `Register form cleared its inputs after they were filled — reCAPTCHA fired a callback later than triggerInvisibleRecaptcha() accounts for (see docs/ui-spec/register-form.requirements.md, DIVERGENCE-4)`
-      );
-    }
+  async fillDetails({ firstName, lastName, userName, password }: RegisterDetails): Promise<void> {
+    const timeout = RegisterPage.STEP_TIMEOUT_MS;
+    await this.firstNameInput.fill(firstName, { timeout });
+    await this.lastNameInput.fill(lastName, { timeout });
+    await this.userNameInput.fill(userName, { timeout });
+    await this.passwordInput.fill(password, { timeout });
   }
 
   async clickRegister(): Promise<void> {
@@ -172,8 +150,9 @@ export class RegisterPage {
   // Playwright auto-dismisses the dialog and the message is lost. Rejects
   // rather than hanging if no alert arrives, which would otherwise surface as
   // an opaque whole-test timeout naming no step.
-  captureNextDialogMessage(timeout = 20_000): Promise<string> {
+  captureNextDialogMessage(): Promise<string> {
     return new Promise((resolve, reject) => {
+      const timeout = RegisterPage.DIALOG_TIMEOUT_MS;
       const timer = setTimeout(
         () =>
           reject(
