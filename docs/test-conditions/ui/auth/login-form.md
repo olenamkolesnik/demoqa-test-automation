@@ -375,6 +375,8 @@ Active session     → /login shows "You are already logged in." + Log out contr
 **Notes**
 High priority despite being an edge case: this is the project's main test-isolation hazard. A leaked session from an earlier action makes every other condition in this file fail at its first locator, with an error naming the locator rather than the real cause. Every test of this form must start from a signed-out browser context — a fresh context, or one whose cookies have been cleared (corrected 2026-09-18; see **Constraint on test design — session isolation** in the requirements file).
 
+The same cookie mechanism that ends a session can also inject one, so anything that seeds a signed-in state carries a security constraint as well as an isolation one — see **Security constraint on any cookie-based seeding** in the requirements file before building such a fixture.
+
 ### COND-LOGIN-FORM-014: Registration is reachable from the form
 
 | Field      | Value               |
