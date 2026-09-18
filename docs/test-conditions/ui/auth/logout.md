@@ -6,7 +6,7 @@ Derived from `docs/ui-spec/logout.requirements.md`. One condition per situation 
 
 ## Feature analysis
 
-**Feature:** logout / session termination — the `Logout` control in the signed-in header block on `/profile` and `/books`, the `Log out` control in `/login`'s already-signed-in state, and the state the application presents once a session ends.
+**Feature:** logout / session termination — the `Logout` control in the signed-in header block on `/profile`, the `Log out` control on `/books` and in `/login`'s already-signed-in state, and the state the application presents once a session ends.
 **Source:** `docs/ui-spec/logout.requirements.md` (observations 2026-09-08, 2026-09-10, 2026-09-11, 2026-09-14, and two live passes on 2026-09-18)
 **Test level:** System-level, black-box, per `docs/test-plan.md` §4
 
@@ -89,11 +89,12 @@ The logout control works from `/books` as well as `/profile` — a session can b
 **Values / boundaries**
 
 ```
-Signed in, on /books → click button "Logout" → URL = https://demoqa.com/login, signed out
+Signed in, on /books → click button "Log out" → URL = https://demoqa.com/login, signed out
+                       (two words on this page — NOT "Logout" as on /profile; see COND-LOGOUT-INF-001)
 ```
 
 **Notes**
-Distinct from COND-LOGOUT-001, not a duplicate of it: -001 covers the transition itself, this one covers REQ-LOGOUT-001's claim that the control is offered on _every_ page with the header block. `/books` is the only second such page currently known, so it is the whole of the evidence for that claim. Medium rather than High — if this fails but -001 passes, the user can still sign out by navigating to `/profile` first.
+Distinct from COND-LOGOUT-001, not a duplicate of it: -001 covers the transition itself, this one covers REQ-LOGOUT-001's claim that the control is offered on _every_ page with the header block. `/books` is the only second such page currently known, so it is the whole of the evidence for that claim. **The control is named `Log out` here, not `Logout`** — corrected 2026-09-18 after the stage-6 live check; the earlier wording copied `/profile`'s name onto a page it had never been observed on. Medium rather than High — if this fails but -001 passes, the user can still sign out by navigating to `/profile` first.
 
 ### COND-LOGOUT-003: Session cookies are cleared by logout
 
@@ -232,18 +233,20 @@ High priority: this is the actual access-control assertion in the feature — lo
 | Test cases | LOGOUT-008      |
 
 **What to cover**
-Logging out does not withdraw access to the public book catalogue — `/books` still lists books, while the per-row collection controls and the signed-in header block are withdrawn with the session.
+Logging out does not withdraw access to the public book catalogue — `/books` still lists books and still offers search, while the signed-in header block (username + `Log out`) is withdrawn with the session and replaced by a `Login` button.
 
 **Values / boundaries**
 
 ```
-Signed out, /books → 8 book rows listed; textbox "Type to search" present
-                   → table columns = Image, Title, Author, Publisher (no Action column)
-                   → button "Login" in place of the signed-in header block
+Signed in,  /books → 8 book rows; textbox "Type to search"; header shows username + button "Log out"
+Signed out, /books → 8 book rows; textbox "Type to search"; header shows button "Login" instead
+                   → table columns = Image, Title, Author, Publisher in BOTH states
 ```
 
 **Notes**
-Low priority: a negative-space assertion about a public page, and no user journey breaks if it regresses. Recorded because it is the boundary of what logout withdraws — the catalogue is deliberately outside it. The disappearing **Action** column is the sharpest observable signal that collection controls, not the catalogue, are what the session gates.
+Low priority: a negative-space assertion about a public page, and no user journey breaks if it regresses. Recorded because it is the boundary of what logout withdraws — the catalogue is deliberately outside it.
+
+**Corrected 2026-09-18 (stage 6).** An earlier version named a disappearing **Action** column as the sharpest signal of that boundary. There is no Action column on `/books` in either state — it belongs to `/profile`'s collection table, and the claim came from a `/profile` snapshot misidentified as `/books`. The observable that logout changes on `/books` is the header block alone: username + `Log out` while signed in, a `Login` button when not. The table itself is identical in both states, which is precisely the point of this condition.
 
 ### COND-LOGOUT-013: Logout issues no request to the server
 
@@ -291,7 +294,7 @@ Low priority: it concerns _how_ logout takes effect rather than _whether_ it doe
 That the logout control presents the same accessible name everywhere it appears, so it is recognisable as one control and addressable by one locator.
 
 **Why infeasible**
-It does not. `/profile` and `/books` render `button "Logout"` (one word); `/login`'s already-signed-in state renders `button "Log out"` (two words). Both were captured in snapshots taken minutes apart on 2026-09-14, so this is a concurrent inconsistency, not a change over time. DIVERGENCE-1's disposition is **Defect — do not automate**: asserting the requirement would produce a permanently failing test, and asserting the observed two-name reality would encode a defect as expected behavior. Neither belongs in the suite.
+It does not. `/profile` renders `button "Logout"` (one word); `/books` and `/login`'s already-signed-in state both render `button "Log out"` (two words). The `/profile` and `/login` variants were captured in snapshots minutes apart on 2026-09-14; the `/books` variant was confirmed live on 2026-09-18 with its raw HTML. This is a concurrent inconsistency, not a change over time. (Page attribution corrected 2026-09-18 — an earlier version placed `/books` with `/profile`; the split is `/profile` vs. everything else.) DIVERGENCE-1's disposition is **Defect — do not automate**: asserting the requirement would produce a permanently failing test, and asserting the observed two-name reality would encode a defect as expected behavior. Neither belongs in the suite.
 
 **Mitigation**
 Test design honours the observed behavior without asserting it: every condition in this file locates the control **per page**, never through one shared locator. The two page objects already hold two separate locators for what a user would call one button ([`profile.page.ts:25`](../../../../src/ui/pages/profile.page.ts#L25), [`login.page.ts:26`](../../../../src/ui/pages/login.page.ts#L26)). Any page object for a new signed-in page must check which name that page renders rather than assuming either. Revisit if the SUT ever unifies the two.

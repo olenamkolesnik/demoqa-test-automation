@@ -4,7 +4,7 @@ Derived from `docs/test-conditions/ui/auth/logout.md`. One test case per conditi
 
 **Every test case in this file requires a signed-in browser context to begin with**, and ends signed out. The session is carried in four cookies (`token`, `expires`, `userID`, `userName`), so a fresh browser context is signed out by construction — see the constraint section in `docs/ui-spec/login-form.requirements.md`.
 
-**Two accessible names exist for one control.** `/profile` and `/books` render `Logout` (one word); `/login`'s already-signed-in state renders `Log out` (two words). This is a recorded defect (DIVERGENCE-1, disposition _do not automate_) — the cases below locate the control **per page** and never assert which name appears.
+**Two accessible names exist for one control.** `/profile` renders `Logout` (one word); `/books` and `/login`'s already-signed-in state render `Log out` (two words). (Page attribution corrected 2026-09-18 after the stage-6 live check.) This is a recorded defect (DIVERGENCE-1, disposition _do not automate_) — the cases below locate the control **per page** and never assert which name appears.
 
 **The two infeasible conditions — `COND-LOGOUT-INF-001` (the two-name defect) and `COND-LOGOUT-INF-003` (double logout) — deliberately have no test case here.**
 
@@ -51,14 +51,16 @@ On /profile the Logout button shares `id="submit"` with Delete Account and Delet
 
 **Steps & expected results**
 
-| #   | Action             | Expected result                                                                            |
-| --- | ------------------ | ------------------------------------------------------------------------------------------ |
-| 1   | Navigate to /books | The book catalogue is shown with the username "qa_logout_002" and a Logout button above it |
-| 2   | Click Logout       | The page navigates to https://demoqa.com/login                                             |
-| 3   | Observe the page   | The login form is shown; no username and no Logout button                                  |
+| #   | Action             | Expected result                                                                                 |
+| --- | ------------------ | ----------------------------------------------------------------------------------------------- |
+| 1   | Navigate to /books | The book catalogue is shown with the username "qa_logout_002" and a **Log out** button above it |
+| 2   | Click Log out      | The page navigates to https://demoqa.com/login                                                  |
+| 3   | Observe the page   | The login form is shown; no username and no logout control                                      |
 
 **Notes**
 Not a duplicate of LOGOUT-001: that case covers the logout transition, this one covers the claim that the control is offered on _every_ page showing the signed-in header, not only the profile page. `/books` is currently the only second such page, so this case is the whole of the evidence for that claim.
+
+**The button here reads "Log out" — two words — not "Logout" as on the profile page.** Corrected 2026-09-18: the earlier wording copied the profile page's label onto a page it had never been observed on. A tester looking for "Logout" on /books will not find it.
 
 ---
 
@@ -159,7 +161,7 @@ Step 2 says "until /profile is reached" rather than "press Back once" deliberate
 | #   | Action               | Expected result                                                                                        |
 | --- | -------------------- | ------------------------------------------------------------------------------------------------------ |
 | 1   | Navigate to /profile | The signed-out message is shown; no buttons of any kind are present                                    |
-| 2   | Navigate to /books   | The book catalogue is shown with a Login button where the username and Logout button would be          |
+| 2   | Navigate to /books   | The book catalogue is shown with a Login button where the username and Log out button would be         |
 | 3   | Navigate to /login   | The login form is shown — UserName field, Password field, Login and New User buttons; no Logout button |
 
 **Notes**
@@ -216,16 +218,18 @@ Step 3 covers the just-logged-out path as well as the never-signed-in one. The t
 
 **Steps & expected results**
 
-| #   | Action                                      | Expected result                                                                                                                             |
-| --- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Observe the catalogue table while signed in | Books are listed, and the table has an **Action** column alongside Image, Title, Author and Publisher                                       |
-| 2   | Click Logout, then navigate to /books       | The catalogue still lists all 8 books and the "Type to search" box is still present                                                         |
-| 3   | Observe the table columns and the header    | The **Action** column is gone — only Image, Title, Author and Publisher remain — and a Login button replaces the username and Logout button |
+| #   | Action                                   | Expected result                                                                                                                                                          |
+| --- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | Observe the catalogue while signed in    | 8 books are listed with columns Image, Title, Author, Publisher; the "Type to search" box is present; the header shows the username "qa_logout_008" and a Log out button |
+| 2   | Click Log out, then navigate to /books   | The catalogue still lists the same 8 books and the "Type to search" box is still present                                                                                 |
+| 3   | Observe the table columns and the header | The columns are unchanged — Image, Title, Author, Publisher — and a Login button now stands where the username and Log out button were                                   |
 
 **Notes**
 Marks the boundary of what logging out withdraws: the catalogue is public and stays readable, while the per-row collection controls go with the session.
 
-The disappearing **Action** column is the sharpest signal of that boundary, which is why step 1 records the signed-in state first — the assertion is about the change, and without the before-state step 3 would just be describing a table.
+The header block is what changes, and the table is what does not — which is why step 1 records the signed-in state first: the assertion is about the contrast, and without the before-state step 3 would just be describing a page.
+
+**Corrected 2026-09-18 (stage 6).** An earlier version of this case had the table gaining and losing an **Action** column. There is no Action column on /books in either state — it belongs to the profile page's collection table, and the claim came from a profile-page snapshot misidentified as /books. The columns are identical signed in and signed out; a tester who expected them to change would have marked correct behavior as a failure.
 
 ---
 
