@@ -56,7 +56,7 @@ Derived from `docs/ui-spec/logout.requirements.md`. One condition per situation 
 | Category   | State                                                                                          |
 | Technique  | State transition                                                                               |
 | Source     | REQ-LOGOUT-010, REQ-LOGOUT-011, REQ-LOGOUT-012, REQ-LOGOUT-013, REQ-LOGOUT-002, REQ-LOGOUT-004 |
-| Test cases | —                                                                                              |
+| Test cases | LOGOUT-001                                                                                     |
 
 **What to cover**
 From `/profile` while signed in, activating the `Logout` control transitions the user to the signed-out state: the URL becomes `/login`, the displayed username is gone, and the sign-in form is present and usable again.
@@ -81,7 +81,7 @@ The single most important condition in this file — if it fails, no signed-out 
 | Category   | State                          |
 | Technique  | State transition               |
 | Source     | REQ-LOGOUT-001, REQ-LOGOUT-010 |
-| Test cases | —                              |
+| Test cases | LOGOUT-002                     |
 
 **What to cover**
 The logout control works from `/books` as well as `/profile` — a session can be ended from any page rendering the signed-in header block, not only from the profile page.
@@ -104,7 +104,7 @@ Distinct from COND-LOGOUT-001, not a duplicate of it: -001 covers the transition
 | Category   | State                          |
 | Technique  | State transition               |
 | Source     | REQ-LOGOUT-020, REQ-LOGOUT-021 |
-| Test cases | —                              |
+| Test cases | LOGOUT-003                     |
 
 **What to cover**
 Logout removes every cookie carrying the session, leaving no credential material in the browser after the user signs out.
@@ -128,7 +128,7 @@ High priority on security grounds rather than functional ones: the `token` cooki
 | Category   | State            |
 | Technique  | State transition |
 | Source     | REQ-LOGOUT-023   |
-| Test cases | —                |
+| Test cases | LOGOUT-004       |
 
 **What to cover**
 The session is carried by the cookies rather than merely reflected in them: clearing them out-of-band returns the application to its signed-out state without the logout control being used.
@@ -151,7 +151,7 @@ Worth testing in its own right because it underwrites a test-infrastructure deci
 | Category   | State                          |
 | Technique  | State transition               |
 | Source     | REQ-LOGOUT-010, REQ-LOGOUT-030 |
-| Test cases | —                              |
+| Test cases | LOGOUT-005                     |
 
 **What to cover**
 After logging out, navigating back to a page that was displayed while signed in re-renders it in its signed-out form rather than restoring the cached signed-in content.
@@ -177,7 +177,7 @@ Security-adjacent and cheap to assert: a bfcache restore showing a previous user
 | Category   | Behavior                       |
 | Technique  | EP                             |
 | Source     | REQ-LOGOUT-005, REQ-LOGOUT-001 |
-| Test cases | —                              |
+| Test cases | LOGOUT-006                     |
 
 **What to cover**
 A user without a session is offered no logout control on any page — the control and the signed-out state are mutually exclusive.
@@ -204,7 +204,7 @@ The negative equivalence class paired with COND-LOGOUT-001's positive one. Cover
 | Category   | Behavior                       |
 | Technique  | EP                             |
 | Source     | REQ-LOGOUT-030, REQ-LOGOUT-031 |
-| Test cases | —                              |
+| Test cases | LOGOUT-007                     |
 
 **What to cover**
 Requesting `/profile` directly without a session renders no signed-in content and directs the user toward signing in, whether the context never had a session or has just logged out.
@@ -229,7 +229,7 @@ High priority: this is the actual access-control assertion in the feature — lo
 | Category   | Behavior        |
 | Technique  | EP              |
 | Source     | REQ-LOGOUT-032  |
-| Test cases | —               |
+| Test cases | LOGOUT-008      |
 
 **What to cover**
 Logging out does not withdraw access to the public book catalogue — `/books` still lists books, while the per-row collection controls and the signed-in header block are withdrawn with the session.
@@ -254,7 +254,7 @@ Low priority: a negative-space assertion about a public page, and no user journe
 | Category   | Behavior        |
 | Technique  | EP              |
 | Source     | REQ-LOGOUT-022  |
-| Test cases | —               |
+| Test cases | LOGOUT-009      |
 
 **What to cover**
 Activating logout clears the session entirely client-side, without contacting the server — no request to any application endpoint is issued.
