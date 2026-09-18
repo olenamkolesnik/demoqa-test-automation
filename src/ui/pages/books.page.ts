@@ -1,4 +1,5 @@
 import type { Locator, Page } from '@playwright/test';
+import { UserNameDisplayComponent } from '../components/user-name-display.component';
 
 // Minimal by design: /books has no test cases of its own yet. This page
 // object exists to express what the logout suite's test cases need from it —
@@ -16,16 +17,14 @@ export class BooksPage {
   // pointer events — which surfaces as a bare "Test timeout" naming no step.
   private static readonly STEP_TIMEOUT_MS = 10_000;
 
-  private readonly userNameValue: Locator;
+  private readonly userNameDisplay: UserNameDisplayComponent;
   private readonly logOut: Locator;
   private readonly login: Locator;
   private readonly searchBox: Locator;
   private readonly catalogueTable: Locator;
 
   constructor(private readonly page: Page) {
-    // Same bare <label id="userName-value"> as /profile: no accessible name,
-    // no associated caption, so the id is the only stable handle.
-    this.userNameValue = page.locator('#userName-value');
+    this.userNameDisplay = new UserNameDisplayComponent(page);
     // "Log out" — TWO words on this page, unlike /profile's one-word "Logout"
     // (DIVERGENCE-1, docs/ui-spec/logout.requirements.md). This is the split
     // the requirements file originally got wrong, so do not "fix" the name to
@@ -57,7 +56,7 @@ export class BooksPage {
   }
 
   userName(): Locator {
-    return this.userNameValue;
+    return this.userNameDisplay.value();
   }
 
   logOutButton(): Locator {

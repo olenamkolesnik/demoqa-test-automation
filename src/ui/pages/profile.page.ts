@@ -1,4 +1,5 @@
 import type { Locator, Page } from '@playwright/test';
+import { UserNameDisplayComponent } from '../components/user-name-display.component';
 
 // Minimal by design: /profile has no test cases of its own yet. This page
 // object exists to express what other suites' test cases need from it — the
@@ -7,7 +8,7 @@ import type { Locator, Page } from '@playwright/test';
 // — plus deleteAccount(), which is retained for a future test covering the
 // delete flow itself. Extend this rather than starting a second page object.
 export class ProfilePage {
-  private readonly userNameValue: Locator;
+  private readonly userNameDisplay: UserNameDisplayComponent;
   private readonly logOut: Locator;
   private readonly deleteAccountButton: Locator;
   private readonly deleteAccountConfirmButton: Locator;
@@ -15,12 +16,12 @@ export class ProfilePage {
   private readonly anyButton: Locator;
 
   constructor(private readonly page: Page) {
-    // The username renders as a <label id="userName-value"> with no accessible
-    // name of its own — it sits beside a separate "User Name :" caption rather
-    // than being associated with one, so no getByRole/getByLabel query reaches
-    // it. The id is the only stable handle (verified live 2026-09-11).
-    // Note #userName-label is NOT this caption: it reads "Books :".
-    this.userNameValue = page.locator('#userName-value');
+    // Extracted into UserNameDisplayComponent (2026-09-18) once /books needed
+    // the identical locator — see that component's own comment for the DOM
+    // shape (bare <label id="userName-value">, no accessible name, no
+    // association with its "User Name :" caption; verified live 2026-09-11).
+    // Note #userName-label is NOT that caption: it reads "Books :".
+    this.userNameDisplay = new UserNameDisplayComponent(page);
     // "Logout" — one word, unlike the "Log out" button the login page shows in
     // its already-signed-in state (REQ-LOGIN-003). Located by role and name
     // because id="submit" is shared with Delete Account and Delete All Books
@@ -54,7 +55,7 @@ export class ProfilePage {
   }
 
   async clickLogOut(): Promise<void> {
-    await this.logOut.click();
+    await this.logOut.click({ timeout: ProfilePage.STEP_TIMEOUT_MS });
   }
 
   // Deletes the signed-in account through the page's own Delete Account
@@ -88,7 +89,7 @@ export class ProfilePage {
   private static readonly STEP_TIMEOUT_MS = 10_000;
 
   userName(): Locator {
-    return this.userNameValue;
+    return this.userNameDisplay.value();
   }
 
   logOutButton(): Locator {
