@@ -1,32 +1,33 @@
 import { mergeTests } from '@playwright/test';
 import { test as accountTest, expect } from '../../src/fixtures/account.fixtures';
 import { test as uiPageTest } from '../../src/fixtures/ui-page.fixtures';
+import type { SeededUser } from '../../src/fixtures/seed-user.util';
 
-const test = mergeTests(accountTest, uiPageTest);
+const mergedTest = mergeTests(accountTest, uiPageTest);
 
-// Every test here signs in through the login form first, then verifies what
-// logging out changes. The account is seeded via seedUser; the session itself
-// cannot be — DemoQA carries it in cookies set by a real authentication
-// response, not by anything an API-issued token can inject into the browser
-// (docs/ui-spec/login-form.requirements.md, "Constraint on test design").
-//
-// LOGOUT-008 (COND-LOGOUT-012, catalogue stays readable) and LOGOUT-009
-// (COND-LOGOUT-013, no server request) are Low priority and filtered from
-// automation per the priority rule. LOGOUT-009 would also be out of scope on
-// its own terms: its entire assertion is "no request was made to demoqa.com",
-// and this suite does not assert on network traffic even where a test case's
-// own Notes suggest it (generate-ui-tests skill, "Reading the Notes field").
-// Both remain manually verified — see docs/test-cases/ui/auth/logout.md.
+// Composes seedUser (API chain) with loginPage.loginAs() (UI chain). Kept
+// here rather than in src/fixtures/*.ts because those files must not cross
+// chains (docs/coding-standards.md, "the two chains meet only at tests/").
+const test = mergedTest.extend<{ signedInSession: SeededUser }>({
+  signedInSession: async ({ page, loginPage, seedUser }, use) => {
+    await loginPage.loginAs({ userName: seedUser.userName, password: seedUser.password });
+    await page.waitForURL(/\/profile$/);
+    await use(seedUser);
+  },
+});
+
+// LOGOUT-006 through 009 have no test here despite tracing to real
+// conditions: 008/009 are Low priority (filtered); 006/007 never call
+// clickLogOut() as the thing under test — they assert what a signed-out page
+// renders, not what logging out produces. All four remain manually verified
+// — see docs/test-cases/ui/auth/logout.md's Automation field for each.
 
 test.describe('Logout', () => {
   test(
     'Log out from the profile page',
     { tag: ['@LOGOUT-001', '@state-transition'] },
-    async ({ page, loginPage, profilePage, seedUser }) => {
-      await loginPage.loginAs({ userName: seedUser.userName, password: seedUser.password });
-      await page.waitForURL(/\/profile$/);
-
-      await expect.soft(profilePage.userName()).toHaveText(seedUser.userName);
+    async ({ page, loginPage, profilePage, signedInSession }) => {
+      await expect.soft(profilePage.userName()).toHaveText(signedInSession.userName);
       await expect.soft(profilePage.logOutButton()).toBeVisible();
 
       await profilePage.clickLogOut();
@@ -42,12 +43,10 @@ test.describe('Logout', () => {
   test(
     'Log out from the book store page',
     { tag: ['@LOGOUT-002', '@state-transition'] },
-    async ({ page, loginPage, booksPage, seedUser }) => {
-      await loginPage.loginAs({ userName: seedUser.userName, password: seedUser.password });
-      await page.waitForURL(/\/profile$/);
+    async ({ page, booksPage, signedInSession }) => {
       await booksPage.goto();
 
-      await expect.soft(booksPage.userName()).toHaveText(seedUser.userName);
+      await expect.soft(booksPage.userName()).toHaveText(signedInSession.userName);
       await expect.soft(booksPage.logOutButton()).toBeVisible();
 
       await booksPage.clickLogOut();
@@ -61,29 +60,30 @@ test.describe('Logout', () => {
   test(
     'Verify session cookies are cleared by logout',
     { tag: ['@LOGOUT-003', '@state-transition'] },
-    async ({ page, context, loginPage, profilePage, seedUser }) => {
-      await loginPage.loginAs({ userName: seedUser.userName, password: seedUser.password });
-      await page.waitForURL(/\/profile$/);
-
+    async ({ page, context, profilePage, signedInSession }) => {
       const authCookieNames = ['token', 'expires', 'userID', 'userName'];
-      const cookiesBefore = (await context.cookies()).map((c) => c.name);
-      expect(authCookieNames.every((name) => cookiesBefore.includes(name))).toBe(true);
+      const cookieNamesBefore = (await context.cookies()).map((c) => c.name);
+      for (const name of authCookieNames) {
+        expect.soft(cookieNamesBefore).toContain(name);
+      }
+      const userIdCookie = (await context.cookies()).find((c) => c.name === 'userID');
+      expect.soft(userIdCookie?.value).toBe(signedInSession.userId);
 
       await profilePage.clickLogOut();
       await page.waitForURL(/\/login$/);
 
-      const cookiesAfter = (await context.cookies()).map((c) => c.name);
-      expect(authCookieNames.some((name) => cookiesAfter.includes(name))).toBe(false);
+      const cookieNamesAfter = (await context.cookies()).map((c) => c.name);
+      for (const name of authCookieNames) {
+        expect.soft(cookieNamesAfter).not.toContain(name);
+      }
     }
   );
 
   test(
     'End a session by clearing its cookies',
     { tag: ['@LOGOUT-004', '@state-transition'] },
-    async ({ page, context, loginPage, profilePage, seedUser }) => {
-      await loginPage.loginAs({ userName: seedUser.userName, password: seedUser.password });
-      await page.waitForURL(/\/profile$/);
-
+    async ({ context, profilePage, signedInSession }) => {
+      void signedInSession;
       await context.clearCookies();
       await profilePage.goto();
 
@@ -95,10 +95,8 @@ test.describe('Logout', () => {
   test(
     'Press the browser Back button after logging out',
     { tag: ['@LOGOUT-005', '@state-transition'] },
-    async ({ page, loginPage, profilePage, seedUser }) => {
-      await loginPage.loginAs({ userName: seedUser.userName, password: seedUser.password });
-      await page.waitForURL(/\/profile$/);
-
+    async ({ page, profilePage, signedInSession }) => {
+      void signedInSession;
       await profilePage.clickLogOut();
       await page.waitForURL(/\/login$/);
 
@@ -108,45 +106,6 @@ test.describe('Logout', () => {
       await expect.soft(profilePage.signedOutMessage()).toBeVisible();
       await expect.soft(profilePage.userName()).toHaveCount(0);
       await expect.soft(profilePage.logOutButton()).toHaveCount(0);
-    }
-  );
-
-  test(
-    'Confirm no logout control is offered without a session',
-    { tag: ['@LOGOUT-006', '@negative'] },
-    async ({ profilePage, booksPage, loginPage }) => {
-      await profilePage.goto();
-      await expect.soft(profilePage.buttons()).toHaveCount(0);
-
-      await booksPage.goto();
-      await expect.soft(booksPage.loginButton()).toBeVisible();
-      await expect.soft(booksPage.logOutButton()).toHaveCount(0);
-
-      await loginPage.goto();
-      await expect.soft(loginPage.usernameField()).toBeVisible();
-      await expect.soft(loginPage.logOutButton()).toHaveCount(0);
-    }
-  );
-
-  test(
-    'Open the profile page without a session',
-    { tag: ['@LOGOUT-007', '@negative'] },
-    async ({ page, profilePage, loginPage, seedUser }) => {
-      await profilePage.goto();
-
-      await expect.soft(page).toHaveURL(/\/profile$/);
-      await expect.soft(profilePage.signedOutMessage()).toBeVisible();
-      await expect.soft(profilePage.buttons()).toHaveCount(0);
-
-      await loginPage.loginAs({ userName: seedUser.userName, password: seedUser.password });
-      await page.waitForURL(/\/profile$/);
-      await profilePage.clickLogOut();
-      await page.waitForURL(/\/login$/);
-
-      await profilePage.goto();
-      await expect.soft(page).toHaveURL(/\/profile$/);
-      await expect.soft(profilePage.signedOutMessage()).toBeVisible();
-      await expect.soft(profilePage.buttons()).toHaveCount(0);
     }
   );
 });

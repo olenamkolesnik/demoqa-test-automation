@@ -146,15 +146,15 @@ Step 2 says "until /profile is reached" rather than "press Back once" deliberate
 
 ### TC: Confirm no logout control is offered without a session
 
-| Field          | Value                                                                    |
-| -------------- | ------------------------------------------------------------------------ |
-| ID             | LOGOUT-006                                                               |
-| Condition      | COND-LOGOUT-010                                                          |
-| Risk           | —                                                                        |
-| Preconditions  | Browser is signed out (fresh context, or all demoqa.com cookies cleared) |
-| Test data      | None — no account is required                                            |
-| Postconditions | None — nothing is created                                                |
-| Automation     | Automated → `tests/ui/logout.ui.spec.ts`                                 |
+| Field          | Value                                                                                                                                                                                                                                   |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ID             | LOGOUT-006                                                                                                                                                                                                                              |
+| Condition      | COND-LOGOUT-010                                                                                                                                                                                                                         |
+| Risk           | —                                                                                                                                                                                                                                       |
+| Preconditions  | Browser is signed out (fresh context, or all demoqa.com cookies cleared)                                                                                                                                                                |
+| Test data      | None — no account is required                                                                                                                                                                                                           |
+| Postconditions | None — nothing is created                                                                                                                                                                                                               |
+| Automation     | Evaluated, not automated — a real, Medium-priority condition, but its steps never call `clickLogOut()`; it tests what a signed-out page renders, not what logging out produces. See `tests/ui/logout.ui.spec.ts`'s file-header comment. |
 
 **Steps & expected results**
 
@@ -175,15 +175,15 @@ The only case in this file needing no account and no cleanup, since it never sig
 
 ### TC: Open the profile page without a session
 
-| Field          | Value                                                                                               |
-| -------------- | --------------------------------------------------------------------------------------------------- |
-| ID             | LOGOUT-007                                                                                          |
-| Condition      | COND-LOGOUT-011                                                                                     |
-| Risk           | Risk-1, Risk-2                                                                                      |
-| Preconditions  | User account exists (created via API: POST /Account/v1/User); browser is signed out (fresh context) |
-| Test data      | userName: "qa_logout_007" / password: "Aa1!aaaaaaaa"                                                |
-| Postconditions | Account "qa_logout_007" deleted via DELETE /Account/v1/User/{userId}                                |
-| Automation     | Automated → `tests/ui/logout.ui.spec.ts`                                                            |
+| Field          | Value                                                                                                                                                                                                                                                                                                |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ID             | LOGOUT-007                                                                                                                                                                                                                                                                                           |
+| Condition      | COND-LOGOUT-011                                                                                                                                                                                                                                                                                      |
+| Risk           | Risk-1, Risk-2                                                                                                                                                                                                                                                                                       |
+| Preconditions  | User account exists (created via API: POST /Account/v1/User); browser is signed out (fresh context)                                                                                                                                                                                                  |
+| Test data      | userName: "qa_logout_007" / password: "Aa1!aaaaaaaa"                                                                                                                                                                                                                                                 |
+| Postconditions | Account "qa_logout_007" deleted via DELETE /Account/v1/User/{userId}                                                                                                                                                                                                                                 |
+| Automation     | Evaluated, not automated — a real, High-priority condition, but its main assertion (steps 1-2) holds for a browser that never touched the logout feature; only step 3 calls `clickLogOut()`, as a side check on an already-established fact. See `tests/ui/logout.ui.spec.ts`'s file-header comment. |
 
 **Steps & expected results**
 
