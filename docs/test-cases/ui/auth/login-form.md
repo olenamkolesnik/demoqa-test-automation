@@ -5,8 +5,9 @@ Derived from `docs/test-conditions/ui/auth/login-form.md`. One test case per con
 
 **Every test case in this file requires a signed-out browser context.** Reaching `/login` with an
 active session shows no form at all (LOGIN-FORM-013), so a leaked session makes every other case
-here fail at its first step. The session lives in React memory only and cannot be cleared through
-storage, so "signed out" means a fresh browser context.
+here fail at its first step. The session is carried in cookies (`token`, `expires`, `userID`,
+`userName`), so "signed out" means a fresh browser context or one whose cookies have been cleared
+— corrected 2026-09-18; see the constraint section in `docs/ui-spec/login-form.requirements.md`.
 
 ---
 
@@ -205,8 +206,10 @@ the server is injectable. Security testing is out of scope (`docs/test-plan.md` 
 
 **Notes**
 The most important case in this file — if it fails, no authenticated journey is reachable. The
-account is seeded through the API, but the session must be established through this form: DemoQA
-holds it in React memory only, so it cannot be injected.
+account is seeded through the API, and the session is established through this form because that
+is precisely what this case tests. (Corrected 2026-09-18: a session _can_ also be injected via
+cookies — see `docs/ui-spec/login-form.requirements.md`. That route is a setup shortcut for other
+suites, never for this case, whose subject is the form itself.)
 
 ---
 
@@ -382,8 +385,9 @@ not a dispatched keyboard event — a synthetic event proves less than it appear
 **Notes**
 This is the isolation hazard behind the signed-out precondition on every other case in this file:
 a session left open by an earlier test makes the form disappear, and the resulting failure names a
-missing locator rather than the real cause. The session cannot be cleared through storage — only a
-fresh browser context or the Log out control ends it.
+missing locator rather than the real cause. A fresh browser context, clearing cookies, or the Log
+out control each end the session (corrected 2026-09-18 — this previously said the session could not
+be cleared through storage).
 
 Automation covers step 1 only (the already-logged-in state replacing the form). Step 2 (profile
 link navigation and the profile page's content) is not re-asserted here — LOGIN-FORM-007 already

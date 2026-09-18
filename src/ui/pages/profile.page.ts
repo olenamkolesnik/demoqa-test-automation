@@ -1,23 +1,27 @@
 import type { Locator, Page } from '@playwright/test';
+import { UserNameDisplayComponent } from '../components/user-name-display.component';
 
 // Minimal by design: /profile has no test cases of its own yet. This page
 // object exists to express what other suites' test cases need from it — the
-// login form's post-sign-in assertions (LOGIN-FORM-007, LOGIN-FORM-013) — plus
-// deleteAccount(), which is retained for a future test covering the delete
-// flow itself. Extend this rather than starting a second page object.
+// login form's post-sign-in assertions (LOGIN-FORM-007, LOGIN-FORM-013), the
+// logout suite's signed-out-profile assertions (LOGOUT-004, -005, -006, -007)
+// — plus deleteAccount(), which is retained for a future test covering the
+// delete flow itself. Extend this rather than starting a second page object.
 export class ProfilePage {
-  private readonly userNameValue: Locator;
+  private readonly userNameDisplay: UserNameDisplayComponent;
   private readonly logOut: Locator;
   private readonly deleteAccountButton: Locator;
   private readonly deleteAccountConfirmButton: Locator;
+  private readonly signedOutNotice: Locator;
+  private readonly anyButton: Locator;
 
   constructor(private readonly page: Page) {
-    // The username renders as a <label id="userName-value"> with no accessible
-    // name of its own — it sits beside a separate "User Name :" caption rather
-    // than being associated with one, so no getByRole/getByLabel query reaches
-    // it. The id is the only stable handle (verified live 2026-09-11).
-    // Note #userName-label is NOT this caption: it reads "Books :".
-    this.userNameValue = page.locator('#userName-value');
+    // Extracted into UserNameDisplayComponent (2026-09-18) once /books needed
+    // the identical locator — see that component's own comment for the DOM
+    // shape (bare <label id="userName-value">, no accessible name, no
+    // association with its "User Name :" caption; verified live 2026-09-11).
+    // Note #userName-label is NOT that caption: it reads "Books :".
+    this.userNameDisplay = new UserNameDisplayComponent(page);
     // "Logout" — one word, unlike the "Log out" button the login page shows in
     // its already-signed-in state (REQ-LOGIN-003). Located by role and name
     // because id="submit" is shared with Delete Account and Delete All Books
@@ -32,6 +36,18 @@ export class ProfilePage {
     // (verified live 2026-09-14; modal confirmed again 2026-09-16 as
     // `.modal` / `#closeSmallModal-ok`).
     this.deleteAccountConfirmButton = page.getByRole('button', { name: 'OK', exact: true });
+    // What /profile renders instead of the collection when there is no session.
+    // The page stays at /profile — it does not redirect — so this text, not a
+    // URL change, is the signal of a signed-out visit (REQ-LOGOUT-031). A
+    // substring is enough: the full sentence also carries two inline links.
+    this.signedOutNotice = page.getByText(
+      'Currently you are not logged into the Book Store application'
+    );
+    // Every button on the page, for asserting there are none: a signed-out
+    // /profile renders no buttons whatsoever (REQ-LOGOUT-030, verified
+    // 2026-09-18 with querySelectorAll returning an empty list). Assert
+    // toHaveCount(0) in the test.
+    this.anyButton = page.getByRole('button');
   }
 
   async goto(): Promise<void> {
@@ -39,7 +55,7 @@ export class ProfilePage {
   }
 
   async clickLogOut(): Promise<void> {
-    await this.logOut.click();
+    await this.logOut.click({ timeout: ProfilePage.STEP_TIMEOUT_MS });
   }
 
   // Deletes the signed-in account through the page's own Delete Account
@@ -73,10 +89,18 @@ export class ProfilePage {
   private static readonly STEP_TIMEOUT_MS = 10_000;
 
   userName(): Locator {
-    return this.userNameValue;
+    return this.userNameDisplay.value();
   }
 
   logOutButton(): Locator {
     return this.logOut;
+  }
+
+  signedOutMessage(): Locator {
+    return this.signedOutNotice;
+  }
+
+  buttons(): Locator {
+    return this.anyButton;
   }
 }

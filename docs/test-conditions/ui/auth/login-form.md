@@ -210,7 +210,7 @@ userName / password: a seeded qa_-prefixed account created via POST /Account/v1/
 ```
 
 **Notes**
-The single most important condition in this file — if it fails, no authenticated journey is reachable. The account is seeded via the API; the session itself must be established through the form, because DemoQA holds it in React memory only and it cannot be injected.
+The single most important condition in this file — if it fails, no authenticated journey is reachable. The account is seeded via the API; the session is established through the form because establishing it _is_ what this condition tests. (Corrected 2026-09-18: a session can also be injected via cookies — see `docs/ui-spec/login-form.requirements.md`. That is a setup route for other suites, not for this condition.)
 
 ### COND-LOGIN-FORM-008: Unknown username is rejected
 
@@ -373,7 +373,9 @@ Active session     → /login shows "You are already logged in." + Log out contr
 ```
 
 **Notes**
-High priority despite being an edge case: this is the project's main test-isolation hazard. Because the session lives in React memory and cannot be cleared through storage, a leaked session from an earlier action makes every other condition in this file fail at its first locator, with an error naming the locator rather than the real cause. Every test of this form must start from a signed-out browser context (see **Constraint on test design — session isolation** in the requirements file).
+High priority despite being an edge case: this is the project's main test-isolation hazard. A leaked session from an earlier action makes every other condition in this file fail at its first locator, with an error naming the locator rather than the real cause. Every test of this form must start from a signed-out browser context — a fresh context, or one whose cookies have been cleared (corrected 2026-09-18; see **Constraint on test design — session isolation** in the requirements file).
+
+The same cookie mechanism that ends a session can also inject one, so anything that seeds a signed-in state carries a security constraint as well as an isolation one — see **Security constraint on any cookie-based seeding** in the requirements file before building such a fixture.
 
 ### COND-LOGIN-FORM-014: Registration is reachable from the form
 

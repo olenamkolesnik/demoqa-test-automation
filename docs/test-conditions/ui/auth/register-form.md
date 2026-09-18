@@ -400,7 +400,7 @@ Active session → navigate to /register → the four inputs and the Register bu
 **Notes**
 The contrast with REQ-LOGIN-003 is the reason this is worth recording: the two forms behave oppositely in the same situation, so an automation author who generalises from the login form will get this wrong.
 
-`Low` priority: it is a negative-space assertion (nothing is replaced), and no user journey depends on it. It also carries a real setup cost — establishing a session requires driving the login form, since DemoQA holds the session in React memory and it cannot be seeded from an API token. Expected to be filtered out at automation time; recorded so the omission is a decision rather than an oversight.
+`Low` priority: it is a negative-space assertion (nothing is replaced), and no user journey depends on it. Expected to be filtered out at automation time; recorded so the omission is a decision rather than an oversight. (Corrected 2026-09-18: the original rationale also cited a setup cost — that establishing a session required driving the login form because the session could not be seeded. The session _is_ cookie-seedable, so that cost is lower than stated; the priority stands on the first two reasons alone.)
 
 ---
 

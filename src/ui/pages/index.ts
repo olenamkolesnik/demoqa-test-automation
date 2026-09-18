@@ -3,6 +3,7 @@
 // Deliberately limited to src/ui/pages/ — the API layers are picked from
 // selectively (one schema, one factory helper), where a barrel would hide
 // which module a name actually comes from.
+export { BooksPage } from './books.page';
 export { LoginPage } from './login.page';
 export type { LoginCredentials } from './login.page';
 export { ProfilePage } from './profile.page';

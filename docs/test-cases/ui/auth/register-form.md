@@ -355,7 +355,7 @@ Covers the transition only. The login form's own behavior is out of scope here �
 **Notes**
 The contrast with the login form is why this case exists: `/login` replaces its form entirely when a session is active, but `/register` does not. Anyone generalising from the login form's behavior will get this wrong.
 
-The session must be established by driving the login form — DemoQA holds it in memory only, so an API-created account gets the tester as far as having credentials, never as far as being signed in.
+The session must be established by driving the login form, or by injecting the session cookies — an API-created account alone gets the tester as far as having credentials, not as far as being signed in, because `GenerateToken`'s bearer token is not one of the four cookies the UI reads. (Corrected 2026-09-18: this previously said DemoQA holds the session in memory only and it could not be seeded — see `docs/ui-spec/login-form.requirements.md`.)
 
 This case's condition is `Low` priority and is expected to be filtered out when this file is automated, so it is likely to remain a manual check.
 
