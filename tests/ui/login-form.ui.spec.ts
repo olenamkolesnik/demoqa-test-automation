@@ -5,10 +5,13 @@ import { test as uiPageTest } from '../../src/fixtures/ui-page.fixtures';
 const test = mergeTests(accountTest, uiPageTest);
 
 // Every test here needs a signed-out browser. Playwright gives each test its
-// own context and DemoQA holds the session in React memory only, so a fresh
-// context is signed out by construction — no fixture, no storageState, and
-// nothing to clear. What that guarantee needs is that nothing in this file
-// creates a context of its own or shares one between tests.
+// own context with its own empty cookie jar, and DemoQA carries the session in
+// cookies, so a fresh context is signed out by construction — no fixture, no
+// storageState, nothing to clear. What that guarantee needs is that nothing in
+// this file creates a context of its own or shares one between tests.
+// (Comment corrected 2026-09-18: it previously said the session was held in
+// React memory. The conclusion is unchanged — a fresh context is still signed
+// out — but the reason is cookies. See docs/ui-spec/login-form.requirements.md.)
 
 // REQ-LOGIN-014 ("perform required-field checks client-side, without a server
 // round trip") is not asserted by any test in this file. LOGIN-FORM-001/002/003
@@ -133,8 +136,10 @@ test.describe('Login form', () => {
     'Open the login page while already signed in',
     { tag: ['@LOGIN-FORM-013', '@state-transition'] },
     async ({ page, loginPage, seedUser }) => {
-      // The session has to be established through the form: DemoQA holds it in
-      // React memory, so seedUser can create the account but not sign it in.
+      // seedUser creates the account but does not sign it in, so the session is
+      // established through the form. A cookie-seeded session would also work
+      // here (see docs/ui-spec/login-form.requirements.md), but driving the form
+      // keeps this test's precondition built the way a user would build it.
       await loginPage.loginAs({ userName: seedUser.userName, password: seedUser.password });
       await expect(page).toHaveURL(/\/profile$/);
 
