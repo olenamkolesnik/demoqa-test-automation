@@ -20,7 +20,7 @@ Derived from `docs/test-conditions/ui/auth/logout.md`. One test case per conditi
 | Preconditions  | User account exists (created via API: POST /Account/v1/User); user is signed in through the login form, on /profile |
 | Test data      | userName: "qa_logout_001" / password: "Aa1!aaaaaaaa" (valid complexity: upper, lower, digit, special)               |
 | Postconditions | User signed out; account "qa_logout_001" deleted via DELETE /Account/v1/User/{userId}                               |
-| Automation     | Not automated                                                                                                       |
+| Automation     | Automated → `tests/ui/logout.ui.spec.ts`                                                                            |
 
 **Steps & expected results**
 
@@ -47,7 +47,7 @@ On /profile the Logout button shares `id="submit"` with Delete Account and Delet
 | Preconditions  | User account exists (created via API: POST /Account/v1/User); user is signed in through the login form, on /books |
 | Test data      | userName: "qa_logout_002" / password: "Aa1!aaaaaaaa"                                                              |
 | Postconditions | User signed out; account "qa_logout_002" deleted via DELETE /Account/v1/User/{userId}                             |
-| Automation     | Not automated                                                                                                     |
+| Automation     | Automated → `tests/ui/logout.ui.spec.ts`                                                                          |
 
 **Steps & expected results**
 
@@ -74,7 +74,7 @@ Not a duplicate of LOGOUT-001: that case covers the logout transition, this one 
 | Preconditions  | User account exists (created via API: POST /Account/v1/User); user is signed in through the login form, on /profile |
 | Test data      | userName: "qa_logout_003" / password: "Aa1!aaaaaaaa"                                                                |
 | Postconditions | User signed out; account "qa_logout_003" deleted via DELETE /Account/v1/User/{userId}                               |
-| Automation     | Not automated                                                                                                       |
+| Automation     | Automated → `tests/ui/logout.ui.spec.ts`                                                                            |
 
 **Steps & expected results**
 
@@ -101,7 +101,7 @@ It matters on security grounds, not just correctness: the `token` cookie is a JW
 | Preconditions  | User account exists (created via API: POST /Account/v1/User); user is signed in through the login form, on /profile |
 | Test data      | userName: "qa_logout_004" / password: "Aa1!aaaaaaaa"                                                                |
 | Postconditions | User signed out; account "qa_logout_004" deleted via DELETE /Account/v1/User/{userId}                               |
-| Automation     | Not automated                                                                                                       |
+| Automation     | Automated → `tests/ui/logout.ui.spec.ts`                                                                            |
 
 **Steps & expected results**
 
@@ -127,7 +127,7 @@ Worth testing because it underwrites a test-infrastructure assumption, not only 
 | Preconditions  | User account exists (created via API: POST /Account/v1/User); user is signed in through the login form, on /profile |
 | Test data      | userName: "qa_logout_005" / password: "Aa1!aaaaaaaa"                                                                |
 | Postconditions | User signed out; account "qa_logout_005" deleted via DELETE /Account/v1/User/{userId}                               |
-| Automation     | Not automated                                                                                                       |
+| Automation     | Automated → `tests/ui/logout.ui.spec.ts`                                                                            |
 
 **Steps & expected results**
 
@@ -154,7 +154,7 @@ Step 2 says "until /profile is reached" rather than "press Back once" deliberate
 | Preconditions  | Browser is signed out (fresh context, or all demoqa.com cookies cleared) |
 | Test data      | None — no account is required                                            |
 | Postconditions | None — nothing is created                                                |
-| Automation     | Not automated                                                            |
+| Automation     | Automated → `tests/ui/logout.ui.spec.ts`                                 |
 
 **Steps & expected results**
 
@@ -183,7 +183,7 @@ The only case in this file needing no account and no cleanup, since it never sig
 | Preconditions  | User account exists (created via API: POST /Account/v1/User); browser is signed out (fresh context) |
 | Test data      | userName: "qa_logout_007" / password: "Aa1!aaaaaaaa"                                                |
 | Postconditions | Account "qa_logout_007" deleted via DELETE /Account/v1/User/{userId}                                |
-| Automation     | Not automated                                                                                       |
+| Automation     | Automated → `tests/ui/logout.ui.spec.ts`                                                            |
 
 **Steps & expected results**
 
@@ -214,7 +214,7 @@ Step 3 covers the just-logged-out path as well as the never-signed-in one. The t
 | Preconditions  | User account exists (created via API: POST /Account/v1/User); user is signed in through the login form, on /books |
 | Test data      | userName: "qa_logout_008" / password: "Aa1!aaaaaaaa"                                                              |
 | Postconditions | User signed out; account "qa_logout_008" deleted via DELETE /Account/v1/User/{userId}                             |
-| Automation     | Not automated                                                                                                     |
+| Automation     | Evaluated, not automated — COND-LOGOUT-012 is Low priority (generate-ui-tests priority filter)                    |
 
 **Steps & expected results**
 
@@ -235,15 +235,15 @@ The header block is what changes, and the table is what does not — which is wh
 
 ### TC: Confirm logout contacts no server
 
-| Field          | Value                                                                                                               |
-| -------------- | ------------------------------------------------------------------------------------------------------------------- |
-| ID             | LOGOUT-009                                                                                                          |
-| Condition      | COND-LOGOUT-013                                                                                                     |
-| Risk           | Risk-1, Risk-2                                                                                                      |
-| Preconditions  | User account exists (created via API: POST /Account/v1/User); user is signed in through the login form, on /profile |
-| Test data      | userName: "qa_logout_009" / password: "Aa1!aaaaaaaa"                                                                |
-| Postconditions | User signed out; account "qa_logout_009" deleted via DELETE /Account/v1/User/{userId}                               |
-| Automation     | Not automated                                                                                                       |
+| Field          | Value                                                                                                                                                                                                                                                          |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ID             | LOGOUT-009                                                                                                                                                                                                                                                     |
+| Condition      | COND-LOGOUT-013                                                                                                                                                                                                                                                |
+| Risk           | Risk-1, Risk-2                                                                                                                                                                                                                                                 |
+| Preconditions  | User account exists (created via API: POST /Account/v1/User); user is signed in through the login form, on /profile                                                                                                                                            |
+| Test data      | userName: "qa_logout_009" / password: "Aa1!aaaaaaaa"                                                                                                                                                                                                           |
+| Postconditions | User signed out; account "qa_logout_009" deleted via DELETE /Account/v1/User/{userId}                                                                                                                                                                          |
+| Automation     | Evaluated, not automated — COND-LOGOUT-013 is Low priority, and its assertion is on network traffic, which this suite does not automate even when a case's own steps call for it (generate-ui-tests skill, "Reading the Notes field"). Manually verified only. |
 
 **Steps & expected results**
 
