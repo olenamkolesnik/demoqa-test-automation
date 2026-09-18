@@ -1,5 +1,15 @@
 [
   {
+    "run": 63,
+    "status": "success",
+    "sha": "1c0236c",
+    "ref": "feat/log-out",
+    "pr": 30,
+    "actor": "olenamkolesnik",
+    "date": "2026-09-18T18:41:52.911Z",
+    "workflowUrl": "https://github.com/olenamkolesnik/demoqa-test-automation/actions/runs/35381262191"
+  },
+  {
     "run": 62,
     "status": "success",
     "sha": "a062076",
